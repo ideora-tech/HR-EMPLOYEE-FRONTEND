@@ -10,9 +10,6 @@ export const onSignInWithCredentials = async (
     callbackUrl?: string,
 ) => {
     try {
-        // console.log('onSignInWithCredentials:------------- ', email, password, callbackUrl)
-                console.log('callbackUrl-----------', callbackUrl)
-
         await signIn('credentials', {
             email,
             password,
@@ -20,13 +17,11 @@ export const onSignInWithCredentials = async (
         })
     } catch (error) {
         if (error instanceof AuthError) {
-            /** Customize error message based on AuthError */
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            switch ((error.type as any).type) {
+            switch (error.type) {
                 case 'CredentialsSignin':
-                    return { error: 'Invalid credentials!' }
+                    return { error: 'Email atau password salah!' }
                 default:
-                    return { error: 'Something went wrong!' }
+                    return { error: 'Terjadi kesalahan. Silakan coba lagi.' }
             }
         }
         throw error

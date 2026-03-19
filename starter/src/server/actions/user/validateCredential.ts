@@ -1,19 +1,44 @@
 'use server'
-import type { SignInCredential } from '@/@types/auth'
-import { signInUserData } from '@/mock/data/authData'
-import sleep from '@/utils/sleep'
+import type { SignInCredential, BackendLoginResponse } from '@/@types/auth'
 
 const validateCredential = async (values: SignInCredential) => {
-    /** Implement your validation here, as this is just a mock */
     const { email, password } = values
 
-    await sleep(80)
+    try {
+        const response = await fetch(
+            `${process.env.BACKEND_API_URL}/auth/login`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            },
+        )
 
-    const user = signInUserData.find(
-        (user) => user.email === email && user.password === password,
-    )
+        if (!response.ok) return null
 
-    return user
+        const data: BackendLoginResponse = await response.json()
+
+        if (!data.success) return null
+
+        const { user, tokens } = data.data
+
+        return {
+            id: user.id,
+            userName: user.name,
+            email: user.email,
+            avatar: '',
+            role: user.role,
+            companyId: user.company_id,
+            accessToken: tokens.access_token,
+            refreshToken: tokens.refresh_token,
+        }
+    } catch (error) {
+        console.error('Login error:', error)
+        return null
+    }
 }
 
 export default validateCredential

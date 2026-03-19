@@ -1,9 +1,10 @@
 import type { InternalAxiosRequestConfig } from 'axios'
 
+// Token tidak perlu di-set di sini — semua request lewat /api/proxy/* Route Handler
+// yang membaca token langsung dari sesi server-side (auth()).
 const AxiosRequestIntrceptorConfigCallback = (
     config: InternalAxiosRequestConfig,
 ) => {
-    /** handle config mutatation here before request to server */
     return config
 }
 

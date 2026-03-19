@@ -18,35 +18,47 @@ export default {
         }),
         Credentials({
             async authorize(credentials) {
-                /** validate credentials from backend here */
                 const user = await validateCredential(
                     credentials as SignInCredential,
                 )
-                console.log('credentials---------', credentials)
-                console.log('authorize user---------', user)
-                if (!user) {
-                    return null
-                }
+
+                if (!user) return null
 
                 return {
                     id: user.id,
                     name: user.userName,
                     email: user.email,
                     image: user.avatar,
+                    role: user.role,
+                    companyId: user.companyId,
+                    accessToken: user.accessToken,
+                    refreshToken: user.refreshToken,
                 }
             },
         }),
     ],
     callbacks: {
-        async session(payload) {
-            /** apply extra user attributes here, for example, we add 'authority' & 'id' in this section */
+        async jwt({ token, user }) {
+            if (user) {
+                token.role = user.role
+                token.companyId = user.companyId
+                token.accessToken = user.accessToken
+                token.refreshToken = user.refreshToken
+            }
+            return token
+        },
+        async session({ session, token }) {
             return {
-                ...payload.session,
+                ...session,
                 user: {
-                    ...payload.session.user,
-                    id: payload.token.sub,
-                    authority: ['admin', 'user'],
+                    ...session.user,
+                    id: token.sub,
+                    role: token.role,
+                    companyId: token.companyId,
+                    authority: [token.role?.toLowerCase() ?? 'user'],
                 },
+                accessToken: token.accessToken,
+                refreshToken: token.refreshToken,
             }
         },
     },

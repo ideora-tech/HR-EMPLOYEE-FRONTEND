@@ -3,6 +3,25 @@ export type SignInCredential = {
     password: string
 }
 
+export type BackendLoginResponse = {
+    success: boolean
+    message: string
+    data: {
+        user: {
+            id: string
+            name: string
+            email: string
+            role: string
+            company_id: string
+        }
+        tokens: {
+            access_token: string
+            refresh_token: string
+        }
+    }
+    timestamp: string
+}
+
 export type SignInResponse = {
     token: string
     user: {
@@ -48,6 +67,8 @@ export type User = {
     userName?: string | null
     email?: string | null
     authority?: string[]
+    role?: string | null
+    companyId?: string | null
 }
 
 export type Token = {

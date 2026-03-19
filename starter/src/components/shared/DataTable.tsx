@@ -373,7 +373,7 @@ function DataTable<T>(props: DataTableProps<T>) {
                     </TBody>
                 )}
             </Table>
-            <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center justify-between mt-4 px-4 pb-4">
                 <Pagination
                     pageSize={pageSize}
                     currentPage={pageIndex}
