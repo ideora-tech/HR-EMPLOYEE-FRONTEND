@@ -38,6 +38,16 @@ const navigationConfig: NavigationTree[] = [
         subMenu: [],
     },
     {
+        key: 'aksesModul',
+        path: '/akses-modul',
+        title: 'Akses Modul',
+        translateKey: 'nav.aksesModul',
+        icon: 'aksesModul',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: [],
+        subMenu: [],
+    },
+    {
         key: 'singleMenuItem',
         path: '',
         title: 'Single menu item',

@@ -47,6 +47,7 @@ const PaketPage = () => {
     const [submitting, setSubmitting] = useState(false)
     const [viewMode, setViewMode] = useState<ViewMode>('table')
 
+    const [searchInput, setSearchInput] = useState('')
     const [search, setSearch] = useState('')
     const [kodePaketFilter, setKodePaketFilter] = useState<'' | KodePaket>('')
     const [currentPage, setCurrentPage] = useState(1)
@@ -88,8 +89,8 @@ const PaketPage = () => {
         fetchPaket()
     }, [fetchPaket])
 
-    const handleSearchChange = (value: string) => {
-        setSearch(value)
+    const handleSearchSubmit = () => {
+        setSearch(searchInput)
         setCurrentPage(1)
     }
 
@@ -213,12 +214,18 @@ const PaketPage = () => {
                 <div className="flex items-center gap-3 px-4 pb-3">
                     <Input
                         className="flex-1"
-                        placeholder="Cari nama paket..."
+                        placeholder="Cari nama paket... (tekan Enter)"
                         suffix={
-                            <HiOutlineSearch className="text-gray-400 text-lg" />
+                            <HiOutlineSearch
+                                className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                onClick={handleSearchSubmit}
+                            />
                         }
-                        value={search}
-                        onChange={(e) => handleSearchChange(e.target.value)}
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSearchSubmit()
+                        }}
                     />
                     <div className="w-44 shrink-0">
                         <Select<KodeOption>

@@ -431,7 +431,62 @@ Soft delete modul.
 ## Akses Modul Tier
 
 > **Header wajib:** `Authorization: Bearer <access_token>`
-> Konfigurasi modul apa yang aktif di tiap paket. Baris di-seed otomatis — admin hanya bisa **update** (tidak ada create/delete).
+> Konfigurasi modul apa yang tersedia di tiap paket. Admin bisa **tambah**, **update**, dan **hapus** modul dari paket.
+
+### POST `/akses-modul-tier`
+
+Tambah modul ke paket tertentu.
+
+**Request Body:**
+```json
+{
+  "kode_modul": "RECRUITMENT",
+  "paket": "PROFESSIONAL",
+  "aktif": 1,
+  "batasan": null
+}
+```
+
+| Field | Tipe | Wajib | Keterangan |
+|-------|------|-------|------------|
+| `kode_modul` | string | ✅ | Huruf besar, angka, underscore. Harus sudah ada di tabel `modul` |
+| `paket` | string | ✅ | Huruf besar, angka, underscore. Harus sudah ada di tabel `paket_langganan` |
+| `aktif` | number | ❌ | `1` atau `0`. Default: `1` |
+| `batasan` | object \| null | ❌ | Batasan fitur. `null` = tidak ada batasan |
+
+**Response `201`:**
+```json
+{
+  "message": "Modul 'RECRUITMENT' berhasil ditambahkan ke paket 'PROFESSIONAL'",
+  "data": {
+    "id_akses_modul": "550e8400-e29b-41d4-a716-446655440099",
+    "kode_modul": "RECRUITMENT",
+    "paket": "PROFESSIONAL",
+    "aktif": 1,
+    "batasan": null,
+    "dibuat_pada": "2026-03-20T10:00:00.000Z",
+    "diubah_pada": null
+  }
+}
+```
+
+> **409 Conflict** jika kombinasi `kode_modul` + `paket` sudah terdaftar.
+
+---
+
+### DELETE `/akses-modul-tier/:id`
+
+Hapus modul dari paket (soft delete berdasarkan UUID).
+
+**Response `200`:**
+```json
+{
+  "message": "Modul berhasil dihapus dari paket",
+  "data": null
+}
+```
+
+---
 
 ### GET `/akses-modul-tier`
 

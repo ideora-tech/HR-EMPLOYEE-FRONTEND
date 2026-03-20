@@ -22,4 +22,13 @@ export const API_ENDPOINTS = {
         BASE: `${PROXY}/modul`,
         BY_ID: (id: string) => `${PROXY}/modul/${id}`,
     },
+
+    // Akses Modul Tier (Konfigurasi Paket × Modul)
+    AKSES_MODUL_TIER: {
+        BASE: `${PROXY}/akses-modul-tier`,
+        BY_PAKET: (paket: string) =>
+            `${PROXY}/akses-modul-tier/paket/${paket}`,
+        BY_PAKET_MODUL: (paket: string, kode_modul: string) =>
+            `${PROXY}/akses-modul-tier/paket/${paket}/modul/${kode_modul}`,
+    },
 } as const
