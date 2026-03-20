@@ -1,11 +1,12 @@
 // ─── Paket Types ─────────────────────────────────────────────────────────────
 
-export type KodePaket = 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE'
+export type KodePaket = string
 
 export interface IPaket {
     id_paket: string
     kode_paket: KodePaket
     nama: string
+    harga: number
     maks_karyawan: number
     aktif: number             // MySQL int: 0 | 1
     dibuat_pada: string
@@ -15,6 +16,7 @@ export interface IPaket {
 export interface IPaketCreate {
     kode_paket: KodePaket
     nama: string
+    harga: number
     maks_karyawan: number
     aktif: number
 }

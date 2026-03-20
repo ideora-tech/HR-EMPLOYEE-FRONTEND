@@ -22,7 +22,7 @@ File-file berikut ada di `.claude/` dan wajib dibaca saat relevan:
 
 - **Framework**: Next.js 15.3.1 App Router
 - **Auth**: NextAuth v5 (beta) — Credentials provider, JWT session
-- **Backend**: NestJS di `http://localhost:4002`, frontend di `http://localhost:3003`
+- **Backend**: NestJS di `http://localhost:4005`, frontend di `http://localhost:3003`
 - **UI**: Ecme template — komponen dari `@/components/ui` dan `@/components/shared`
 - **Styling**: Tailwind CSS
 - **HTTP Client**: Axios via `@/services/ApiService`, baseURL `/api`
@@ -40,7 +40,7 @@ Browser (Axios) → /api/proxy/<endpoint>
 → Route Handler: src/app/api/proxy/[...path]/route.ts
     auth() → baca JWT cookie (server-side, tanpa HTTP call)
     Authorization: Bearer <token>
-→ http://localhost:4002/<endpoint>
+→ http://localhost:4005/<endpoint>
 ```
 
 - Jangan gunakan `getSession()` dari client.
@@ -65,7 +65,7 @@ export const API_ENDPOINTS = {
 ## Auth Flow
 
 ```
-Login   → validateCredential fetch POST http://localhost:4002/auth/login
+Login   → validateCredential fetch POST http://localhost:4005/auth/login
         → jwt callback simpan accessToken, refreshToken ke JWT cookie
         → redirect /home
 
@@ -234,6 +234,44 @@ aktif === 1
 
 ---
 
+## Utility — Format Angka (WAJIB)
+
+**JANGAN gunakan `toLocaleString('id-ID')` langsung di komponen** — menyebabkan hydration error di Next.js karena output berbeda antara server dan client.
+
+Selalu import dari `@/utils/formatNumber`:
+
+```ts
+import { formatNum, formatRupiah } from '@/utils/formatNumber'
+
+formatNum(1500000)      // → "1.500.000"
+formatRupiah(150000)    // → "Rp 150.000"
+```
+
+Input Rupiah di form — format saat user mengetik, parse saat submit:
+
+```ts
+// Format: strip non-digit → formatNum
+const formatRupiahInput = (raw: string): string => {
+    const digits = raw.replace(/\D/g, '')
+    if (!digits) return '0'
+    return formatNum(Number(digits))
+}
+
+// Parse: strip titik → Number
+const parseRupiah = (formatted: string): number =>
+    Number(formatted.replace(/\./g, '')) || 0
+```
+
+```tsx
+<Input
+    prefix={<span className="text-gray-500 font-medium">Rp</span>}
+    value={form.harga}
+    onChange={(e) => setForm(p => ({ ...p, harga: formatRupiahInput(e.target.value) }))}
+/>
+```
+
+---
+
 ## Design Pattern — Toast
 
 ```tsx
@@ -246,7 +284,7 @@ toast.push(<Notification type="danger" title="Gagal menyimpan data" />)
 ## Environment Variables
 
 ```env
-BACKEND_API_URL=http://localhost:4002
+BACKEND_API_URL=http://localhost:4005
 NEXTAUTH_URL=http://localhost:3003/
 NEXTAUTH_SECRET=<secret>
 ```

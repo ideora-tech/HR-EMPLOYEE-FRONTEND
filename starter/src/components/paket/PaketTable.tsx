@@ -6,6 +6,7 @@ import { Tag, Tooltip } from '@/components/ui'
 import { HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
 import type { IPaket, KodePaket } from '@/@types/paket.types'
+import { formatNum, formatRupiah } from '@/utils/formatNumber'
 
 const KODE_TAG_CLASS: Record<KodePaket, string> = {
     FREE: 'bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-100',
@@ -15,7 +16,7 @@ const KODE_TAG_CLASS: Record<KodePaket, string> = {
 }
 
 const formatMaks = (maks: number) =>
-    maks >= 999999 ? 'Unlimited' : maks.toLocaleString('id-ID')
+    maks >= 999999 ? 'Unlimited' : formatNum(maks)
 
 interface PaketTableProps {
     data: IPaket[]
@@ -64,6 +65,13 @@ const PaketTable = ({
                         {row.original.kode_paket}
                     </Tag>
                 ),
+            },
+            {
+                header: 'Harga',
+                accessorKey: 'harga',
+                size: 180,
+                cell: ({ row }: CellContext<IPaket, unknown>) =>
+                    formatRupiah(row.original.harga),
             },
             {
                 header: 'Maks. Karyawan',

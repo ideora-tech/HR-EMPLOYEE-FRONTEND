@@ -6,24 +6,10 @@ import {
     Dialog,
     FormItem,
     Input,
-    Select,
     Switcher,
 } from '@/components/ui'
-import type {
-    IPaket,
-    IPaketCreate,
-    IPaketUpdate,
-    KodePaket,
-} from '@/@types/paket.types'
-
-type KodeOption = { value: KodePaket; label: string }
-
-const KODE_OPTIONS: KodeOption[] = [
-    { value: 'FREE', label: 'Free' },
-    { value: 'STARTER', label: 'Starter' },
-    { value: 'PROFESSIONAL', label: 'Professional' },
-    { value: 'ENTERPRISE', label: 'Enterprise' },
-]
+import type { IPaket, IPaketCreate, IPaketUpdate } from '@/@types/paket.types'
+import { formatNum } from '@/utils/formatNumber'
 
 interface PaketFormProps {
     open: boolean
@@ -34,18 +20,29 @@ interface PaketFormProps {
 }
 
 interface FormState {
-    kode_paket: KodePaket
+    kode_paket: string
     nama: string
+    harga: string
     maks_karyawan: string
     aktif: boolean
 }
 
 const INITIAL_STATE: FormState = {
-    kode_paket: 'FREE',
+    kode_paket: '',
     nama: '',
+    harga: '0',
     maks_karyawan: '10',
     aktif: true,
 }
+
+const formatRupiah = (raw: string): string => {
+    const digits = raw.replace(/\D/g, '')
+    if (!digits) return '0'
+    return formatNum(Number(digits))
+}
+
+const parseRupiah = (formatted: string): number =>
+    Number(formatted.replace(/\./g, '')) || 0
 
 const PaketForm = ({
     open,
@@ -60,13 +57,13 @@ const PaketForm = ({
     >({})
 
     const isEdit = !!editData
-    const isEnterprise = form.kode_paket === 'ENTERPRISE'
 
     useEffect(() => {
         if (editData) {
             setForm({
                 kode_paket: editData.kode_paket,
                 nama: editData.nama,
+                harga: formatNum(Number(editData.harga)),
                 maks_karyawan: String(editData.maks_karyawan),
                 aktif: editData.aktif === 1,
             })
@@ -76,15 +73,13 @@ const PaketForm = ({
         setErrors({})
     }, [editData, open])
 
-    useEffect(() => {
-        if (isEnterprise) {
-            setForm((p) => ({ ...p, maks_karyawan: '999999' }))
-        }
-    }, [isEnterprise])
-
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof FormState, string>> = {}
+        if (!form.kode_paket.trim())
+            newErrors.kode_paket = 'Kode paket wajib diisi'
         if (!form.nama.trim()) newErrors.nama = 'Nama paket wajib diisi'
+        if (parseRupiah(form.harga) < 0)
+            newErrors.harga = 'Harga tidak boleh negatif'
         if (!form.maks_karyawan || Number(form.maks_karyawan) < 1)
             newErrors.maks_karyawan = 'Maks. karyawan wajib diisi (min. 1)'
         setErrors(newErrors)
@@ -94,8 +89,9 @@ const PaketForm = ({
     const handleSubmit = () => {
         if (!validate()) return
         const payload: IPaketCreate = {
-            kode_paket: form.kode_paket,
+            kode_paket: form.kode_paket.trim().toUpperCase(),
             nama: form.nama.trim(),
+            harga: parseRupiah(form.harga),
             maks_karyawan: Number(form.maks_karyawan),
             aktif: form.aktif ? 1 : 0,
         }
@@ -114,18 +110,25 @@ const PaketForm = ({
             </h5>
 
             <div className="flex flex-col gap-4">
-                <FormItem label="Kode Paket">
-                    <Select<KodeOption>
-                        options={KODE_OPTIONS}
-                        value={
-                            KODE_OPTIONS.find(
-                                (o) => o.value === form.kode_paket,
-                            ) ?? KODE_OPTIONS[0]
-                        }
-                        onChange={(opt) =>
+                <FormItem
+                    label="Kode Paket"
+                    asterisk
+                    invalid={!!errors.kode_paket}
+                    errorMessage={errors.kode_paket}
+                    extra={
+                        <span className="text-xs text-gray-400">
+                            Akan diubah ke huruf kapital otomatis
+                        </span>
+                    }
+                >
+                    <Input
+                        placeholder="contoh: BASIC, GOLD, PREMIUM"
+                        value={form.kode_paket}
+                        invalid={!!errors.kode_paket}
+                        onChange={(e) =>
                             setForm((p) => ({
                                 ...p,
-                                kode_paket: (opt as KodeOption).value,
+                                kode_paket: e.target.value.toUpperCase(),
                             }))
                         }
                     />
@@ -148,27 +151,46 @@ const PaketForm = ({
                 </FormItem>
 
                 <FormItem
+                    label="Harga"
+                    asterisk
+                    invalid={!!errors.harga}
+                    errorMessage={errors.harga}
+                    extra={
+                        <span className="text-xs text-gray-400">
+                            0 untuk paket gratis
+                        </span>
+                    }
+                >
+                    <Input
+                        prefix={
+                            <span className="text-gray-500 font-medium">
+                                Rp
+                            </span>
+                        }
+                        placeholder="0"
+                        value={form.harga}
+                        invalid={!!errors.harga}
+                        onChange={(e) =>
+                            setForm((p) => ({
+                                ...p,
+                                harga: formatRupiah(e.target.value),
+                            }))
+                        }
+                    />
+                </FormItem>
+
+                <FormItem
                     label="Maks. Karyawan"
                     asterisk
                     invalid={!!errors.maks_karyawan}
                     errorMessage={errors.maks_karyawan}
-                    extra={
-                        isEnterprise ? (
-                            <span className="text-xs text-gray-400">
-                                Otomatis Unlimited (999.999)
-                            </span>
-                        ) : undefined
-                    }
                 >
                     <Input
                         type="number"
                         min={1}
                         value={form.maks_karyawan}
                         invalid={!!errors.maks_karyawan}
-                        disabled={isEnterprise}
-                        placeholder={
-                            isEnterprise ? 'Unlimited (999999)' : '10'
-                        }
+                        placeholder="10"
                         onChange={(e) =>
                             setForm((p) => ({
                                 ...p,

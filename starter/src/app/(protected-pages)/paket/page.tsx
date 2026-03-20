@@ -21,6 +21,8 @@ import PaketTable from '@/components/paket/PaketTable'
 import PaketCard from '@/components/paket/PaketCard'
 import PaketForm from '@/components/paket/PaketForm'
 import PaketService from '@/services/paket.service'
+import { parseApiError } from '@/utils/parseApiError'
+import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type {
     IPaket,
     IPaketCreate,
@@ -68,9 +70,14 @@ const PaketPage = () => {
                 setPaketList(res.data)
                 setTotal(res.meta?.total ?? 0)
             }
-        } catch {
+        } catch (err) {
             toast.push(
-                <Notification type="danger" title="Gagal memuat data paket" />,
+                <Notification
+                    type="danger"
+                    title={MESSAGES.ERROR.FETCH(ENTITY.PAKET)}
+                >
+                    {parseApiError(err)}
+                </Notification>,
             )
         } finally {
             setLoading(false)
@@ -120,7 +127,7 @@ const PaketPage = () => {
                 toast.push(
                     <Notification
                         type="success"
-                        title="Paket berhasil diperbarui"
+                        title={MESSAGES.SUCCESS.UPDATED(ENTITY.PAKET)}
                     />,
                 )
             } else {
@@ -128,23 +135,25 @@ const PaketPage = () => {
                 toast.push(
                     <Notification
                         type="success"
-                        title="Paket berhasil ditambahkan"
+                        title={MESSAGES.SUCCESS.CREATED(ENTITY.PAKET)}
                     />,
                 )
             }
             setFormOpen(false)
             setEditTarget(null)
             fetchPaket()
-        } catch {
+        } catch (err) {
             toast.push(
                 <Notification
                     type="danger"
                     title={
                         editTarget
-                            ? 'Gagal memperbarui paket'
-                            : 'Gagal menambah paket'
+                            ? MESSAGES.ERROR.UPDATE(ENTITY.PAKET)
+                            : MESSAGES.ERROR.CREATE(ENTITY.PAKET)
                     }
-                />,
+                >
+                    {parseApiError(err)}
+                </Notification>,
             )
         } finally {
             setSubmitting(false)
@@ -157,13 +166,21 @@ const PaketPage = () => {
         try {
             await PaketService.remove(deleteTarget.id_paket)
             toast.push(
-                <Notification type="success" title="Paket berhasil dihapus" />,
+                <Notification
+                    type="success"
+                    title={MESSAGES.SUCCESS.DELETED(ENTITY.PAKET)}
+                />,
             )
             setDeleteTarget(null)
             fetchPaket()
-        } catch {
+        } catch (err) {
             toast.push(
-                <Notification type="danger" title="Gagal menghapus paket" />,
+                <Notification
+                    type="danger"
+                    title={MESSAGES.ERROR.DELETE(ENTITY.PAKET)}
+                >
+                    {parseApiError(err)}
+                </Notification>,
             )
         } finally {
             setSubmitting(false)

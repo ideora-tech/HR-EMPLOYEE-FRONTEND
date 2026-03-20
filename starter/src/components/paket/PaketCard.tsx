@@ -1,8 +1,9 @@
 'use client'
 
 import { Card, Tag, Button } from '@/components/ui'
-import { HiPencilAlt, HiTrash, HiUsers } from 'react-icons/hi'
+import { HiPencilAlt, HiTrash, HiUsers, HiCurrencyDollar } from 'react-icons/hi'
 import type { IPaket, KodePaket } from '@/@types/paket.types'
+import { formatNum, formatRupiah } from '@/utils/formatNumber'
 
 const KODE_CONFIG: Record<
     KodePaket,
@@ -35,9 +36,9 @@ interface PaketCardProps {
 const PaketCard = ({ paket, onEdit, onDelete }: PaketCardProps) => {
     const config = KODE_CONFIG[paket.kode_paket]
     const maksLabel =
-        paket.maks_karyawan >= 999999
-            ? 'Unlimited'
-            : paket.maks_karyawan.toLocaleString('id-ID')
+        paket.maks_karyawan >= 999999 ? 'Unlimited' : formatNum(paket.maks_karyawan)
+    const hargaLabel =
+        paket.harga === 0 ? 'Gratis' : formatRupiah(paket.harga)
 
     return (
         <Card className={config.accentClass}>
@@ -55,6 +56,12 @@ const PaketCard = ({ paket, onEdit, onDelete }: PaketCardProps) => {
             </div>
 
             <h6 className="font-bold mb-1">{paket.nama}</h6>
+
+            <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-2">
+                <HiCurrencyDollar className="text-base" />
+                <span className="font-semibold text-gray-700">{hargaLabel}</span>
+                <span>/ bulan</span>
+            </div>
 
             <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-5">
                 <HiUsers className="text-base" />
