@@ -16,4 +16,10 @@ export const API_ENDPOINTS = {
         BASE: `${PROXY}/paket`,
         BY_ID: (id: string) => `${PROXY}/paket/${id}`,
     },
+
+    // Modul (Fitur Aplikasi)
+    MODUL: {
+        BASE: `${PROXY}/modul`,
+        BY_ID: (id: string) => `${PROXY}/modul/${id}`,
+    },
 } as const

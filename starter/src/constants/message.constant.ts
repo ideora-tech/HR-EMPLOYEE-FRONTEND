@@ -21,6 +21,7 @@ export const MESSAGES = {
 
 export const ENTITY = {
     PAKET: 'Paket',
+    MODUL: 'Modul',
     KARYAWAN: 'Karyawan',
     PERUSAHAAN: 'Perusahaan',
     PENGGUNA: 'Pengguna',

@@ -28,6 +28,16 @@ const navigationConfig: NavigationTree[] = [
         subMenu: [],
     },
     {
+        key: 'modul',
+        path: '/modul',
+        title: 'Modul',
+        translateKey: 'nav.modul',
+        icon: 'modul',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: [],
+        subMenu: [],
+    },
+    {
         key: 'singleMenuItem',
         path: '',
         title: 'Single menu item',

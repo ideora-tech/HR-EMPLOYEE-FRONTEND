@@ -8,49 +8,39 @@ import {
     Input,
     Switcher,
 } from '@/components/ui'
-import type { IPaket, IPaketCreate, IPaketUpdate } from '@/@types/paket.types'
-import { formatNum } from '@/utils/formatNumber'
+import type { IModul, IModulCreate, IModulUpdate } from '@/@types/modul.types'
 
-interface PaketFormProps {
+interface ModulFormProps {
     open: boolean
-    editData?: IPaket | null
+    editData?: IModul | null
     submitting?: boolean
     onClose: () => void
-    onSubmit: (payload: IPaketCreate | IPaketUpdate) => void
+    onSubmit: (payload: IModulCreate | IModulUpdate) => void
 }
 
 interface FormState {
-    kode_paket: string
+    kode_modul: string
     nama: string
-    harga: string
-    maks_karyawan: string
+    deskripsi: string
+    urutan: string
     aktif: boolean
 }
 
 const INITIAL_STATE: FormState = {
-    kode_paket: '',
+    kode_modul: '',
     nama: '',
-    harga: '0',
-    maks_karyawan: '10',
+    deskripsi: '',
+    urutan: '1',
     aktif: true,
 }
 
-const formatRupiah = (raw: string): string => {
-    const digits = raw.replace(/\D/g, '')
-    if (!digits) return '0'
-    return formatNum(Number(digits))
-}
-
-const parseRupiah = (formatted: string): number =>
-    Number(formatted.replace(/\./g, '')) || 0
-
-const PaketForm = ({
+const ModulForm = ({
     open,
     editData,
     submitting = false,
     onClose,
     onSubmit,
-}: PaketFormProps) => {
+}: ModulFormProps) => {
     const [form, setForm] = useState<FormState>(INITIAL_STATE)
     const [errors, setErrors] = useState<
         Partial<Record<keyof FormState, string>>
@@ -61,10 +51,10 @@ const PaketForm = ({
     useEffect(() => {
         if (editData) {
             setForm({
-                kode_paket: editData.kode_paket,
+                kode_modul: editData.kode_modul,
                 nama: editData.nama,
-                harga: formatNum(Number(editData.harga)),
-                maks_karyawan: String(editData.maks_karyawan),
+                deskripsi: editData.deskripsi ?? '',
+                urutan: String(editData.urutan),
                 aktif: editData.aktif === 1,
             })
         } else {
@@ -75,24 +65,22 @@ const PaketForm = ({
 
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof FormState, string>> = {}
-        if (!form.kode_paket.trim())
-            newErrors.kode_paket = 'Kode paket wajib diisi'
-        if (!form.nama.trim()) newErrors.nama = 'Nama paket wajib diisi'
-        if (parseRupiah(form.harga) < 0)
-            newErrors.harga = 'Harga tidak boleh negatif'
-        if (!form.maks_karyawan || Number(form.maks_karyawan) < 1)
-            newErrors.maks_karyawan = 'Maks. karyawan wajib diisi (min. 1)'
+        if (!form.kode_modul.trim())
+            newErrors.kode_modul = 'Kode modul wajib diisi'
+        if (!form.nama.trim()) newErrors.nama = 'Nama modul wajib diisi'
+        if (!form.urutan || Number(form.urutan) < 1)
+            newErrors.urutan = 'No. urut wajib diisi (min. 1)'
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
 
     const handleSubmit = () => {
         if (!validate()) return
-        const payload: IPaketCreate = {
-            kode_paket: form.kode_paket.trim().toUpperCase(),
+        const payload: IModulCreate = {
+            kode_modul: form.kode_modul.trim().toUpperCase(),
             nama: form.nama.trim(),
-            harga: parseRupiah(form.harga),
-            maks_karyawan: Number(form.maks_karyawan),
+            deskripsi: form.deskripsi.trim() || null,
+            urutan: Number(form.urutan),
             aktif: form.aktif ? 1 : 0,
         }
         onSubmit(payload)
@@ -106,15 +94,15 @@ const PaketForm = ({
             width={480}
         >
             <h5 className="mb-6">
-                {isEdit ? 'Edit Paket' : 'Tambah Paket Baru'}
+                {isEdit ? 'Edit Modul' : 'Tambah Modul Baru'}
             </h5>
 
-            <div className="flex flex-col gap-0">
+            <div className="flex flex-col gap-1">
                 <FormItem
-                    label="Kode Paket"
+                    label="Kode Modul"
                     asterisk
-                    invalid={!!errors.kode_paket}
-                    errorMessage={errors.kode_paket}
+                    invalid={!!errors.kode_modul}
+                    errorMessage={errors.kode_modul}
                     extra={
                         <span className="text-xs text-gray-400">
                             Akan diubah ke huruf kapital otomatis
@@ -122,26 +110,26 @@ const PaketForm = ({
                     }
                 >
                     <Input
-                        placeholder="contoh: BASIC, GOLD, PREMIUM"
-                        value={form.kode_paket}
-                        invalid={!!errors.kode_paket}
+                        placeholder="contoh: ATTENDANCE, PAYROLL, LEAVE"
+                        value={form.kode_modul}
+                        invalid={!!errors.kode_modul}
                         onChange={(e) =>
                             setForm((p) => ({
                                 ...p,
-                                kode_paket: e.target.value.toUpperCase(),
+                                kode_modul: e.target.value.toUpperCase(),
                             }))
                         }
                     />
                 </FormItem>
 
                 <FormItem
-                    label="Nama Paket"
+                    label="Nama Modul"
                     asterisk
                     invalid={!!errors.nama}
                     errorMessage={errors.nama}
                 >
                     <Input
-                        placeholder="contoh: Free Plan"
+                        placeholder="contoh: Absensi Karyawan"
                         value={form.nama}
                         invalid={!!errors.nama}
                         onChange={(e) =>
@@ -150,57 +138,45 @@ const PaketForm = ({
                     />
                 </FormItem>
 
+                <FormItem label="Deskripsi">
+                    <Input
+                        textArea
+                        rows={3}
+                        placeholder="Deskripsi singkat tentang modul ini (opsional)"
+                        value={form.deskripsi}
+                        onChange={(e) =>
+                            setForm((p) => ({
+                                ...p,
+                                deskripsi: e.target.value,
+                            }))
+                        }
+                    />
+                </FormItem>
+
                 <FormItem
-                    label="Harga"
+                    label="No. Urut"
                     asterisk
-                    invalid={!!errors.harga}
-                    errorMessage={errors.harga}
+                    invalid={!!errors.urutan}
+                    errorMessage={errors.urutan}
                     extra={
                         <span className="text-xs text-gray-400">
-                            0 untuk paket gratis
+                            Urutan tampil modul di aplikasi
                         </span>
                     }
                 >
                     <Input
-                        prefix={
-                            <span className="text-gray-500 font-medium">
-                                Rp
-                            </span>
-                        }
-                        placeholder="0"
-                        value={form.harga}
-                        invalid={!!errors.harga}
-                        onChange={(e) =>
-                            setForm((p) => ({
-                                ...p,
-                                harga: formatRupiah(e.target.value),
-                            }))
-                        }
-                    />
-                </FormItem>
-
-                <FormItem
-                    label="Maks. Karyawan"
-                    asterisk
-                    invalid={!!errors.maks_karyawan}
-                    errorMessage={errors.maks_karyawan}
-                >
-                    <Input
                         type="number"
                         min={1}
-                        value={form.maks_karyawan}
-                        invalid={!!errors.maks_karyawan}
-                        placeholder="10"
+                        placeholder="1"
+                        value={form.urutan}
+                        invalid={!!errors.urutan}
                         onChange={(e) =>
-                            setForm((p) => ({
-                                ...p,
-                                maks_karyawan: e.target.value,
-                            }))
+                            setForm((p) => ({ ...p, urutan: e.target.value }))
                         }
                     />
                 </FormItem>
 
-                <FormItem label="Status Paket">
+                <FormItem label="Status Modul">
                     <div className="flex items-center gap-3">
                         <Switcher
                             checked={form.aktif}
@@ -226,11 +202,11 @@ const PaketForm = ({
                     loading={submitting}
                     onClick={handleSubmit}
                 >
-                    {isEdit ? 'Simpan Perubahan' : 'Tambah Paket'}
+                    {isEdit ? 'Simpan Perubahan' : 'Tambah Modul'}
                 </Button>
             </div>
         </Dialog>
     )
 }
 
-export default PaketForm
+export default ModulForm
