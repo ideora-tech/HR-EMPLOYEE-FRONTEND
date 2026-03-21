@@ -21,6 +21,27 @@ export const API_ENDPOINTS = {
     MODUL: {
         BASE: `${PROXY}/modul`,
         BY_ID: (id: string) => `${PROXY}/modul/${id}`,
+        MENU_LIST: (kode: string) => `${PROXY}/modul/${kode}/menu`,
+        MENU_ITEM: (kode: string, id_menu: string) =>
+            `${PROXY}/modul/${kode}/menu/${id_menu}`,
+    },
+
+    // Menu (Navigasi Aplikasi)
+    MENU: {
+        BASE: `${PROXY}/menu`,
+        BY_ID: (id: string) => `${PROXY}/menu/${id}`,
+    },
+
+    // Peran (Role Pengguna)
+    PERAN: {
+        BASE: `${PROXY}/peran`,
+        BY_ID: (id: string) => `${PROXY}/peran/${id}`,
+    },
+
+    // Pengguna (User Management)
+    PENGGUNA: {
+        BASE: `${PROXY}/pengguna`,
+        BY_ID: (id: string) => `${PROXY}/pengguna/${id}`,
     },
 
     // Akses Modul Tier (Konfigurasi Paket × Modul)

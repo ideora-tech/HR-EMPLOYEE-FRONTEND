@@ -18,13 +18,13 @@ import {
     HiOutlineSearch,
     HiOutlineX,
 } from 'react-icons/hi'
-import ModulTable from '@/components/modul/ModulTable'
-import ModulCard from '@/components/modul/ModulCard'
-import ModulForm from '@/components/modul/ModulForm'
-import ModulService from '@/services/modul.service'
+import PeranTable from '@/components/peran/PeranTable'
+import PeranCard from '@/components/peran/PeranCard'
+import PeranForm from '@/components/peran/PeranForm'
+import PeranService from '@/services/peran.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
-import type { IModul, IModulCreate, IModulUpdate } from '@/@types/modul.types'
+import type { IPeran, IPeranCreate, IPeranUpdate } from '@/@types/peran.types'
 
 type ViewMode = 'table' | 'card'
 type AktifOption = { value: '' | '1' | '0'; label: string }
@@ -35,8 +35,8 @@ const AKTIF_OPTIONS: AktifOption[] = [
     { value: '0', label: 'Nonaktif' },
 ]
 
-const ModulPage = () => {
-    const [modulList, setModulList] = useState<IModul[]>([])
+const PeranPage = () => {
+    const [peranList, setPeranList] = useState<IPeran[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [viewMode, setViewMode] = useState<ViewMode>('table')
@@ -49,27 +49,27 @@ const ModulPage = () => {
     const [total, setTotal] = useState(0)
 
     const [formOpen, setFormOpen] = useState(false)
-    const [editTarget, setEditTarget] = useState<IModul | null>(null)
-    const [deleteTarget, setDeleteTarget] = useState<IModul | null>(null)
+    const [editTarget, setEditTarget] = useState<IPeran | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<IPeran | null>(null)
 
-    const fetchModul = useCallback(async () => {
+    const fetchPeran = useCallback(async () => {
         setLoading(true)
         try {
-            const res = await ModulService.getAll({
+            const res = await PeranService.getAll({
                 search: search || undefined,
                 aktif: aktifFilter !== '' ? Number(aktifFilter) : undefined,
                 page: currentPage,
                 limit: pageSize,
             })
             if (res.success) {
-                setModulList(res.data)
+                setPeranList(res.data)
                 setTotal(res.meta?.total ?? 0)
             }
         } catch (err) {
             toast.push(
                 <Notification
                     type="danger"
-                    title={MESSAGES.ERROR.FETCH(ENTITY.MODUL)}
+                    title={MESSAGES.ERROR.FETCH(ENTITY.PERAN)}
                 >
                     {parseApiError(err)}
                 </Notification>,
@@ -80,8 +80,8 @@ const ModulPage = () => {
     }, [search, aktifFilter, currentPage, pageSize])
 
     useEffect(() => {
-        fetchModul()
-    }, [fetchModul])
+        fetchPeran()
+    }, [fetchPeran])
 
     const handleSearchSubmit = () => {
         setSearch(searchInput)
@@ -108,49 +108,49 @@ const ModulPage = () => {
         setCurrentPage(1)
     }, [])
 
-    const handleOpenEdit = useCallback((m: IModul) => {
-        setEditTarget(m)
+    const handleOpenEdit = useCallback((p: IPeran) => {
+        setEditTarget(p)
         setFormOpen(true)
     }, [])
 
-    const handleOpenDelete = useCallback((m: IModul) => {
-        setDeleteTarget(m)
+    const handleOpenDelete = useCallback((p: IPeran) => {
+        setDeleteTarget(p)
     }, [])
 
-    const handleSubmit = async (payload: IModulCreate | IModulUpdate) => {
+    const handleSubmit = async (payload: IPeranCreate | IPeranUpdate) => {
         setSubmitting(true)
         try {
             if (editTarget) {
-                await ModulService.update(
-                    editTarget.id_modul,
-                    payload as IModulUpdate,
+                await PeranService.update(
+                    editTarget.id_peran,
+                    payload as IPeranUpdate,
                 )
                 toast.push(
                     <Notification
                         type="success"
-                        title={MESSAGES.SUCCESS.UPDATED(ENTITY.MODUL)}
+                        title={MESSAGES.SUCCESS.UPDATED(ENTITY.PERAN)}
                     />,
                 )
             } else {
-                await ModulService.create(payload as IModulCreate)
+                await PeranService.create(payload as IPeranCreate)
                 toast.push(
                     <Notification
                         type="success"
-                        title={MESSAGES.SUCCESS.CREATED(ENTITY.MODUL)}
+                        title={MESSAGES.SUCCESS.CREATED(ENTITY.PERAN)}
                     />,
                 )
             }
             setFormOpen(false)
             setEditTarget(null)
-            fetchModul()
+            fetchPeran()
         } catch (err) {
             toast.push(
                 <Notification
                     type="danger"
                     title={
                         editTarget
-                            ? MESSAGES.ERROR.UPDATE(ENTITY.MODUL)
-                            : MESSAGES.ERROR.CREATE(ENTITY.MODUL)
+                            ? MESSAGES.ERROR.UPDATE(ENTITY.PERAN)
+                            : MESSAGES.ERROR.CREATE(ENTITY.PERAN)
                     }
                 >
                     {parseApiError(err)}
@@ -165,20 +165,20 @@ const ModulPage = () => {
         if (!deleteTarget) return
         setSubmitting(true)
         try {
-            await ModulService.remove(deleteTarget.id_modul)
+            await PeranService.remove(deleteTarget.id_peran)
             toast.push(
                 <Notification
                     type="success"
-                    title={MESSAGES.SUCCESS.DELETED(ENTITY.MODUL)}
+                    title={MESSAGES.SUCCESS.DELETED(ENTITY.PERAN)}
                 />,
             )
             setDeleteTarget(null)
-            fetchModul()
+            fetchPeran()
         } catch (err) {
             toast.push(
                 <Notification
                     type="danger"
-                    title={MESSAGES.ERROR.DELETE(ENTITY.MODUL)}
+                    title={MESSAGES.ERROR.DELETE(ENTITY.PERAN)}
                 >
                     {parseApiError(err)}
                 </Notification>,
@@ -192,7 +192,7 @@ const ModulPage = () => {
         <div className="flex flex-col gap-4">
             <Card
                 header={{
-                    content: <h4>Manajemen Modul</h4>,
+                    content: <h4>Manajemen Peran</h4>,
                     extra: (
                         <Button
                             variant="solid"
@@ -203,7 +203,7 @@ const ModulPage = () => {
                                 setFormOpen(true)
                             }}
                         >
-                            Tambah Modul
+                            Tambah Peran
                         </Button>
                     ),
                     bordered: false,
@@ -214,7 +214,7 @@ const ModulPage = () => {
                 <div className="flex items-center gap-3 px-4 pb-3">
                     <Input
                         className="flex-1"
-                        placeholder="Cari nama atau kode modul... (tekan Enter)"
+                        placeholder="Cari nama atau kode peran... (tekan Enter)"
                         suffix={
                             searchInput ? (
                                 <HiOutlineX
@@ -277,8 +277,8 @@ const ModulPage = () => {
 
                 {/* Content */}
                 {viewMode === 'table' ? (
-                    <ModulTable
-                        data={modulList}
+                    <PeranTable
+                        data={peranList}
                         loading={loading}
                         pagingData={{
                             total,
@@ -294,16 +294,16 @@ const ModulPage = () => {
                     <div className="flex justify-center items-center py-16">
                         <Spinner size={36} />
                     </div>
-                ) : modulList.length === 0 ? (
+                ) : peranList.length === 0 ? (
                     <div className="text-center py-16 text-gray-400 text-sm">
-                        Belum ada data modul
+                        Belum ada data peran
                     </div>
                 ) : (
                     <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {modulList.map((modul) => (
-                            <ModulCard
-                                key={modul.id_modul}
-                                modul={modul}
+                        {peranList.map((peran) => (
+                            <PeranCard
+                                key={peran.id_peran}
+                                peran={peran}
                                 onEdit={handleOpenEdit}
                                 onDelete={handleOpenDelete}
                             />
@@ -313,7 +313,7 @@ const ModulPage = () => {
             </Card>
 
             {/* Form Modal */}
-            <ModulForm
+            <PeranForm
                 open={formOpen}
                 editData={editTarget}
                 submitting={submitting}
@@ -328,7 +328,7 @@ const ModulPage = () => {
             <ConfirmDialog
                 isOpen={!!deleteTarget}
                 type="danger"
-                title="Hapus Modul?"
+                title="Hapus Peran?"
                 confirmText="Ya, Hapus"
                 cancelText="Batal"
                 confirmButtonProps={{
@@ -341,7 +341,7 @@ const ModulPage = () => {
                 onConfirm={handleDelete}
             >
                 <p className="text-sm">
-                    Modul{' '}
+                    Peran{' '}
                     <span className="font-semibold">
                         &ldquo;{deleteTarget?.nama}&rdquo;
                     </span>{' '}
@@ -353,4 +353,4 @@ const ModulPage = () => {
     )
 }
 
-export default ModulPage
+export default PeranPage

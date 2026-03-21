@@ -7,9 +7,9 @@ import type {
 } from '@/@types/akses-modul.types'
 
 const AksesModulService = {
-    async getAll(): Promise<ApiResponse<IAksesModulTier[]>> {
+    async getAll(limit = 1000): Promise<ApiResponse<IAksesModulTier[]>> {
         return ApiService.fetchDataWithAxios<ApiResponse<IAksesModulTier[]>>({
-            url: API_ENDPOINTS.AKSES_MODUL_TIER.BASE,
+            url: `${API_ENDPOINTS.AKSES_MODUL_TIER.BASE}?limit=${limit}`,
             method: 'GET',
         })
     },

@@ -23,7 +23,10 @@ export const ENTITY = {
     PAKET: 'Paket',
     MODUL: 'Modul',
     AKSES_MODUL: 'Akses Modul',
+    MENU: 'Menu',
+    PERAN: 'Peran',
     KARYAWAN: 'Karyawan',
     PERUSAHAAN: 'Perusahaan',
     PENGGUNA: 'Pengguna',
+    MENU_MODUL: 'Menu Modul',
 } as const

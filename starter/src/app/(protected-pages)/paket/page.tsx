@@ -16,6 +16,7 @@ import {
     HiOutlineViewGrid,
     HiOutlineViewList,
     HiOutlineSearch,
+    HiOutlineX,
 } from 'react-icons/hi'
 import PaketTable from '@/components/paket/PaketTable'
 import PaketCard from '@/components/paket/PaketCard'
@@ -91,6 +92,12 @@ const PaketPage = () => {
 
     const handleSearchSubmit = () => {
         setSearch(searchInput)
+        setCurrentPage(1)
+    }
+
+    const handleSearchClear = () => {
+        setSearchInput('')
+        setSearch('')
         setCurrentPage(1)
     }
 
@@ -216,10 +223,17 @@ const PaketPage = () => {
                         className="flex-1"
                         placeholder="Cari nama paket... (tekan Enter)"
                         suffix={
-                            <HiOutlineSearch
-                                className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
-                                onClick={handleSearchSubmit}
-                            />
+                            searchInput ? (
+                                <HiOutlineX
+                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                    onClick={handleSearchClear}
+                                />
+                            ) : (
+                                <HiOutlineSearch
+                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                    onClick={handleSearchSubmit}
+                                />
+                            )
                         }
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}

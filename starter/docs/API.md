@@ -771,6 +771,175 @@ Ambil daftar modul yang aktif untuk paket perusahaan user yang sedang login.
 
 ---
 
+## Peran
+
+> Semua endpoint butuh JWT token.
+
+### GET /peran
+
+Ambil daftar peran dengan pagination & search.
+
+**Query params:**
+
+| Param | Tipe | Default | Keterangan |
+|-------|------|---------|------------|
+| `search` | string | — | Cari berdasarkan `kode_peran` atau `nama` |
+| `page` | number | 1 | Halaman |
+| `limit` | number | 10 | Jumlah per halaman |
+| `aktif` | 0 \| 1 | — | Filter status aktif |
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Berhasil mengambil daftar peran",
+  "data": [
+    {
+      "id_peran": "uuid-...",
+      "kode_peran": "HR_ADMIN",
+      "nama": "HR Manager / Admin",
+      "aktif": 1,
+      "dibuat_pada": "2026-03-01T00:00:00.000Z",
+      "diubah_pada": null
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 10,
+    "total": 4,
+    "totalPages": 1
+  },
+  "timestamp": "..."
+}
+```
+
+---
+
+### GET /peran/:id
+
+Ambil detail peran berdasarkan UUID.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Berhasil mengambil detail peran",
+  "data": {
+    "id_peran": "uuid-...",
+    "kode_peran": "HR_ADMIN",
+    "nama": "HR Manager / Admin",
+    "aktif": 1,
+    "dibuat_pada": "2026-03-01T00:00:00.000Z",
+    "diubah_pada": null
+  },
+  "timestamp": "..."
+}
+```
+
+---
+
+### POST /peran
+
+Tambah peran baru.
+
+**Request body:**
+```json
+{
+  "kode_peran": "HR_ADMIN",
+  "nama": "HR Manager / Admin",
+  "aktif": 1
+}
+```
+
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `kode_peran` | ✅ | Kode unik, maks 50 karakter |
+| `nama` | ✅ | Nama tampilan, maks 100 karakter |
+| `aktif` | ❌ | Default `1` |
+
+**Response 201:**
+```json
+{
+  "success": true,
+  "message": "Peran berhasil dibuat",
+  "data": {
+    "id_peran": "uuid-...",
+    "kode_peran": "HR_ADMIN",
+    "nama": "HR Manager / Admin",
+    "aktif": 1,
+    "dibuat_pada": "2026-03-21T00:00:00.000Z",
+    "diubah_pada": null
+  },
+  "timestamp": "..."
+}
+```
+
+---
+
+### PUT /peran/:id
+
+Update peran (replace semua field).
+
+**Request body:**
+```json
+{
+  "kode_peran": "HR_ADMIN",
+  "nama": "HR Manager",
+  "aktif": 1
+}
+```
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Peran berhasil diupdate",
+  "data": {
+    "id_peran": "uuid-...",
+    "kode_peran": "HR_ADMIN",
+    "nama": "HR Manager",
+    "aktif": 1,
+    "dibuat_pada": "2026-03-01T00:00:00.000Z",
+    "diubah_pada": "2026-03-21T00:00:00.000Z"
+  },
+  "timestamp": "..."
+}
+```
+
+---
+
+### PATCH /peran/:id
+
+Update sebagian field peran.
+
+**Request body** (semua opsional):
+```json
+{
+  "nama": "HR Manager Baru",
+  "aktif": 0
+}
+```
+
+**Response 200:** sama dengan PUT.
+
+---
+
+### DELETE /peran/:id
+
+Hapus peran (soft delete).
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Peran berhasil dihapus",
+  "data": null,
+  "timestamp": "..."
+}
+```
+
+---
+
 ## Catatan Umum untuk Frontend
 
 ### Cara Pakai Token
@@ -825,7 +994,7 @@ const isAktif = data.aktif === true
 
 | Window | Maks Request |
 |--------|-------------|
-| Per detik | 10 |
-| Per menit | 100 |
+| Per detik | 50 |
+| Per menit | 300 |
 
 Jika melebihi limit, server mengembalikan `429 Too Many Requests`.

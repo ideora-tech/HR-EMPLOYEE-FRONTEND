@@ -18,13 +18,13 @@ import {
     HiOutlineSearch,
     HiOutlineX,
 } from 'react-icons/hi'
-import ModulTable from '@/components/modul/ModulTable'
-import ModulCard from '@/components/modul/ModulCard'
-import ModulForm from '@/components/modul/ModulForm'
-import ModulService from '@/services/modul.service'
+import MenuTable from '@/components/menu/MenuTable'
+import MenuCard from '@/components/menu/MenuCard'
+import MenuForm from '@/components/menu/MenuForm'
+import MenuService from '@/services/menu.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
-import type { IModul, IModulCreate, IModulUpdate } from '@/@types/modul.types'
+import type { IMenu, IMenuCreate, IMenuUpdate } from '@/@types/menu.types'
 
 type ViewMode = 'table' | 'card'
 type AktifOption = { value: '' | '1' | '0'; label: string }
@@ -35,8 +35,8 @@ const AKTIF_OPTIONS: AktifOption[] = [
     { value: '0', label: 'Nonaktif' },
 ]
 
-const ModulPage = () => {
-    const [modulList, setModulList] = useState<IModul[]>([])
+const MenuPage = () => {
+    const [menuList, setMenuList] = useState<IMenu[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [viewMode, setViewMode] = useState<ViewMode>('table')
@@ -49,27 +49,27 @@ const ModulPage = () => {
     const [total, setTotal] = useState(0)
 
     const [formOpen, setFormOpen] = useState(false)
-    const [editTarget, setEditTarget] = useState<IModul | null>(null)
-    const [deleteTarget, setDeleteTarget] = useState<IModul | null>(null)
+    const [editTarget, setEditTarget] = useState<IMenu | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<IMenu | null>(null)
 
-    const fetchModul = useCallback(async () => {
+    const fetchMenu = useCallback(async () => {
         setLoading(true)
         try {
-            const res = await ModulService.getAll({
+            const res = await MenuService.getAll({
                 search: search || undefined,
                 aktif: aktifFilter !== '' ? Number(aktifFilter) : undefined,
                 page: currentPage,
                 limit: pageSize,
             })
             if (res.success) {
-                setModulList(res.data)
+                setMenuList(res.data)
                 setTotal(res.meta?.total ?? 0)
             }
         } catch (err) {
             toast.push(
                 <Notification
                     type="danger"
-                    title={MESSAGES.ERROR.FETCH(ENTITY.MODUL)}
+                    title={MESSAGES.ERROR.FETCH(ENTITY.MENU)}
                 >
                     {parseApiError(err)}
                 </Notification>,
@@ -80,8 +80,8 @@ const ModulPage = () => {
     }, [search, aktifFilter, currentPage, pageSize])
 
     useEffect(() => {
-        fetchModul()
-    }, [fetchModul])
+        fetchMenu()
+    }, [fetchMenu])
 
     const handleSearchSubmit = () => {
         setSearch(searchInput)
@@ -108,49 +108,46 @@ const ModulPage = () => {
         setCurrentPage(1)
     }, [])
 
-    const handleOpenEdit = useCallback((m: IModul) => {
+    const handleOpenEdit = useCallback((m: IMenu) => {
         setEditTarget(m)
         setFormOpen(true)
     }, [])
 
-    const handleOpenDelete = useCallback((m: IModul) => {
+    const handleOpenDelete = useCallback((m: IMenu) => {
         setDeleteTarget(m)
     }, [])
 
-    const handleSubmit = async (payload: IModulCreate | IModulUpdate) => {
+    const handleSubmit = async (payload: IMenuCreate | IMenuUpdate) => {
         setSubmitting(true)
         try {
             if (editTarget) {
-                await ModulService.update(
-                    editTarget.id_modul,
-                    payload as IModulUpdate,
-                )
+                await MenuService.update(editTarget.id_menu, payload as IMenuUpdate)
                 toast.push(
                     <Notification
                         type="success"
-                        title={MESSAGES.SUCCESS.UPDATED(ENTITY.MODUL)}
+                        title={MESSAGES.SUCCESS.UPDATED(ENTITY.MENU)}
                     />,
                 )
             } else {
-                await ModulService.create(payload as IModulCreate)
+                await MenuService.create(payload as IMenuCreate)
                 toast.push(
                     <Notification
                         type="success"
-                        title={MESSAGES.SUCCESS.CREATED(ENTITY.MODUL)}
+                        title={MESSAGES.SUCCESS.CREATED(ENTITY.MENU)}
                     />,
                 )
             }
             setFormOpen(false)
             setEditTarget(null)
-            fetchModul()
+            fetchMenu()
         } catch (err) {
             toast.push(
                 <Notification
                     type="danger"
                     title={
                         editTarget
-                            ? MESSAGES.ERROR.UPDATE(ENTITY.MODUL)
-                            : MESSAGES.ERROR.CREATE(ENTITY.MODUL)
+                            ? MESSAGES.ERROR.UPDATE(ENTITY.MENU)
+                            : MESSAGES.ERROR.CREATE(ENTITY.MENU)
                     }
                 >
                     {parseApiError(err)}
@@ -165,20 +162,20 @@ const ModulPage = () => {
         if (!deleteTarget) return
         setSubmitting(true)
         try {
-            await ModulService.remove(deleteTarget.id_modul)
+            await MenuService.remove(deleteTarget.id_menu)
             toast.push(
                 <Notification
                     type="success"
-                    title={MESSAGES.SUCCESS.DELETED(ENTITY.MODUL)}
+                    title={MESSAGES.SUCCESS.DELETED(ENTITY.MENU)}
                 />,
             )
             setDeleteTarget(null)
-            fetchModul()
+            fetchMenu()
         } catch (err) {
             toast.push(
                 <Notification
                     type="danger"
-                    title={MESSAGES.ERROR.DELETE(ENTITY.MODUL)}
+                    title={MESSAGES.ERROR.DELETE(ENTITY.MENU)}
                 >
                     {parseApiError(err)}
                 </Notification>,
@@ -192,7 +189,7 @@ const ModulPage = () => {
         <div className="flex flex-col gap-4">
             <Card
                 header={{
-                    content: <h4>Manajemen Modul</h4>,
+                    content: <h4>Manajemen Menu</h4>,
                     extra: (
                         <Button
                             variant="solid"
@@ -203,7 +200,7 @@ const ModulPage = () => {
                                 setFormOpen(true)
                             }}
                         >
-                            Tambah Modul
+                            Tambah Menu
                         </Button>
                     ),
                     bordered: false,
@@ -214,7 +211,7 @@ const ModulPage = () => {
                 <div className="flex items-center gap-3 px-4 pb-3">
                     <Input
                         className="flex-1"
-                        placeholder="Cari nama atau kode modul... (tekan Enter)"
+                        placeholder="Cari nama atau kode menu... (tekan Enter)"
                         suffix={
                             searchInput ? (
                                 <HiOutlineX
@@ -277,8 +274,8 @@ const ModulPage = () => {
 
                 {/* Content */}
                 {viewMode === 'table' ? (
-                    <ModulTable
-                        data={modulList}
+                    <MenuTable
+                        data={menuList}
                         loading={loading}
                         pagingData={{
                             total,
@@ -294,16 +291,16 @@ const ModulPage = () => {
                     <div className="flex justify-center items-center py-16">
                         <Spinner size={36} />
                     </div>
-                ) : modulList.length === 0 ? (
+                ) : menuList.length === 0 ? (
                     <div className="text-center py-16 text-gray-400 text-sm">
-                        Belum ada data modul
+                        Belum ada data menu
                     </div>
                 ) : (
                     <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {modulList.map((modul) => (
-                            <ModulCard
-                                key={modul.id_modul}
-                                modul={modul}
+                        {menuList.map((menu) => (
+                            <MenuCard
+                                key={menu.id_menu}
+                                menu={menu}
                                 onEdit={handleOpenEdit}
                                 onDelete={handleOpenDelete}
                             />
@@ -313,7 +310,7 @@ const ModulPage = () => {
             </Card>
 
             {/* Form Modal */}
-            <ModulForm
+            <MenuForm
                 open={formOpen}
                 editData={editTarget}
                 submitting={submitting}
@@ -328,7 +325,7 @@ const ModulPage = () => {
             <ConfirmDialog
                 isOpen={!!deleteTarget}
                 type="danger"
-                title="Hapus Modul?"
+                title="Hapus Menu?"
                 confirmText="Ya, Hapus"
                 cancelText="Batal"
                 confirmButtonProps={{
@@ -341,7 +338,7 @@ const ModulPage = () => {
                 onConfirm={handleDelete}
             >
                 <p className="text-sm">
-                    Modul{' '}
+                    Menu{' '}
                     <span className="font-semibold">
                         &ldquo;{deleteTarget?.nama}&rdquo;
                     </span>{' '}
@@ -353,4 +350,4 @@ const ModulPage = () => {
     )
 }
 
-export default ModulPage
+export default MenuPage
