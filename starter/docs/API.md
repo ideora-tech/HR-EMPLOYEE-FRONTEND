@@ -997,4 +997,259 @@ const isAktif = data.aktif === true
 | Per detik | 50 |
 | Per menit | 300 |
 
+> **Tips untuk bulk operation:** Jika frontend perlu kirim banyak request sekaligus (misal assign banyak menu), gunakan endpoint bulk (`PUT`) daripada loop per-item untuk menghindari 429.
+
+---
+
+## Peran
+
+> **Auth:** Bearer Token wajib di semua endpoint
+
+### GET /peran
+Ambil semua peran dengan pagination & search.
+
+**Query Params:**
+| Param | Tipe | Default | Keterangan |
+|-------|------|---------|------------|
+| `search` | string | — | Cari berdasarkan `kode_peran` atau `nama` |
+| `page` | number | 1 | Halaman |
+| `limit` | number | 10 | Jumlah per halaman |
+| `aktif` | 0\|1 | — | Filter status aktif |
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil daftar peran",
+  "data": [
+    {
+      "id_peran": "550e8400-e29b-41d4-a716-446655440000",
+      "kode_peran": "HR_ADMIN",
+      "nama": "HR Manager / Admin",
+      "aktif": 1,
+      "dibuat_pada": "2026-03-20T10:00:00.000Z",
+      "diubah_pada": null
+    }
+  ],
+  "meta": { "page": 1, "limit": 10, "total": 4, "totalPages": 1 }
+}
+```
+
+---
+
+### GET /peran/:id
+Ambil detail peran berdasarkan UUID.
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil detail peran",
+  "data": {
+    "id_peran": "550e8400-e29b-41d4-a716-446655440000",
+    "kode_peran": "HR_ADMIN",
+    "nama": "HR Manager / Admin",
+    "aktif": 1,
+    "dibuat_pada": "2026-03-20T10:00:00.000Z",
+    "diubah_pada": null
+  }
+}
+```
+
+---
+
+### POST /peran
+Tambah peran baru.
+
+**Request Body:**
+```json
+{
+  "kode_peran": "SUPERVISOR",
+  "nama": "Supervisor",
+  "aktif": 1
+}
+```
+
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `kode_peran` | ✅ | Huruf besar + underscore, max 50 karakter |
+| `nama` | ✅ | Nama tampilan, max 100 karakter |
+| `aktif` | ❌ | Default `1` |
+
+**Response `201`:**
+```json
+{
+  "message": "Peran berhasil dibuat",
+  "data": { "id_peran": "...", "kode_peran": "SUPERVISOR", "nama": "Supervisor", "aktif": 1, ... }
+}
+```
+
+---
+
+### PUT /peran/:id
+Update peran (replace semua field).
+
+### PATCH /peran/:id
+Update sebagian field peran.
+
+**Request Body (sama untuk PUT & PATCH):**
+```json
+{
+  "nama": "Supervisor Senior",
+  "aktif": 1
+}
+```
+
+---
+
+### DELETE /peran/:id
+Soft delete peran.
+
+**Response `200`:**
+```json
+{ "message": "Peran berhasil dihapus", "data": null }
+```
+
+---
+
+## Izin Peran
+
+Mengatur **menu apa saja** yang bisa diakses oleh sebuah peran, beserta **aksi** yang diperbolehkan (VIEW, CREATE, UPDATE, DELETE).
+
+> **Auth:** Bearer Token wajib di semua endpoint
+
+### Konsep Aksi
+
+| Aksi | Keterangan |
+|------|------------|
+| `VIEW` | Menu muncul di sidebar, user bisa melihat halaman |
+| `CREATE` | Boleh tambah data di halaman tersebut |
+| `UPDATE` | Boleh edit data |
+| `DELETE` | Boleh hapus data |
+
+---
+
+### GET /izin-peran
+Ambil semua data izin peran dengan pagination.
+
+**Query Params:** `search`, `page`, `limit` (sama seperti modul lain)
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil data izin peran",
+  "data": [
+    {
+      "id_izin": "uuid-...",
+      "kode_peran": "HR_ADMIN",
+      "id_menu": "uuid-...",
+      "aksi": "VIEW",
+      "diizinkan": 1,
+      "dibuat_pada": "2026-03-20T10:00:00.000Z"
+    }
+  ],
+  "meta": { "page": 1, "limit": 10, "total": 24, "totalPages": 3 }
+}
+```
+
+---
+
+### GET /izin-peran/peran/:kode
+Ambil **semua menu aktif** beserta aksi yang diizinkan untuk satu peran.
+
+Cocok untuk render matrix checklist di frontend — semua menu dikembalikan, `aksi: []` jika belum dikonfigurasi.
+
+**Contoh:** `GET /izin-peran/peran/HR_ADMIN`
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil izin untuk peran 'HR_ADMIN'",
+  "data": [
+    {
+      "id_menu": "uuid-...",
+      "path": "/dashboard",
+      "nama": "Dashboard",
+      "kode_modul": "DASHBOARD",
+      "aksi": ["VIEW"]
+    },
+    {
+      "id_menu": "uuid-...",
+      "path": "/payroll",
+      "nama": "Payroll",
+      "kode_modul": "PAYROLL",
+      "aksi": ["VIEW", "CREATE", "UPDATE"]
+    },
+    {
+      "id_menu": "uuid-...",
+      "path": "/reports/leave",
+      "nama": "Laporan Cuti",
+      "kode_modul": "REPORTS",
+      "aksi": []
+    }
+  ]
+}
+```
+
+---
+
+### PUT /izin-peran/peran/:kode/menu/:id_menu
+Set aksi yang diizinkan untuk satu peran pada satu menu (**upsert/replace**).
+
+- Kirim `aksi: []` untuk menghapus semua izin pada menu tersebut
+- Kirim array penuh untuk replace semua aksi sekaligus
+
+**Contoh:** `PUT /izin-peran/peran/HR_ADMIN/menu/uuid-payroll`
+
+**Request Body:**
+```json
+{
+  "aksi": ["VIEW", "CREATE", "UPDATE"]
+}
+```
+
+| Field | Tipe | Nilai valid |
+|-------|------|-------------|
+| `aksi` | string[] | `VIEW`, `CREATE`, `UPDATE`, `DELETE` |
+
+**Response `200`:**
+```json
+{
+  "message": "Izin untuk peran 'HR_ADMIN' pada menu berhasil diperbarui",
+  "data": {
+    "id_menu": "uuid-payroll",
+    "path": "/payroll",
+    "nama": "Payroll",
+    "kode_modul": "PAYROLL",
+    "aksi": ["VIEW", "CREATE", "UPDATE"]
+  }
+}
+```
+
+---
+
+### DELETE /izin-peran/peran/:kode/menu/:id_menu
+Hapus **semua izin** untuk satu peran pada satu menu.
+
+**Contoh:** `DELETE /izin-peran/peran/HR_ADMIN/menu/uuid-payroll`
+
+**Response `200`:**
+```json
+{ "message": "Semua izin untuk peran 'HR_ADMIN' pada menu berhasil dihapus", "data": null }
+```
+
+---
+
+### Alur Frontend Matrix Izin Peran
+
+```
+1. Load matrix  → GET /izin-peran/peran/HR_ADMIN
+                  Semua menu tampil, aksi[] menunjukkan centang awal
+
+2. User centang → PUT /izin-peran/peran/HR_ADMIN/menu/:id_menu
+   / uncentang     body: { aksi: ["VIEW", "CREATE"] }
+                  Kirim SEMUA aksi yang aktif (bukan toggle per-aksi)
+
+3. Hapus semua  → DELETE /izin-peran/peran/HR_ADMIN/menu/:id_menu
+   aksi di menu    atau PUT dengan body: { aksi: [] }
+```
+
 Jika melebihi limit, server mengembalikan `429 Too Many Requests`.

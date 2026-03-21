@@ -11,6 +11,7 @@ export const ROUTES = {
     MENU_MODUL: '/menu-modul',
     PERAN: '/peran',
     PENGGUNA: '/pengguna',
+    IZIN_PERAN: '/izin-peran',
     SIGN_IN: '/sign-in',
     SIGN_UP: '/sign-up',
     FORGOT_PASSWORD: '/forgot-password',

@@ -88,6 +88,16 @@ const navigationConfig: NavigationTree[] = [
         subMenu: [],
     },
     {
+        key: 'izinPeran',
+        path: '/izin-peran',
+        title: 'Izin Peran',
+        translateKey: 'nav.izinPeran',
+        icon: 'izinPeran',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: [],
+        subMenu: [],
+    },
+    {
         key: 'singleMenuItem',
         path: '',
         title: 'Single menu item',

@@ -38,6 +38,13 @@ export const API_ENDPOINTS = {
         BY_ID: (id: string) => `${PROXY}/peran/${id}`,
     },
 
+    // Izin Peran (Permission Matrix)
+    IZIN_PERAN: {
+        BY_PERAN: (kode: string) => `${PROXY}/izin-peran/peran/${kode}`,
+        BY_PERAN_MENU: (kode: string, id_menu: string) =>
+            `${PROXY}/izin-peran/peran/${kode}/menu/${id_menu}`,
+    },
+
     // Pengguna (User Management)
     PENGGUNA: {
         BASE: `${PROXY}/pengguna`,
