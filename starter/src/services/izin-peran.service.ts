@@ -26,6 +26,17 @@ const IzinPeranService = {
         })
     },
 
+    async bulkSetAksi(
+        kode_peran: string,
+        items: { id_menu: string; aksi: AksiType[] }[],
+    ): Promise<ApiResponse<null>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<null>>({
+            url: API_ENDPOINTS.IZIN_PERAN.BULK(kode_peran),
+            method: 'PUT',
+            data: { items },
+        })
+    },
+
     async removeAksi(
         kode_peran: string,
         id_menu: string,

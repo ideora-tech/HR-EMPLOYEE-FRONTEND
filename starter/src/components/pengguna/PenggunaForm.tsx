@@ -9,21 +9,17 @@ import {
     Select,
     Switcher,
 } from '@/components/ui'
+import { HiEye, HiEyeOff } from 'react-icons/hi'
 import type { IPengguna, IPenggunaCreate, IPenggunaUpdate } from '@/@types/pengguna.types'
+import type { IPeran } from '@/@types/peran.types'
 
 type PeranOption = { value: string; label: string }
-
-const PERAN_OPTIONS: PeranOption[] = [
-    { value: 'OWNER', label: 'Owner' },
-    { value: 'HR_ADMIN', label: 'HR Admin' },
-    { value: 'FINANCE', label: 'Finance' },
-    { value: 'EMPLOYEE', label: 'Employee' },
-]
 
 interface PenggunaFormProps {
     open: boolean
     editData?: IPengguna | null
     submitting?: boolean
+    peranList?: IPeran[]
     onClose: () => void
     onSubmit: (payload: IPenggunaCreate | IPenggunaUpdate) => void
 }
@@ -32,27 +28,60 @@ interface FormState {
     nama: string
     email: string
     kata_sandi: string
+    konfirmasi_sandi: string
     peran: string
     aktif: boolean
 }
+
+type FormErrors = Partial<Record<keyof FormState, string>>
 
 const INITIAL_STATE: FormState = {
     nama: '',
     email: '',
     kata_sandi: '',
+    konfirmasi_sandi: '',
     peran: 'EMPLOYEE',
     aktif: true,
 }
+
+const validatePassword = (pwd: string): string | null => {
+    if (pwd.length < 8) return 'Minimal 8 karakter'
+    if (!/[A-Z]/.test(pwd)) return 'Harus mengandung minimal 1 huruf besar'
+    if (!/[^a-zA-Z0-9]/.test(pwd)) return 'Harus mengandung minimal 1 simbol'
+    return null
+}
+
+const EyeToggle = ({
+    show,
+    onToggle,
+}: {
+    show: boolean
+    onToggle: () => void
+}) => (
+    <span
+        className="text-gray-400 text-lg cursor-pointer hover:text-gray-600 select-none"
+        onClick={onToggle}
+    >
+        {show ? <HiEyeOff /> : <HiEye />}
+    </span>
+)
 
 const PenggunaForm = ({
     open,
     editData,
     submitting = false,
+    peranList = [],
     onClose,
     onSubmit,
 }: PenggunaFormProps) => {
+    const peranOptions: PeranOption[] = peranList.map((p) => ({
+        value: p.kode_peran,
+        label: p.nama,
+    }))
     const [form, setForm] = useState<FormState>(INITIAL_STATE)
-    const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+    const [errors, setErrors] = useState<FormErrors>({})
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirm, setShowConfirm] = useState(false)
 
     const isEdit = !!editData
 
@@ -62,6 +91,7 @@ const PenggunaForm = ({
                 nama: editData.nama,
                 email: editData.email,
                 kata_sandi: '',
+                konfirmasi_sandi: '',
                 peran: editData.peran,
                 aktif: editData.aktif === 1,
             })
@@ -69,19 +99,36 @@ const PenggunaForm = ({
             setForm(INITIAL_STATE)
         }
         setErrors({})
+        setShowPassword(false)
+        setShowConfirm(false)
     }, [editData, open])
 
     const validate = (): boolean => {
-        const newErrors: Partial<Record<keyof FormState, string>> = {}
+        const newErrors: FormErrors = {}
+
         if (!form.nama.trim()) newErrors.nama = 'Nama wajib diisi'
+
         if (!form.email.trim()) newErrors.email = 'Email wajib diisi'
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
             newErrors.email = 'Format email tidak valid'
-        if (!isEdit && !form.kata_sandi.trim())
+
+        const passwordFilled = form.kata_sandi.trim().length > 0
+        if (!isEdit && !passwordFilled) {
             newErrors.kata_sandi = 'Kata sandi wajib diisi'
-        else if (form.kata_sandi && form.kata_sandi.length < 6)
-            newErrors.kata_sandi = 'Kata sandi minimal 6 karakter'
+        } else if (passwordFilled) {
+            const pwdError = validatePassword(form.kata_sandi)
+            if (pwdError) newErrors.kata_sandi = pwdError
+        }
+
+        if (passwordFilled || !isEdit) {
+            if (!form.konfirmasi_sandi.trim())
+                newErrors.konfirmasi_sandi = 'Konfirmasi kata sandi wajib diisi'
+            else if (form.kata_sandi !== form.konfirmasi_sandi)
+                newErrors.konfirmasi_sandi = 'Kata sandi tidak cocok'
+        }
+
         if (!form.peran) newErrors.peran = 'Peran wajib dipilih'
+
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -111,6 +158,8 @@ const PenggunaForm = ({
             onSubmit(payload)
         }
     }
+
+    const passwordFilled = form.kata_sandi.trim().length > 0
 
     return (
         <Dialog
@@ -167,19 +216,64 @@ const PenggunaForm = ({
                             <span className="text-xs text-gray-400">
                                 Kosongkan jika tidak ingin mengganti
                             </span>
-                        ) : undefined
+                        ) : (
+                            <span className="text-xs text-gray-400">
+                                Min 8 karakter, huruf besar, dan simbol
+                            </span>
+                        )
                     }
                 >
                     <Input
-                        type="password"
-                        placeholder={isEdit ? 'Isi untuk mengganti kata sandi' : 'Minimal 6 karakter'}
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder={
+                            isEdit
+                                ? 'Isi untuk mengganti kata sandi'
+                                : 'contoh: Passw0rd!'
+                        }
                         value={form.kata_sandi}
                         invalid={!!errors.kata_sandi}
+                        suffix={
+                            <EyeToggle
+                                show={showPassword}
+                                onToggle={() => setShowPassword((v) => !v)}
+                            />
+                        }
                         onChange={(e) =>
-                            setForm((p) => ({ ...p, kata_sandi: e.target.value }))
+                            setForm((p) => ({
+                                ...p,
+                                kata_sandi: e.target.value,
+                            }))
                         }
                     />
                 </FormItem>
+
+                {(!isEdit || passwordFilled) && (
+                    <FormItem
+                        label="Konfirmasi Kata Sandi"
+                        asterisk={!isEdit}
+                        invalid={!!errors.konfirmasi_sandi}
+                        errorMessage={errors.konfirmasi_sandi}
+                    >
+                        <Input
+                            type={showConfirm ? 'text' : 'password'}
+                            placeholder="Ulangi kata sandi"
+                            value={form.konfirmasi_sandi}
+                            invalid={!!errors.konfirmasi_sandi}
+                            suffix={
+                                <EyeToggle
+                                    show={showConfirm}
+                                    onToggle={() => setShowConfirm((v) => !v)}
+                                />
+                            }
+                            onChange={(e) =>
+                                setForm((p) => ({
+                                    ...p,
+                                    konfirmasi_sandi: e.target.value,
+                                }))
+                            }
+                        />
+                    </FormItem>
+                )}
 
                 <FormItem
                     label="Peran"
@@ -188,10 +282,10 @@ const PenggunaForm = ({
                     errorMessage={errors.peran}
                 >
                     <Select<PeranOption>
-                        options={PERAN_OPTIONS}
+                        options={peranOptions}
                         value={
-                            PERAN_OPTIONS.find((o) => o.value === form.peran) ??
-                            PERAN_OPTIONS[3]
+                            peranOptions.find((o) => o.value === form.peran) ??
+                            peranOptions[3]
                         }
                         onChange={(opt) =>
                             setForm((p) => ({

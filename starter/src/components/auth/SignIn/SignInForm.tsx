@@ -69,7 +69,7 @@ const SignInForm = (props: SignInFormProps) => {
         <div className={className}>
             <Form onSubmit={handleSubmit(handleSignIn)}>
                 <FormItem
-                    label="Email"
+                    label="Email / Username"
                     invalid={Boolean(errors.email)}
                     errorMessage={errors.email?.message}
                 >
@@ -78,8 +78,8 @@ const SignInForm = (props: SignInFormProps) => {
                         control={control}
                         render={({ field }) => (
                             <Input
-                                type="email"
-                                placeholder="Email"
+                                type="text"
+                                placeholder="Email atau username"
                                 autoComplete="off"
                                 {...field}
                             />

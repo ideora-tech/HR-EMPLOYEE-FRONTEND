@@ -22,9 +22,11 @@ import PenggunaTable from '@/components/pengguna/PenggunaTable'
 import PenggunaCard from '@/components/pengguna/PenggunaCard'
 import PenggunaForm from '@/components/pengguna/PenggunaForm'
 import PenggunaService from '@/services/pengguna.service'
+import PeranService from '@/services/peran.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { IPengguna, IPenggunaCreate, IPenggunaUpdate } from '@/@types/pengguna.types'
+import type { IPeran } from '@/@types/peran.types'
 
 type ViewMode = 'table' | 'card'
 type AktifOption = { value: '' | '1' | '0'; label: string }
@@ -37,6 +39,7 @@ const AKTIF_OPTIONS: AktifOption[] = [
 
 const PenggunaPage = () => {
     const [penggunaList, setPenggunaList] = useState<IPengguna[]>([])
+    const [peranList, setPeranList] = useState<IPeran[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [viewMode, setViewMode] = useState<ViewMode>('table')
@@ -51,6 +54,12 @@ const PenggunaPage = () => {
     const [formOpen, setFormOpen] = useState(false)
     const [editTarget, setEditTarget] = useState<IPengguna | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<IPengguna | null>(null)
+
+    useEffect(() => {
+        PeranService.getAll({ aktif: 1, limit: 100 })
+            .then((res) => { if (res.success) setPeranList(res.data) })
+            .catch(() => {})
+    }, [])
 
     const fetchPengguna = useCallback(async () => {
         setLoading(true)
@@ -317,6 +326,7 @@ const PenggunaPage = () => {
                 open={formOpen}
                 editData={editTarget}
                 submitting={submitting}
+                peranList={peranList}
                 onClose={() => {
                     setFormOpen(false)
                     setEditTarget(null)

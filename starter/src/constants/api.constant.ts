@@ -43,6 +43,7 @@ export const API_ENDPOINTS = {
         BY_PERAN: (kode: string) => `${PROXY}/izin-peran/peran/${kode}`,
         BY_PERAN_MENU: (kode: string, id_menu: string) =>
             `${PROXY}/izin-peran/peran/${kode}/menu/${id_menu}`,
+        BULK: (kode: string) => `${PROXY}/izin-peran/peran/${kode}/bulk`,
     },
 
     // Pengguna (User Management)

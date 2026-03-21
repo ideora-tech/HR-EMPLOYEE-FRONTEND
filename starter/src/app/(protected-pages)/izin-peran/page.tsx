@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Card, Input, Select, Notification, Spinner, toast } from '@/components/ui'
 import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import IzinPeranService from '@/services/izin-peran.service'
@@ -27,6 +27,47 @@ const AKSI_COLOR: Record<AksiType, string> = {
     DELETE: 'text-red-500',
 }
 
+interface ColHeaderCheckboxProps {
+    aksi: AksiType
+    menus: IzinPeranMenuItem[]
+    permMap: PermMap
+    disabled: boolean
+    onToggle: () => void
+}
+
+const ColHeaderCheckbox = ({
+    aksi,
+    menus,
+    permMap,
+    disabled,
+    onToggle,
+}: ColHeaderCheckboxProps) => {
+    const ref = useRef<HTMLInputElement>(null)
+    const allChecked =
+        menus.length > 0 &&
+        menus.every((m) => permMap[m.id_menu]?.has(aksi) ?? false)
+    const someChecked = menus.some(
+        (m) => permMap[m.id_menu]?.has(aksi) ?? false,
+    )
+
+    useEffect(() => {
+        if (ref.current) {
+            ref.current.indeterminate = someChecked && !allChecked
+        }
+    }, [allChecked, someChecked])
+
+    return (
+        <input
+            ref={ref}
+            type="checkbox"
+            className="w-4 h-4 accent-indigo-600 cursor-pointer disabled:cursor-not-allowed"
+            checked={allChecked}
+            disabled={disabled}
+            onChange={onToggle}
+        />
+    )
+}
+
 const IzinPeranPage = () => {
     const [peranList, setPeranList] = useState<IPeran[]>([])
     const [selectedPeran, setSelectedPeran] = useState<string>('')
@@ -35,6 +76,7 @@ const IzinPeranPage = () => {
     const [loadingPeran, setLoadingPeran] = useState(false)
     const [loadingMatrix, setLoadingMatrix] = useState(false)
     const [updatingMenu, setUpdatingMenu] = useState<string>('')
+    const [selectingAll, setSelectingAll] = useState<AksiType | ''>('')
     const [searchMenu, setSearchMenu] = useState('')
     const [searchInput, setSearchInput] = useState('')
 
@@ -90,6 +132,44 @@ const IzinPeranPage = () => {
             setPermMap({})
         }
     }, [selectedPeran, loadMatrix])
+
+    const handleToggleAll = async (aksi: AksiType) => {
+        if (!selectedPeran || selectingAll || updatingMenu) return
+
+        const allChecked =
+            menus.length > 0 &&
+            menus.every((m) => permMap[m.id_menu]?.has(aksi) ?? false)
+
+        const prevPermMap = permMap
+        const newPermMap: PermMap = {}
+        for (const m of menus) {
+            const current = permMap[m.id_menu] ?? new Set<AksiType>()
+            const newSet = new Set(current)
+            if (allChecked) newSet.delete(aksi)
+            else newSet.add(aksi)
+            newPermMap[m.id_menu] = newSet
+        }
+
+        const items = menus.map((m) => ({
+            id_menu: m.id_menu,
+            aksi: AKSI_LIST.filter((a) => newPermMap[m.id_menu]?.has(a)),
+        }))
+
+        setPermMap(newPermMap)
+        setSelectingAll(aksi)
+        try {
+            await IzinPeranService.bulkSetAksi(selectedPeran, items)
+        } catch (err) {
+            setPermMap(prevPermMap)
+            toast.push(
+                <Notification type="danger" title="Gagal memperbarui izin">
+                    {parseApiError(err)}
+                </Notification>,
+            )
+        } finally {
+            setSelectingAll('')
+        }
+    }
 
     const handleToggle = async (id_menu: string, aksi: AksiType) => {
         if (!selectedPeran || updatingMenu) return
@@ -244,7 +324,16 @@ const IzinPeranPage = () => {
                                             key={aksi}
                                             className={`text-center px-4 py-3 font-semibold w-28 ${AKSI_COLOR[aksi]}`}
                                         >
-                                            {AKSI_LABEL[aksi]}
+                                            <div className="flex flex-col items-center gap-1">
+                                                <ColHeaderCheckbox
+                                                    aksi={aksi}
+                                                    menus={menus}
+                                                    permMap={permMap}
+                                                    disabled={!!selectingAll || !!updatingMenu}
+                                                    onToggle={() => handleToggleAll(aksi)}
+                                                />
+                                                <span>{AKSI_LABEL[aksi]}</span>
+                                            </div>
                                         </th>
                                     ))}
                                 </tr>
@@ -308,7 +397,8 @@ const IzinPeranPage = () => {
                                                                         }
                                                                         disabled={
                                                                             isUpdating ||
-                                                                            !!updatingMenu
+                                                                            !!updatingMenu ||
+                                                                            !!selectingAll
                                                                         }
                                                                         onChange={() =>
                                                                             handleToggle(
