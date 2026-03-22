@@ -24,6 +24,11 @@ import {
     PiMapPinDuotone,
     PiBriefcaseDuotone,
     PiIdentificationBadgeDuotone,
+    PiHandshakeDuotone,
+    PiAddressBookDuotone,
+    PiUsersThreeDuotone,
+    PiChartLineDuotone,
+    PiStorefrontDuotone,
 } from 'react-icons/pi'
 import type { JSX } from 'react'
 
@@ -75,6 +80,15 @@ const navigationIcon: NavigationIcons = {
     karyawan: <PiIdentificationBadgeDuotone />,
     location: <PiMapPinDuotone />,
     briefcase: <PiBriefcaseDuotone />,
+    crm: <PiHandshakeDuotone />,
+    handshake: <PiHandshakeDuotone />,
+    'address-book': <PiAddressBookDuotone />,
+    addressBook: <PiAddressBookDuotone />,
+    'users-three': <PiUsersThreeDuotone />,
+    usersThree: <PiUsersThreeDuotone />,
+    'chart-line': <PiChartLineDuotone />,
+    chartLine: <PiChartLineDuotone />,
+    storefront: <PiStorefrontDuotone />,
 }
 
 export default navigationIcon

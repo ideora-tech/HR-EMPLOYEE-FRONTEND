@@ -131,8 +131,8 @@ const MenuForm = ({
     return (
         <Dialog
             isOpen={open}
-            onClose={onClose}
-            onRequestClose={onClose}
+            onClose={submitting ? undefined : onClose}
+            closable={!submitting}
             width={480}
         >
             <h5 className="mb-6">

@@ -61,8 +61,8 @@ const AksesModulForm = ({
     return (
         <Dialog
             isOpen={open}
-            onClose={onClose}
-            onRequestClose={onClose}
+            onClose={submitting ? undefined : onClose}
+            closable={!submitting}
             width={460}
         >
             <h5 className="mb-1">Edit Akses Modul</h5>

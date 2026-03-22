@@ -94,8 +94,8 @@ const PerusahaanForm = ({
     return (
         <Dialog
             isOpen={open}
-            onClose={onClose}
-            onRequestClose={onClose}
+            onClose={submitting ? undefined : onClose}
+            closable={!submitting}
             width={520}
         >
             <h5 className="mb-6">
