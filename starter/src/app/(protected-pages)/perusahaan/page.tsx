@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import {
     Button,
     Card,
@@ -19,12 +18,18 @@ import {
     HiOutlineSearch,
     HiOutlineX,
 } from 'react-icons/hi'
-import MenuTable from '@/components/menu/MenuTable'
-import MenuCard from '@/components/menu/MenuCard'
-import MenuService from '@/services/menu.service'
+import PerusahaanTable from '@/components/perusahaan/PerusahaanTable'
+import PerusahaanCard from '@/components/perusahaan/PerusahaanCard'
+import PerusahaanForm from '@/components/perusahaan/PerusahaanForm'
+import PerusahaanOverviewDialog from '@/components/perusahaan/PerusahaanOverviewDialog'
+import PerusahaanService from '@/services/perusahaan.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
-import type { IMenu } from '@/@types/menu.types'
+import type {
+    IPerusahaan,
+    IPerusahaanCreate,
+    IPerusahaanUpdate,
+} from '@/@types/perusahaan.types'
 
 type ViewMode = 'table' | 'card'
 type AktifOption = { value: '' | '1' | '0'; label: string }
@@ -35,9 +40,8 @@ const AKTIF_OPTIONS: AktifOption[] = [
     { value: '0', label: 'Nonaktif' },
 ]
 
-const MenuPage = () => {
-    const router = useRouter()
-    const [menuList, setMenuList] = useState<IMenu[]>([])
+const PerusahaanPage = () => {
+    const [list, setList] = useState<IPerusahaan[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [viewMode, setViewMode] = useState<ViewMode>('table')
@@ -49,26 +53,29 @@ const MenuPage = () => {
     const [pageSize, setPageSize] = useState(10)
     const [total, setTotal] = useState(0)
 
-    const [deleteTarget, setDeleteTarget] = useState<IMenu | null>(null)
+    const [formOpen, setFormOpen] = useState(false)
+    const [editTarget, setEditTarget] = useState<IPerusahaan | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<IPerusahaan | null>(null)
+    const [overviewTarget, setOverviewTarget] = useState<IPerusahaan | null>(null)
 
-    const fetchMenu = useCallback(async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true)
         try {
-            const res = await MenuService.getAll({
+            const res = await PerusahaanService.getAll({
                 search: search || undefined,
                 aktif: aktifFilter !== '' ? Number(aktifFilter) : undefined,
                 page: currentPage,
                 limit: pageSize,
             })
             if (res.success) {
-                setMenuList(res.data)
+                setList(res.data)
                 setTotal(res.meta?.total ?? 0)
             }
         } catch (err) {
             toast.push(
                 <Notification
                     type="danger"
-                    title={MESSAGES.ERROR.FETCH(ENTITY.MENU)}
+                    title={MESSAGES.ERROR.FETCH(ENTITY.PERUSAHAAN)}
                 >
                     {parseApiError(err)}
                 </Notification>,
@@ -79,8 +86,8 @@ const MenuPage = () => {
     }, [search, aktifFilter, currentPage, pageSize])
 
     useEffect(() => {
-        fetchMenu()
-    }, [fetchMenu])
+        fetchData()
+    }, [fetchData])
 
     const handleSearchSubmit = () => {
         setSearch(searchInput)
@@ -93,11 +100,6 @@ const MenuPage = () => {
         setCurrentPage(1)
     }
 
-    const handleFilterChange = (value: '' | '1' | '0') => {
-        setAktifFilter(value)
-        setCurrentPage(1)
-    }
-
     const handlePageChange = useCallback((page: number) => {
         setCurrentPage(page)
     }, [])
@@ -107,33 +109,78 @@ const MenuPage = () => {
         setCurrentPage(1)
     }, [])
 
-    const handleOpenEdit = useCallback(
-        (m: IMenu) => router.push(`/menu/${m.id_menu}/edit`),
-        [router],
-    )
-
-    const handleOpenDelete = useCallback((m: IMenu) => {
-        setDeleteTarget(m)
+    const handleOpenDetail = useCallback((p: IPerusahaan) => {
+        setOverviewTarget(p)
     }, [])
+
+    const handleOpenEdit = useCallback((p: IPerusahaan) => {
+        setEditTarget(p)
+        setFormOpen(true)
+    }, [])
+
+    const handleOpenDelete = useCallback((p: IPerusahaan) => {
+        setDeleteTarget(p)
+    }, [])
+
+    const handleSubmit = async (payload: IPerusahaanCreate | IPerusahaanUpdate) => {
+        setSubmitting(true)
+        try {
+            if (editTarget) {
+                await PerusahaanService.update(editTarget.id_perusahaan, payload as IPerusahaanUpdate)
+                toast.push(
+                    <Notification
+                        type="success"
+                        title={MESSAGES.SUCCESS.UPDATED(ENTITY.PERUSAHAAN)}
+                    />,
+                )
+            } else {
+                await PerusahaanService.create(payload as IPerusahaanCreate)
+                toast.push(
+                    <Notification
+                        type="success"
+                        title={MESSAGES.SUCCESS.CREATED(ENTITY.PERUSAHAAN)}
+                    />,
+                )
+            }
+            setFormOpen(false)
+            setEditTarget(null)
+            fetchData()
+        } catch (err) {
+            toast.push(
+                <Notification
+                    type="danger"
+                    title={
+                        editTarget
+                            ? MESSAGES.ERROR.UPDATE(ENTITY.PERUSAHAAN)
+                            : MESSAGES.ERROR.CREATE(ENTITY.PERUSAHAAN)
+                    }
+                >
+                    {parseApiError(err)}
+                </Notification>,
+            )
+        } finally {
+            setSubmitting(false)
+        }
+    }
 
     const handleDelete = async () => {
         if (!deleteTarget) return
         setSubmitting(true)
         try {
-            await MenuService.remove(deleteTarget.id_menu)
+            await PerusahaanService.remove(deleteTarget.id_perusahaan)
             toast.push(
                 <Notification
                     type="success"
-                    title={MESSAGES.SUCCESS.DELETED(ENTITY.MENU)}
+                    title={MESSAGES.SUCCESS.DELETED(ENTITY.PERUSAHAAN)}
                 />,
             )
             setDeleteTarget(null)
-            fetchMenu()
+            fetchData()
         } catch (err) {
             toast.push(
                 <Notification
                     type="danger"
-                    title={MESSAGES.ERROR.DELETE(ENTITY.MENU)}
+                    title={MESSAGES.ERROR.DELETE(ENTITY.PERUSAHAAN)}
                 >
                     {parseApiError(err)}
                 </Notification>,
@@ -147,15 +194,18 @@ const MenuPage = () => {
         <div className="flex flex-col gap-4">
             <Card
                 header={{
-                    content: <h4>Manajemen Menu</h4>,
+                    content: <h4>Manajemen Perusahaan</h4>,
                     extra: (
                         <Button
                             variant="solid"
                             size="sm"
                             icon={<HiPlusCircle />}
-                            onClick={() => router.push('/menu/tambah')}
+                            onClick={() => {
+                                setEditTarget(null)
+                                setFormOpen(true)
+                            }}
                         >
-                            Tambah Menu
+                            Tambah Perusahaan
                         </Button>
                     ),
                     bordered: false,
@@ -166,7 +216,7 @@ const MenuPage = () => {
                 <div className="flex items-center gap-3 px-4 pb-3">
                     <Input
                         className="flex-1"
-                        placeholder="Cari nama atau kode menu... (tekan Enter)"
+                        placeholder="Cari nama perusahaan... (tekan Enter)"
                         suffix={
                             searchInput ? (
                                 <HiOutlineX
@@ -194,9 +244,10 @@ const MenuPage = () => {
                                     (o) => o.value === aktifFilter,
                                 ) ?? AKTIF_OPTIONS[0]
                             }
-                            onChange={(opt) =>
-                                handleFilterChange((opt as AktifOption).value)
-                            }
+                            onChange={(opt) => {
+                                setAktifFilter((opt as AktifOption).value)
+                                setCurrentPage(1)
+                            }}
                         />
                     </div>
                     <div className="flex items-center rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 shrink-0">
@@ -227,16 +278,13 @@ const MenuPage = () => {
 
                 {/* Content */}
                 {viewMode === 'table' ? (
-                    <MenuTable
-                        data={menuList}
+                    <PerusahaanTable
+                        data={list}
                         loading={loading}
-                        pagingData={{
-                            total,
-                            pageIndex: currentPage,
-                            pageSize,
-                        }}
+                        pagingData={{ total, pageIndex: currentPage, pageSize }}
                         onPaginationChange={handlePageChange}
                         onSelectChange={handlePageSizeChange}
+                        onDetail={handleOpenDetail}
                         onEdit={handleOpenEdit}
                         onDelete={handleOpenDelete}
                     />
@@ -244,16 +292,16 @@ const MenuPage = () => {
                     <div className="flex justify-center items-center py-16">
                         <Spinner size={36} />
                     </div>
-                ) : menuList.length === 0 ? (
+                ) : list.length === 0 ? (
                     <div className="text-center py-16 text-gray-400 text-sm">
-                        Belum ada data menu
+                        Belum ada data perusahaan
                     </div>
                 ) : (
                     <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {menuList.map((menu) => (
-                            <MenuCard
-                                key={menu.id_menu}
-                                menu={menu}
+                        {list.map((perusahaan) => (
+                            <PerusahaanCard
+                                key={perusahaan.id_perusahaan}
+                                perusahaan={perusahaan}
                                 onEdit={handleOpenEdit}
                                 onDelete={handleOpenDelete}
                             />
@@ -262,11 +310,26 @@ const MenuPage = () => {
                 )}
             </Card>
 
-            {/* Delete Confirm */}
+            <PerusahaanOverviewDialog
+                perusahaan={overviewTarget}
+                onClose={() => setOverviewTarget(null)}
+            />
+
+            <PerusahaanForm
+                open={formOpen}
+                editData={editTarget}
+                submitting={submitting}
+                onClose={() => {
+                    setFormOpen(false)
+                    setEditTarget(null)
+                }}
+                onSubmit={handleSubmit}
+            />
+
             <ConfirmDialog
                 isOpen={!!deleteTarget}
                 type="danger"
-                title="Hapus Menu?"
+                title="Hapus Perusahaan?"
                 confirmText="Ya, Hapus"
                 cancelText="Batal"
                 confirmButtonProps={{
@@ -279,7 +342,7 @@ const MenuPage = () => {
                 onConfirm={handleDelete}
             >
                 <p className="text-sm">
-                    Menu{' '}
+                    Perusahaan{' '}
                     <span className="font-semibold">
                         &ldquo;{deleteTarget?.nama}&rdquo;
                     </span>{' '}
@@ -291,4 +354,4 @@ const MenuPage = () => {
     )
 }
 
-export default MenuPage
+export default PerusahaanPage

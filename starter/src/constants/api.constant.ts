@@ -38,6 +38,13 @@ export const API_ENDPOINTS = {
         BY_ID: (id: string) => `${PROXY}/peran/${id}`,
     },
 
+    // Perusahaan (Company Management)
+    PERUSAHAAN: {
+        BASE: `${PROXY}/perusahaan`,
+        BY_ID: (id: string) => `${PROXY}/perusahaan/${id}`,
+        OVERVIEW: (id: string) => `${PROXY}/perusahaan/${id}/overview`,
+    },
+
     // Izin Peran (Permission Matrix)
     IZIN_PERAN: {
         BY_PERAN: (kode: string) => `${PROXY}/izin-peran/peran/${kode}`,

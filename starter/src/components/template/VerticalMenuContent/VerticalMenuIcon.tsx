@@ -24,7 +24,7 @@ const VerticalMenuIcon = ({ icon }: VerticalMenuIconProps) => {
     return (
         <>
             {navigationIcon[icon] && (
-                <span className={`text-2xl`}>{navigationIcon[icon]}</span>
+                <span className="text-2xl text-indigo-500 dark:text-indigo-400">{navigationIcon[icon]}</span>
             )}
         </>
     )

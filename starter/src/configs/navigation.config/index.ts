@@ -88,6 +88,16 @@ const navigationConfig: NavigationTree[] = [
         subMenu: [],
     },
     {
+        key: 'perusahaan',
+        path: '/perusahaan',
+        title: 'Perusahaan',
+        translateKey: 'nav.perusahaan',
+        icon: 'perusahaan',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: [],
+        subMenu: [],
+    },
+    {
         key: 'izinPeran',
         path: '/izin-peran',
         title: 'Izin Peran',

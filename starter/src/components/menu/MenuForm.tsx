@@ -6,13 +6,17 @@ import {
     Dialog,
     FormItem,
     Input,
+    Select,
     Switcher,
 } from '@/components/ui'
 import type { IMenu, IMenuCreate, IMenuUpdate } from '@/@types/menu.types'
 
+type ParentOption = { value: string; label: string }
+
 interface MenuFormProps {
     open: boolean
     editData?: IMenu | null
+    menuList?: IMenu[]
     submitting?: boolean
     onClose: () => void
     onSubmit: (payload: IMenuCreate | IMenuUpdate) => void
@@ -23,6 +27,7 @@ interface FormState {
     path: string
     icon: string
     kode_modul: string
+    parent_id: string   // '' = root (null)
     urutan: string
     aktif: boolean
 }
@@ -32,23 +37,38 @@ const INITIAL_STATE: FormState = {
     path: '',
     icon: '',
     kode_modul: '',
+    parent_id: '',
     urutan: '1',
     aktif: true,
 }
 
+const ROOT_OPTION: ParentOption = { value: '', label: '— Tidak ada (root menu) —' }
+
 const MenuForm = ({
     open,
     editData,
+    menuList = [],
     submitting = false,
     onClose,
     onSubmit,
 }: MenuFormProps) => {
     const [form, setForm] = useState<FormState>(INITIAL_STATE)
-    const [errors, setErrors] = useState<
-        Partial<Record<keyof FormState, string>>
-    >({})
+    const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
 
     const isEdit = !!editData
+
+    // Opsi parent: semua menu kecuali dirinya sendiri
+    const parentOptions: ParentOption[] = [
+        ROOT_OPTION,
+        ...menuList
+            .filter((m) => m.id_menu !== editData?.id_menu)
+            .map((m) => ({
+                value: m.id_menu,
+                label: m.parent_id
+                    ? `    ↳ ${m.nama}`   // indent jika sudah punya parent
+                    : m.nama,
+            })),
+    ]
 
     useEffect(() => {
         if (editData) {
@@ -57,6 +77,7 @@ const MenuForm = ({
                 path: editData.path ?? '',
                 icon: editData.icon ?? '',
                 kode_modul: editData.kode_modul ?? '',
+                parent_id: editData.parent_id ?? '',
                 urutan: String(editData.urutan),
                 aktif: editData.aktif === 1,
             })
@@ -78,12 +99,15 @@ const MenuForm = ({
     const handleSubmit = () => {
         if (!validate()) return
 
+        const parentId = form.parent_id.trim() || null
+
         if (isEdit) {
             const payload: IMenuUpdate = {
                 nama: form.nama.trim(),
                 path: form.path.trim() || null,
                 icon: form.icon.trim() || null,
                 kode_modul: form.kode_modul.trim().toUpperCase() || null,
+                parent_id: parentId,
                 urutan: Number(form.urutan),
                 aktif: form.aktif ? 1 : 0,
             }
@@ -94,11 +118,15 @@ const MenuForm = ({
                 path: form.path.trim() || undefined,
                 icon: form.icon.trim() || undefined,
                 kode_modul: form.kode_modul.trim().toUpperCase() || undefined,
+                parent_id: parentId,
                 urutan: Number(form.urutan),
             }
             onSubmit(payload)
         }
     }
+
+    const selectedParent =
+        parentOptions.find((o) => o.value === form.parent_id) ?? ROOT_OPTION
 
     return (
         <Dialog
@@ -124,6 +152,26 @@ const MenuForm = ({
                         invalid={!!errors.nama}
                         onChange={(e) =>
                             setForm((p) => ({ ...p, nama: e.target.value }))
+                        }
+                    />
+                </FormItem>
+
+                <FormItem
+                    label="Menu Parent"
+                    extra={
+                        <span className="text-xs text-gray-400">
+                            Kosongkan jika ini adalah menu utama (root)
+                        </span>
+                    }
+                >
+                    <Select<ParentOption>
+                        options={parentOptions}
+                        value={selectedParent}
+                        onChange={(opt) =>
+                            setForm((p) => ({
+                                ...p,
+                                parent_id: (opt as ParentOption).value,
+                            }))
                         }
                     />
                 </FormItem>

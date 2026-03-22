@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Card, Notification, Spinner, Tag, toast } from '@/components/ui'
+import { Card, Input, Notification, Spinner, Tag, toast } from '@/components/ui'
+import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import MenuService from '@/services/menu.service'
 import ModulService from '@/services/modul.service'
 import { parseApiError } from '@/utils/parseApiError'
@@ -60,6 +61,15 @@ const MenuModulPage = () => {
     const [loading, setLoading] = useState(true)
     const [updatingKey, setUpdatingKey] = useState<string>('') // "id_menu:kode_modul"
     const [selectingAll, setSelectingAll] = useState<string>('') // kode_modul sedang bulk-toggle
+    const [search, setSearch] = useState('')
+
+    const filteredMenuList = search.trim()
+        ? menuList.filter((m) =>
+              m.nama.toLowerCase().includes(search.toLowerCase()) ||
+              (m.path ?? '').toLowerCase().includes(search.toLowerCase()) ||
+              (m.kode_modul ?? '').toLowerCase().includes(search.toLowerCase()),
+          )
+        : menuList
 
     const fetchAll = useCallback(async () => {
         setLoading(true)
@@ -204,6 +214,26 @@ const MenuModulPage = () => {
                 }}
                 bodyClass="p-0"
             >
+                {/* Search */}
+                <div className="px-4 pb-3">
+                    <Input
+                        className="w-72"
+                        placeholder="Cari nama, path, atau kode modul..."
+                        suffix={
+                            search ? (
+                                <HiOutlineX
+                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                    onClick={() => setSearch('')}
+                                />
+                            ) : (
+                                <HiOutlineSearch className="text-gray-400 text-lg" />
+                            )
+                        }
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
+
                 {loading ? (
                     <div className="flex justify-center items-center py-16">
                         <Spinner size={36} />
@@ -231,7 +261,7 @@ const MenuModulPage = () => {
                                             </div>
                                             <ColHeaderCheckbox
                                                 kode_modul={m.kode_modul}
-                                                menuList={menuList}
+                                                menuList={filteredMenuList}
                                                 menuModulMap={menuModulMap}
                                                 disabled={
                                                     selectingAll === m.kode_modul
@@ -252,8 +282,17 @@ const MenuModulPage = () => {
                                             Belum ada data menu
                                         </td>
                                     </tr>
+                                ) : filteredMenuList.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={modulList.length + 1}
+                                            className="text-center py-16 text-gray-400"
+                                        >
+                                            Tidak ada menu yang cocok dengan pencarian
+                                        </td>
+                                    </tr>
                                 ) : (
-                                    menuList.map((menu) => (
+                                    filteredMenuList.map((menu) => (
                                         <tr
                                             key={menu.id_menu}
                                             className="border-b border-gray-50 dark:border-gray-800 group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
