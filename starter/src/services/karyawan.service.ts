@@ -1,0 +1,107 @@
+import ApiService from '@/services/ApiService'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type {
+    IKaryawan,
+    ICreateKaryawan,
+    IUpdateKaryawan,
+    IKaryawanQuery,
+    IImportKaryawanResult,
+    ApiResponse,
+    ApiPaginatedResponse,
+} from '@/@types/karyawan.types'
+
+const KaryawanService = {
+    async getAll(
+        query?: IKaryawanQuery,
+    ): Promise<ApiPaginatedResponse<IKaryawan>> {
+        const params = new URLSearchParams()
+        if (query?.search) params.append('search', query.search)
+        if (query?.aktif !== undefined)
+            params.append('aktif', String(query.aktif))
+        if (query?.page) params.append('page', String(query.page))
+        if (query?.limit) params.append('limit', String(query.limit))
+
+        const qs = params.toString()
+        const url = qs
+            ? `${API_ENDPOINTS.KARYAWAN.BASE}?${qs}`
+            : API_ENDPOINTS.KARYAWAN.BASE
+
+        return ApiService.fetchDataWithAxios<
+            ApiPaginatedResponse<IKaryawan>
+        >({ url, method: 'GET' })
+    },
+
+    async getById(id: string): Promise<ApiResponse<IKaryawan>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<IKaryawan>>({
+            url: API_ENDPOINTS.KARYAWAN.BY_ID(id),
+            method: 'GET',
+        })
+    },
+
+    async create(
+        payload: ICreateKaryawan,
+    ): Promise<ApiResponse<IKaryawan>> {
+        return ApiService.fetchDataWithAxios<
+            ApiResponse<IKaryawan>,
+            ICreateKaryawan
+        >({
+            url: API_ENDPOINTS.KARYAWAN.BASE,
+            method: 'POST',
+            data: payload,
+        })
+    },
+
+    async update(
+        id: string,
+        payload: IUpdateKaryawan,
+    ): Promise<ApiResponse<IKaryawan>> {
+        return ApiService.fetchDataWithAxios<
+            ApiResponse<IKaryawan>,
+            IUpdateKaryawan
+        >({
+            url: API_ENDPOINTS.KARYAWAN.BY_ID(id),
+            method: 'PATCH',
+            data: payload,
+        })
+    },
+
+    async remove(id: string): Promise<ApiResponse<null>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<null>>({
+            url: API_ENDPOINTS.KARYAWAN.BY_ID(id),
+            method: 'DELETE',
+        })
+    },
+
+    /** Download template Excel kosong untuk import bulk */
+    async downloadTemplate(): Promise<void> {
+        const res = await fetch(API_ENDPOINTS.KARYAWAN.TEMPLATE_EXCEL)
+        if (!res.ok) throw new Error('Gagal mengunduh template')
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'template-karyawan.xlsx'
+        a.click()
+        URL.revokeObjectURL(url)
+    },
+
+    /** Import karyawan dari file Excel */
+    async uploadExcel(
+        file: File,
+    ): Promise<ApiResponse<IImportKaryawanResult>> {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const res = await fetch(API_ENDPOINTS.KARYAWAN.UPLOAD_EXCEL, {
+            method: 'POST',
+            body: formData,
+        })
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(err?.message ?? 'Gagal mengimpor file')
+        }
+        return res.json()
+    },
+}
+
+export default KaryawanService

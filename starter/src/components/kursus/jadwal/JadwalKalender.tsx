@@ -116,19 +116,20 @@ const JadwalKalender = ({
     const nextWeek = () => setWeekStart((w) => w.add(7, 'day'))
     const goToday = () => setWeekStart(getMondayOf(today))
 
-    /* ─── grouped data: nama → byHari ─────────────────────── */
+    /* ─── grouped data: instruktur → byHari ───────────────── */
     const grouped = useMemo(() => {
         const map = new Map<
             string,
             { items: IJadwalKelas[]; byHari: Record<number, IJadwalKelas[]> }
         >()
         data.forEach((j) => {
-            if (!map.has(j.nama)) {
+            const key = j.instruktur?.trim() || '(Tanpa Instruktur)'
+            if (!map.has(key)) {
                 const byHari: Record<number, IJadwalKelas[]> = {}
                 for (let h = 1; h <= 7; h++) byHari[h] = []
-                map.set(j.nama, { items: [], byHari })
+                map.set(key, { items: [], byHari })
             }
-            const g = map.get(j.nama)!
+            const g = map.get(key)!
             g.items.push(j)
             if (g.byHari[j.hari]) g.byHari[j.hari].push(j)
         })
@@ -249,7 +250,7 @@ const JadwalKalender = ({
                         <div className="px-3 py-2.5 border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center">
                             <Input
                                 size="sm"
-                                placeholder="Cari kelas..."
+                                placeholder="Cari karyawan..."
                                 prefix={
                                     <HiOutlineSearch className="text-gray-400" />
                                 }
@@ -280,11 +281,10 @@ const JadwalKalender = ({
                                         {HARI_NAMES[i]}
                                     </p>
                                     <div
-                                        className={`mx-auto mt-0.5 flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${
-                                            isToday
-                                                ? 'bg-primary text-white'
-                                                : 'text-gray-700 dark:text-gray-200'
-                                        }`}
+                                        className={`mx-auto mt-0.5 flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${isToday
+                                            ? 'bg-primary text-white'
+                                            : 'text-gray-700 dark:text-gray-200'
+                                            }`}
                                     >
                                         {day.format('D')}
                                     </div>
@@ -301,133 +301,107 @@ const JadwalKalender = ({
                                 : 'Tidak ditemukan'}
                         </div>
                     ) : (
-                        filteredKeys.map((nama) => {
-                            const group = grouped.get(nama)!
+                        filteredKeys.map((karyawan) => {
+                            const group = grouped.get(karyawan)!
+                            const initials = karyawan
+                                .split(' ')
+                                .slice(0, 2)
+                                .map((w) => w[0])
+                                .join('')
+                                .toUpperCase()
+                            const isTanpaInstruktur =
+                                karyawan === '(Tanpa Instruktur)'
                             return (
                                 <div
-                                    key={nama}
+                                    key={karyawan}
                                     className="grid grid-cols-[220px_repeat(7,1fr)] border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                                 >
-                                    {/* Left: class name */}
-                                    <div className="px-4 py-3 border-r border-gray-100 dark:border-gray-700 flex flex-col justify-center bg-white dark:bg-gray-900">
-                                        <p className="text-sm font-bold text-gray-800 dark:text-gray-100 leading-snug">
-                                            {nama}
-                                        </p>
-                                        <p className="text-xs text-gray-400 mt-0.5">
-                                            {group.items.length} Jadwal
-                                        </p>
+                                    {/* Left: karyawan name + avatar */}
+                                    <div className="px-3 py-3 border-r border-gray-100 dark:border-gray-700 flex items-center gap-3 bg-white dark:bg-gray-900">
+                                        <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${isTanpaInstruktur ? 'bg-gray-100 dark:bg-gray-700 text-gray-400' : 'bg-primary/10 text-primary dark:bg-primary/20'}`}>
+                                            {isTanpaInstruktur ? '—' : initials}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-snug truncate">
+                                                {karyawan}
+                                            </p>
+                                            <p className="text-xs text-gray-400 mt-0.5">
+                                                {group.items.length} Shift
+                                            </p>
+                                        </div>
                                     </div>
 
                                     {/* Day cells */}
                                     {weekDays.map((day, i) => {
-                                        const hari = i + 1 // 1=Mon … 7=Sun
-                                        const isToday = day.isSame(
-                                            today,
-                                            'day',
-                                        )
+                                        const hari = i + 1
+                                        const isToday = day.isSame(today, 'day')
                                         return (
                                             <div
                                                 key={i}
-                                                className={`p-2 border-r last:border-r-0 border-gray-100 dark:border-gray-700 flex flex-col gap-1.5 min-h-[80px] ${
-                                                    isToday
-                                                        ? 'bg-primary/[0.04] dark:bg-primary/10'
-                                                        : ''
-                                                }`}
+                                                className={`p-2 border-r last:border-r-0 border-gray-100 dark:border-gray-700 flex flex-col gap-1.5 min-h-[80px] ${isToday
+                                                    ? 'bg-primary/[0.04] dark:bg-primary/10'
+                                                    : ''
+                                                    }`}
                                             >
-                                                {group.byHari[hari].map(
-                                                    (jadwal) => {
-                                                        const style =
-                                                            getShiftStyle(
-                                                                jadwal.jam_mulai,
-                                                            )
-                                                        const isInactive =
-                                                            jadwal.aktif !== 1
-                                                        return (
-                                                            <div
-                                                                key={
-                                                                    jadwal.id_jadwal
-                                                                }
-                                                                className={`relative p-2 rounded-lg border group transition-shadow hover:shadow-md ${style.bg} ${style.border} ${isInactive ? 'opacity-50 border-dashed' : ''}`}
-                                                            >
-                                                                <span
-                                                                    className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded ${style.badge}`}
-                                                                >
-                                                                    {
-                                                                        style.label
-                                                                    }
-                                                                </span>
+                                                {group.byHari[hari].map((jadwal) => {
+                                                    const style = getShiftStyle(jadwal.jam_mulai)
+                                                    const isInactive = jadwal.aktif !== 1
+                                                    return (
+                                                        <div
+                                                            key={jadwal.id_jadwal}
+                                                            className={`relative p-2 rounded-lg border group transition-shadow hover:shadow-md ${style.bg} ${style.border} ${isInactive ? 'opacity-50 border-dashed' : ''}`}
+                                                        >
+                                                            {/* Shift badge */}
+                                                            <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded ${style.badge}`}>
+                                                                {style.label}
+                                                            </span>
 
-                                                                <p
-                                                                    className={`text-xs font-bold mt-1 ${style.text}`}
-                                                                >
-                                                                    {
-                                                                        jadwal.jam_mulai
-                                                                    }{' '}
-                                                                    –{' '}
-                                                                    {
-                                                                        jadwal.jam_selesai
-                                                                    }
+                                                            {/* Waktu */}
+                                                            <p className={`text-xs font-bold mt-1 ${style.text}`}>
+                                                                {jadwal.jam_mulai} – {jadwal.jam_selesai}
+                                                            </p>
+
+                                                            {/* Nama kelas */}
+                                                            <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 mt-0.5 leading-snug truncate">
+                                                                {jadwal.nama}
+                                                            </p>
+
+                                                            {/* Lokasi */}
+                                                            {jadwal.lokasi && (
+                                                                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+                                                                    {jadwal.lokasi}
                                                                 </p>
+                                                            )}
 
-                                                                {jadwal.lokasi && (
-                                                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                                                                        {
-                                                                            jadwal.lokasi
-                                                                        }
-                                                                    </p>
-                                                                )}
+                                                            {/* Nonaktif */}
+                                                            {isInactive && (
+                                                                <span className="text-[9px] font-medium text-gray-400 mt-0.5 block">
+                                                                    Nonaktif
+                                                                </span>
+                                                            )}
 
-                                                                {jadwal.instruktur && (
-                                                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
-                                                                        {
-                                                                            jadwal.instruktur
-                                                                        }
-                                                                    </p>
-                                                                )}
-
-                                                                {isInactive && (
-                                                                    <span className="text-[9px] font-medium text-gray-400 mt-0.5 block">
-                                                                        Nonaktif
+                                                            {/* Hover actions */}
+                                                            <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
+                                                                <Tooltip title="Edit">
+                                                                    <span
+                                                                        className="cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 transition-colors"
+                                                                        onClick={(e) => { e.stopPropagation(); onEdit(jadwal) }}
+                                                                    >
+                                                                        <HiOutlinePencilAlt className="text-[11px]" />
                                                                     </span>
-                                                                )}
-
-                                                                {/* Hover actions */}
-                                                                <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
-                                                                    <Tooltip title="Edit">
-                                                                        <span
-                                                                            className="cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 transition-colors"
-                                                                            onClick={(
-                                                                                e,
-                                                                            ) => {
-                                                                                e.stopPropagation()
-                                                                                onEdit(
-                                                                                    jadwal,
-                                                                                )
-                                                                            }}
-                                                                        >
-                                                                            <HiOutlinePencilAlt className="text-[11px]" />
-                                                                        </span>
-                                                                    </Tooltip>
-                                                                    <Tooltip title="Hapus">
-                                                                        <span
-                                                                            className="cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded bg-white dark:bg-gray-700 shadow-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 transition-colors"
-                                                                            onClick={(
-                                                                                e,
-                                                                            ) => {
-                                                                                e.stopPropagation()
-                                                                                onDelete(
-                                                                                    jadwal,
-                                                                                )
-                                                                            }}
-                                                                        >
-                                                                            <HiOutlineTrash className="text-[11px]" />
-                                                                        </span>
-                                                                    </Tooltip>
-                                                                </div>
+                                                                </Tooltip>
+                                                                <Tooltip title="Hapus">
+                                                                    <span
+                                                                        className="cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded bg-white dark:bg-gray-700 shadow-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 transition-colors"
+                                                                        onClick={(e) => { e.stopPropagation(); onDelete(jadwal) }}
+                                                                    >
+                                                                        <HiOutlineTrash className="text-[11px]" />
+                                                                    </span>
+                                                                </Tooltip>
                                                             </div>
-                                                        )
-                                                    },
-                                                )}
+                                                        </div>
+                                                    )
+                                                })}
                                             </div>
                                         )
                                     })}

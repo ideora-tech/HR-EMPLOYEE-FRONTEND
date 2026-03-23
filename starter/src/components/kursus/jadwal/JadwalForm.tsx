@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
     Button,
     Dialog,
@@ -9,6 +9,7 @@ import {
     Select,
     Switcher,
 } from '@/components/ui'
+import KaryawanService from '@/services/karyawan.service'
 import type {
     IJadwalKelas,
     ICreateJadwalKelas,
@@ -18,6 +19,7 @@ import type {
 
 type HariOption = { value: string; label: string }
 type ProgramOption = { value: string; label: string }
+type InstrukturOption = { value: string; label: string }
 
 const HARI_OPTIONS: HariOption[] = [
     { value: '1', label: 'Senin' },
@@ -72,6 +74,31 @@ const JadwalForm = ({
 }: JadwalFormProps) => {
     const [form, setForm] = useState<FormState>(INITIAL_STATE)
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+    const [instrukturOptions, setInstrukturOptions] = useState<InstrukturOption[]>([
+        { value: '', label: '— Tanpa Instruktur —' },
+    ])
+    const [loadingKaryawan, setLoadingKaryawan] = useState(false)
+
+    const loadKaryawan = useCallback(async () => {
+        setLoadingKaryawan(true)
+        try {
+            const res = await KaryawanService.getAll({ limit: 200, aktif: 1 })
+            if (res.success) {
+                setInstrukturOptions([
+                    { value: '', label: '— Tanpa Instruktur —' },
+                    ...res.data.map((k) => ({ value: k.nama, label: k.nama })),
+                ])
+            }
+        } catch {
+            // fallback: keep default option
+        } finally {
+            setLoadingKaryawan(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (open) loadKaryawan()
+    }, [open, loadKaryawan])
 
     const isEdit = !!editData
 
@@ -213,10 +240,19 @@ const JadwalForm = ({
 
                 <div className="grid grid-cols-2 gap-3">
                     <FormItem label="Instruktur">
-                        <Input
-                            placeholder="Nama instruktur (opsional)"
-                            value={form.instruktur}
-                            onChange={(e) => setForm((p) => ({ ...p, instruktur: e.target.value }))}
+                        <Select<InstrukturOption>
+                            options={instrukturOptions}
+                            value={
+                                instrukturOptions.find((o) => o.value === form.instruktur) ??
+                                instrukturOptions[0]
+                            }
+                            isLoading={loadingKaryawan}
+                            onChange={(opt) =>
+                                setForm((p) => ({
+                                    ...p,
+                                    instruktur: (opt as InstrukturOption).value,
+                                }))
+                            }
                         />
                     </FormItem>
                     <FormItem label="Lokasi">

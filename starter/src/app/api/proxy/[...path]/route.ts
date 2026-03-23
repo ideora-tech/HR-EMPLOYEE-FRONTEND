@@ -13,19 +13,32 @@ async function handler(request: NextRequest, { params }: Params) {
     const search = request.nextUrl.search
     const backendUrl = `${BACKEND_URL}${backendPath}${search}`
 
+    const contentTypeReq = request.headers.get('content-type') ?? ''
+    const isMultipart = contentTypeReq.includes('multipart/form-data')
+
     const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
         Accept: 'application/json',
+    }
+
+    // For regular JSON requests, set Content-Type explicitly.
+    // For multipart, let fetch set it automatically (with boundary).
+    if (!isMultipart) {
+        headers['Content-Type'] = 'application/json'
     }
 
     if (session?.accessToken) {
         headers['Authorization'] = `Bearer ${session.accessToken}`
     }
 
-    const body =
-        request.method !== 'GET' && request.method !== 'HEAD'
-            ? await request.text()
-            : undefined
+    let body: BodyInit | undefined
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+        if (isMultipart) {
+            // Forward raw FormData so the backend receives the file correctly
+            body = await request.formData()
+        } else {
+            body = await request.text()
+        }
+    }
 
     const response = await fetch(backendUrl, {
         method: request.method,

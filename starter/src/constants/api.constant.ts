@@ -68,6 +68,14 @@ export const API_ENDPOINTS = {
             `${PROXY}/akses-modul-tier/paket/${paket}/modul/${kode_modul}`,
     },
 
+    // Karyawan (Employee Management)
+    KARYAWAN: {
+        BASE: `${PROXY}/karyawan`,
+        BY_ID: (id: string) => `${PROXY}/karyawan/${id}`,
+        TEMPLATE_EXCEL: `${PROXY}/karyawan/template/excel`,
+        UPLOAD_EXCEL: `${PROXY}/karyawan/upload/excel`,
+    },
+
     // Kursus Dansa
     KURSUS: {
         TINGKAT: {

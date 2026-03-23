@@ -17,6 +17,9 @@ export const ROUTES = {
     SIGN_UP: '/sign-up',
     FORGOT_PASSWORD: '/forgot-password',
 
+    // Karyawan
+    KARYAWAN: '/karyawan',
+
     // Kursus
     KURSUS_SISWA: '/kursus/siswa',
     KURSUS_PROGRAM: '/kursus/program-pengajaran',

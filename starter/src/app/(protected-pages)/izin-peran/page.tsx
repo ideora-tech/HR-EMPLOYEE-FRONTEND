@@ -35,6 +35,81 @@ interface ColHeaderCheckboxProps {
     onToggle: () => void
 }
 
+interface RowCheckboxProps {
+    id_menu: string
+    permMap: PermMap
+    disabled: boolean
+    onToggle: () => void
+}
+
+const RowCheckbox = ({
+    id_menu,
+    permMap,
+    disabled,
+    onToggle,
+}: RowCheckboxProps) => {
+    const ref = useRef<HTMLInputElement>(null)
+    const current = permMap[id_menu] ?? new Set<AksiType>()
+    const allChecked = AKSI_LIST.every((a) => current.has(a))
+    const someChecked = AKSI_LIST.some((a) => current.has(a))
+
+    useEffect(() => {
+        if (ref.current) {
+            ref.current.indeterminate = someChecked && !allChecked
+        }
+    }, [allChecked, someChecked])
+
+    return (
+        <input
+            ref={ref}
+            type="checkbox"
+            className="w-4 h-4 accent-indigo-600 cursor-pointer disabled:cursor-not-allowed"
+            checked={allChecked}
+            disabled={disabled}
+            onChange={onToggle}
+        />
+    )
+}
+
+interface RowAllHeaderCheckboxProps {
+    menus: IzinPeranMenuItem[]
+    permMap: PermMap
+    disabled: boolean
+    onToggle: () => void
+}
+
+const RowAllHeaderCheckbox = ({
+    menus,
+    permMap,
+    disabled,
+    onToggle,
+}: RowAllHeaderCheckboxProps) => {
+    const ref = useRef<HTMLInputElement>(null)
+    const allChecked =
+        menus.length > 0 &&
+        menus.every((m) => AKSI_LIST.every((a) => permMap[m.id_menu]?.has(a) ?? false))
+    const someChecked = menus.some((m) =>
+        AKSI_LIST.some((a) => permMap[m.id_menu]?.has(a) ?? false),
+    )
+
+    useEffect(() => {
+        if (ref.current) {
+            ref.current.indeterminate = someChecked && !allChecked
+        }
+    }, [allChecked, someChecked])
+
+    return (
+        <input
+            ref={ref}
+            type="checkbox"
+            className="w-4 h-4 accent-indigo-600 cursor-pointer disabled:cursor-not-allowed"
+            checked={allChecked}
+            disabled={disabled}
+            onChange={onToggle}
+        />
+    )
+}
+
 const ColHeaderCheckbox = ({
     aksi,
     menus,
@@ -77,6 +152,7 @@ const IzinPeranPage = () => {
     const [loadingMatrix, setLoadingMatrix] = useState(false)
     const [updatingMenu, setUpdatingMenu] = useState<string>('')
     const [selectingAll, setSelectingAll] = useState<AksiType | ''>('')
+    const [selectingAllRow, setSelectingAllRow] = useState(false)
     const [searchMenu, setSearchMenu] = useState('')
     const [searchInput, setSearchInput] = useState('')
 
@@ -168,6 +244,69 @@ const IzinPeranPage = () => {
             )
         } finally {
             setSelectingAll('')
+        }
+    }
+
+    const handleToggleRow = async (id_menu: string) => {
+        if (!selectedPeran || updatingMenu || selectingAll || selectingAllRow) return
+
+        const current = permMap[id_menu] ?? new Set<AksiType>()
+        const allChecked = AKSI_LIST.every((a) => current.has(a))
+
+        const newSet = new Set<AksiType>()
+        if (!allChecked) AKSI_LIST.forEach((a) => newSet.add(a))
+
+        const newAksi = AKSI_LIST.filter((a) => newSet.has(a))
+
+        setPermMap((prev) => ({ ...prev, [id_menu]: newSet }))
+        setUpdatingMenu(id_menu)
+        try {
+            await IzinPeranService.setAksi(selectedPeran, id_menu, newAksi)
+        } catch (err) {
+            setPermMap((prev) => ({ ...prev, [id_menu]: current }))
+            toast.push(
+                <Notification type="danger" title="Gagal memperbarui izin">
+                    {parseApiError(err)}
+                </Notification>,
+            )
+        } finally {
+            setUpdatingMenu('')
+        }
+    }
+
+    const handleToggleAllRow = async () => {
+        if (!selectedPeran || selectingAll || selectingAllRow || updatingMenu) return
+
+        const allChecked =
+            menus.length > 0 &&
+            menus.every((m) => AKSI_LIST.every((a) => permMap[m.id_menu]?.has(a) ?? false))
+
+        const prevPermMap = permMap
+        const newPermMap: PermMap = {}
+        for (const m of menus) {
+            const newSet = new Set<AksiType>()
+            if (!allChecked) AKSI_LIST.forEach((a) => newSet.add(a))
+            newPermMap[m.id_menu] = newSet
+        }
+
+        const items = menus.map((m) => ({
+            id_menu: m.id_menu,
+            aksi: AKSI_LIST.filter((a) => newPermMap[m.id_menu]?.has(a)),
+        }))
+
+        setPermMap(newPermMap)
+        setSelectingAllRow(true)
+        try {
+            await IzinPeranService.bulkSetAksi(selectedPeran, items)
+        } catch (err) {
+            setPermMap(prevPermMap)
+            toast.push(
+                <Notification type="danger" title="Gagal memperbarui izin">
+                    {parseApiError(err)}
+                </Notification>,
+            )
+        } finally {
+            setSelectingAllRow(false)
         }
     }
 
@@ -319,6 +458,17 @@ const IzinPeranPage = () => {
                                     <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">
                                         Menu
                                     </th>
+                                    <th className="text-center px-4 py-3 font-semibold w-24 text-gray-500 dark:text-gray-400">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <RowAllHeaderCheckbox
+                                                menus={menus}
+                                                permMap={permMap}
+                                                disabled={!!selectingAll || !!updatingMenu || selectingAllRow}
+                                                onToggle={handleToggleAllRow}
+                                            />
+                                            <span>Semua</span>
+                                        </div>
+                                    </th>
                                     {AKSI_LIST.map((aksi) => (
                                         <th
                                             key={aksi}
@@ -348,7 +498,7 @@ const IzinPeranPage = () => {
                                                 className="bg-gray-50/60 dark:bg-gray-800/60"
                                             >
                                                 <td
-                                                    colSpan={5}
+                                                    colSpan={6}
                                                     className="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest"
                                                 >
                                                     {kode_modul}
@@ -377,6 +527,19 @@ const IzinPeranPage = () => {
                                                                     {menu.path}
                                                                 </p>
                                                             )}
+                                                        </td>
+                                                        <td className="text-center px-4 py-3">
+                                                            <RowCheckbox
+                                                                id_menu={menu.id_menu}
+                                                                permMap={permMap}
+                                                                disabled={
+                                                                    isUpdating ||
+                                                                    !!updatingMenu ||
+                                                                    !!selectingAll ||
+                                                                    selectingAllRow
+                                                                }
+                                                                onToggle={() => handleToggleRow(menu.id_menu)}
+                                                            />
                                                         </td>
                                                         {AKSI_LIST.map((aksi) => {
                                                             const checked =

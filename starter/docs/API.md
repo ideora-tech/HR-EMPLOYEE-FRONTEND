@@ -1248,3 +1248,181 @@ const isAktif = data.aktif === true
 | Per menit | 300 |
 
 > **Tips bulk:** Gunakan endpoint bulk (`PUT /izin-peran/peran/:kode/bulk`, `PUT /modul/:kode/menu`) daripada loop per-item untuk menghindari `429`.
+
+---
+
+## Karyawan
+
+> Semua endpoint butuh `Authorization: Bearer <token>`.
+> **Company user** hanya bisa akses karyawan milik perusahaannya sendiri.
+> **SUPERADMIN** bisa lihat semua karyawan lintas perusahaan.
+
+### GET `/karyawan`
+
+Daftar karyawan dengan pagination & search.
+
+**Query Params:**
+
+| Param | Tipe | Keterangan |
+|-------|------|------------|
+| `page` | number | Halaman (default: 1) |
+| `limit` | number | Jumlah per halaman (default: 10) |
+| `search` | string | Cari di nama, NIK, email, telepon |
+| `aktif` | 0 \| 1 | Filter status aktif |
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil daftar karyawan",
+  "data": [
+    {
+      "id_karyawan": "uuid",
+      "id_perusahaan": "uuid",
+      "nik": "EMP-001",
+      "nama": "Budi Santoso",
+      "email": "budi@perusahaan.com",
+      "telepon": "081234567890",
+      "tanggal_lahir": "1990-05-20",
+      "jenis_kelamin": 1,
+      "alamat": "Jl. Sudirman No. 1",
+      "foto_url": null,
+      "tanggal_masuk": "2022-01-01",
+      "tanggal_keluar": null,
+      "status_kepegawaian": "TETAP",
+      "aktif": 1,
+      "dibuat_pada": "2026-03-23T10:00:00.000Z",
+      "diubah_pada": null
+    }
+  ],
+  "meta": { "page": 1, "limit": 10, "total": 50, "totalPages": 5 }
+}
+```
+
+---
+
+### GET `/karyawan/:id`
+
+Detail satu karyawan berdasarkan UUID.
+
+**Response `200`:** sama seperti satu item di atas.
+**Response `404`:** `Karyawan dengan ID '...' tidak ditemukan`
+
+---
+
+### POST `/karyawan`
+
+Tambah karyawan baru. Hanya untuk company user.
+
+**Request Body:**
+```json
+{
+  "nik": "EMP-002",
+  "nama": "Siti Rahayu",
+  "email": "siti@perusahaan.com",
+  "telepon": "081298765432",
+  "tanggal_lahir": "1995-08-10",
+  "jenis_kelamin": 2,
+  "alamat": "Jl. Thamrin No. 5, Jakarta",
+  "tanggal_masuk": "2023-03-01",
+  "status_kepegawaian": "KONTRAK"
+}
+```
+
+| Field | Tipe | Wajib | Keterangan |
+|-------|------|-------|------------|
+| `nik` | string | ❌ | Nomor induk karyawan — unik per perusahaan |
+| `nama` | string | ✅ | Nama lengkap |
+| `email` | string | ❌ | Format email valid |
+| `telepon` | string | ❌ | Maks 20 karakter |
+| `tanggal_lahir` | string | ❌ | Format `YYYY-MM-DD` |
+| `jenis_kelamin` | 1 \| 2 | ❌ | 1 = Laki-laki, 2 = Perempuan |
+| `alamat` | string | ❌ | |
+| `foto_url` | string | ❌ | URL foto karyawan |
+| `tanggal_masuk` | string | ❌ | Format `YYYY-MM-DD` |
+| `tanggal_keluar` | string | ❌ | Format `YYYY-MM-DD` |
+| `status_kepegawaian` | string | ❌ | `TETAP` / `KONTRAK` / `PROBASI` / `MAGANG` |
+
+**Response `201`:** data karyawan yang baru dibuat.
+**Response `409`:** `NIK '...' sudah digunakan`
+**Response `403`:** jika SUPERADMIN mencoba create (hanya company user)
+
+---
+
+### PATCH `/karyawan/:id`
+
+Update sebagian data karyawan. Semua field opsional, plus `aktif`.
+
+**Request Body:** sama seperti POST tapi semua opsional, tambah field:
+
+| Field | Tipe | Keterangan |
+|-------|------|------------|
+| `aktif` | 0 \| 1 | Nonaktifkan / aktifkan karyawan |
+
+**Response `200`:** data karyawan setelah diupdate.
+**Response `404`:** karyawan tidak ditemukan.
+**Response `409`:** NIK baru sudah dipakai karyawan lain.
+
+---
+
+### DELETE `/karyawan/:id`
+
+Soft delete karyawan (set `dihapus_pada`, `aktif = 0`).
+
+**Response `200`:**
+```json
+{ "message": "Karyawan berhasil dihapus", "data": null }
+```
+
+---
+
+### GET `/karyawan/template/excel`
+
+Download file Excel template kosong untuk keperluan import bulk.
+
+**Response:** File `.xlsx` (`Content-Disposition: attachment; filename="template-karyawan.xlsx"`)
+
+**Kolom template:**
+
+| Kolom | Wajib | Keterangan |
+|-------|-------|------------|
+| `nik` | ❌ | Nomor induk karyawan |
+| `nama*` | ✅ | Nama lengkap |
+| `email` | ❌ | |
+| `telepon` | ❌ | |
+| `tanggal_lahir (YYYY-MM-DD)` | ❌ | |
+| `jenis_kelamin (1=L / 2=P)` | ❌ | |
+| `tanggal_masuk (YYYY-MM-DD)` | ❌ | |
+| `status_kepegawaian (TETAP/KONTRAK/PROBASI/MAGANG)` | ❌ | |
+| `alamat` | ❌ | |
+
+---
+
+### POST `/karyawan/upload/excel`
+
+Import karyawan secara bulk dari file Excel. Hanya untuk company user.
+
+**Request:** `multipart/form-data`, field `file` berisi file `.xlsx`.
+
+**Proses:**
+1. Baca semua baris dari Excel
+2. Ambil semua NIK existing dari DB — **1x query**
+3. Validasi setiap baris di memory (nama wajib, NIK duplikat)
+4. Batch insert semua baris valid — **1 query per 100 baris**
+
+**Response `200`:**
+```json
+{
+  "message": "Import selesai: 48 berhasil, 2 gagal",
+  "data": {
+    "berhasil": 48,
+    "gagal": 2,
+    "errors": [
+      "Baris 3: kolom \"nama\" wajib diisi",
+      "Baris 7: NIK 'EMP-005' sudah digunakan"
+    ]
+  }
+}
+```
+
+**Response `400`:** jika file kosong / tidak ada data.
+**Response `403`:** jika SUPERADMIN mencoba upload.
