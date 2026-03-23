@@ -33,6 +33,21 @@ async function handler(request: NextRequest, { params }: Params) {
         body,
     })
 
+    const contentType = response.headers.get('content-type') ?? ''
+
+    // Pass-through binary responses (Excel, PDF, etc.) directly
+    if (!contentType.includes('application/json')) {
+        const buffer = await response.arrayBuffer()
+        const resHeaders = new Headers()
+        resHeaders.set('Content-Type', contentType)
+        const disposition = response.headers.get('content-disposition')
+        if (disposition) resHeaders.set('Content-Disposition', disposition)
+        return new NextResponse(buffer, {
+            status: response.status,
+            headers: resHeaders,
+        })
+    }
+
     const text = await response.text()
     let data: unknown
     try {

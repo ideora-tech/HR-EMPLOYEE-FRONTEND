@@ -10,8 +10,9 @@ import {
     toast,
 } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
+import { HiPlusCircle, HiOutlineSearch, HiOutlineX, HiOutlineViewList, HiOutlineCalendar } from 'react-icons/hi'
 import JadwalTable from '@/components/kursus/jadwal/JadwalTable'
+import JadwalKalender from '@/components/kursus/jadwal/JadwalKalender'
 import JadwalForm from '@/components/kursus/jadwal/JadwalForm'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
 import ProgramPengajaranService from '@/services/kursus/program-pengajaran.service'
@@ -45,6 +46,7 @@ const JadwalKelasPage = () => {
     const [pageSize, setPageSize] = useState(10)
     const [total, setTotal] = useState(0)
 
+    const [view, setView] = useState<'table' | 'kalender'>('table')
     const [formOpen, setFormOpen] = useState(false)
     const [editTarget, setEditTarget] = useState<IJadwalKelas | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<IJadwalKelas | null>(null)
@@ -82,6 +84,17 @@ const JadwalKelasPage = () => {
     useEffect(() => {
         fetchData()
     }, [fetchData])
+
+    const handleViewChange = (v: 'table' | 'kalender') => {
+        setView(v)
+        if (v === 'kalender') {
+            setPageSize(200)
+            setCurrentPage(1)
+        } else {
+            setPageSize(10)
+            setCurrentPage(1)
+        }
+    }
 
     const handleSearchSubmit = () => {
         setSearch(searchInput)
@@ -146,20 +159,41 @@ const JadwalKelasPage = () => {
                 header={{
                     content: <h4>Jadwal Kelas</h4>,
                     extra: (
-                        <Button
-                            variant="solid"
-                            size="sm"
-                            icon={<HiPlusCircle />}
-                            onClick={() => { setEditTarget(null); setFormOpen(true) }}
-                        >
-                            Tambah Jadwal
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            {/* View toggle */}
+                            <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+                                <button
+                                    type="button"
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${view === 'table' ? 'bg-primary text-white' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                                    onClick={() => handleViewChange('table')}
+                                >
+                                    <HiOutlineViewList className="text-base" />
+                                    Tabel
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${view === 'kalender' ? 'bg-primary text-white' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                                    onClick={() => handleViewChange('kalender')}
+                                >
+                                    <HiOutlineCalendar className="text-base" />
+                                    Kalender
+                                </button>
+                            </div>
+                            <Button
+                                variant="solid"
+                                size="sm"
+                                icon={<HiPlusCircle />}
+                                onClick={() => { setEditTarget(null); setFormOpen(true) }}
+                            >
+                                Tambah Jadwal
+                            </Button>
+                        </div>
                     ),
                     bordered: false,
                 }}
                 bodyClass="p-0"
             >
-                <div className="flex items-center gap-3 px-4 pb-3">
+                <div className={`flex items-center gap-3 px-4 pb-3 ${view === 'kalender' ? 'hidden' : ''}`}>
                     <Input
                         className="flex-1"
                         placeholder="Cari nama kelas, instruktur, lokasi... (tekan Enter)"
@@ -192,15 +226,26 @@ const JadwalKelasPage = () => {
                     </div>
                 </div>
 
-                <JadwalTable
-                    data={list}
-                    loading={loading}
-                    pagingData={{ total, pageIndex: currentPage, pageSize }}
-                    onPaginationChange={setCurrentPage}
-                    onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
-                    onEdit={(item) => { setEditTarget(item); setFormOpen(true) }}
-                    onDelete={setDeleteTarget}
-                />
+                {view === 'table' ? (
+                    <JadwalTable
+                        data={list}
+                        loading={loading}
+                        pagingData={{ total, pageIndex: currentPage, pageSize }}
+                        onPaginationChange={setCurrentPage}
+                        onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
+                        onEdit={(item) => { setEditTarget(item); setFormOpen(true) }}
+                        onDelete={setDeleteTarget}
+                    />
+                ) : (
+                    <div className="px-4 pb-4">
+                        <JadwalKalender
+                            data={list}
+                            loading={loading}
+                            onEdit={(item) => { setEditTarget(item); setFormOpen(true) }}
+                            onDelete={setDeleteTarget}
+                        />
+                    </div>
+                )}
             </Card>
 
             <JadwalForm

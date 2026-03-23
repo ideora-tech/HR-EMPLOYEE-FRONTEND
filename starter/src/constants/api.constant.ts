@@ -92,6 +92,8 @@ export const API_ENDPOINTS = {
             BASE: `${PROXY}/kursus/jadwal-kelas`,
             BY_ID: (id: string) => `${PROXY}/kursus/jadwal-kelas/${id}`,
             KUOTA: (id: string) => `${PROXY}/kursus/jadwal-kelas/${id}/kuota`,
+            EXPORT: (weekStart: string, weekEnd: string) =>
+                `${PROXY}/kursus/jadwal-kelas/export?week_start=${weekStart}&week_end=${weekEnd}`,
         },
         DAFTAR: {
             BASE: `${PROXY}/kursus/daftar-kelas`,
