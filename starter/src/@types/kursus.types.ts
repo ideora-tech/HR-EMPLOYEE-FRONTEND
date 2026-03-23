@@ -29,6 +29,8 @@ export interface IKursusQuery {
     aktif?: number
     page?: number
     limit?: number
+    week_start?: string
+    week_end?: string
 }
 
 // ─── Siswa ────────────────────────────────────────────────────────────────────
@@ -133,13 +135,12 @@ export interface IJadwalKelas {
     id_jadwal: string
     id_program: string
     nama: string
-    hari: 1 | 2 | 3 | 4 | 5 | 6 | 7  // 1=Senin ... 7=Minggu
-    jam_mulai: string                   // "HH:MM"
-    jam_selesai: string                 // "HH:MM"
     instruktur: string | null
     lokasi: string | null
     kuota: number
     aktif: number
+    tanggal_mulai: string   // ISO datetime "YYYY-MM-DDTHH:MM:00" (jam mulai tertanam)
+    tanggal_selesai: string // ISO datetime "YYYY-MM-DDTHH:MM:00" (jam selesai tertanam)
     dibuat_pada: string
     diubah_pada: string | null
 }
@@ -153,15 +154,25 @@ export interface IKuotaJadwal {
 export interface ICreateJadwalKelas {
     id_program: string
     nama: string
-    hari: 1 | 2 | 3 | 4 | 5 | 6 | 7
-    jam_mulai: string
-    jam_selesai: string
+    tanggal_mulai: string   // "YYYY-MM-DD"
+    tanggal_selesai: string // "YYYY-MM-DD"
+    jam_mulai: string       // "HH:MM"
+    jam_selesai: string     // "HH:MM"
     instruktur?: string
     lokasi?: string
     kuota?: number
 }
 
-export type IUpdateJadwalKelas = Partial<ICreateJadwalKelas> & { aktif?: 0 | 1 }
+export interface IUpdateJadwalKelas {
+    id_program?: string
+    nama?: string
+    tanggal_mulai?: string   // "YYYY-MM-DD HH:MM:SS" (combined datetime)
+    tanggal_selesai?: string // "YYYY-MM-DD HH:MM:SS" (combined datetime)
+    instruktur?: string
+    lokasi?: string
+    kuota?: number
+    aktif?: 0 | 1
+}
 
 // ─── Daftar Kelas ─────────────────────────────────────────────────────────────
 

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import dayjs from 'dayjs'
-import { Input, Button, Notification, Tooltip, toast } from '@/components/ui'
+import { DatePicker, Input, Button, Notification, Tooltip, toast } from '@/components/ui'
+import type { DatePickerRangeValue } from '@/components/ui/DatePicker/DatePickerRange'
 import {
     HiOutlinePencilAlt,
     HiOutlineTrash,
@@ -14,39 +15,42 @@ import {
 } from 'react-icons/hi'
 import type { IJadwalKelas } from '@/@types/kursus.types'
 import { API_ENDPOINTS } from '@/constants/api.constant'
+import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
 
 /* ─── constants ──────────────────────────────────────────── */
 
-const HARI_NAMES = [
-    'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu',
-]
-
-const MONTHS_ID = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-]
+// index 0=Mon ... 6=Sun (hari field: 1=Mon ... 7=Sun)
+const HARI_NAMES = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
 
 /* ─── helpers ────────────────────────────────────────────── */
 
-/** Returns the Monday of the week containing `date`. */
 function getMondayOf(date: dayjs.Dayjs): dayjs.Dayjs {
-    const jsDay = date.day() // 0=Sun, 1=Mon, ..., 6=Sat
+    const jsDay = date.day()
     const diff = jsDay === 0 ? -6 : 1 - jsDay
     return date.add(diff, 'day').startOf('day')
 }
 
-function monthLabel(d: dayjs.Dayjs): string {
-    return `${MONTHS_ID[d.month()]} ${d.year()}`
+/** day.day(): 0=Sun,1=Mon,...,6=Sat  →  hari: 1=Mon,...,7=Sun */
+function toHari(day: dayjs.Dayjs): number {
+    const d = day.day()
+    return d === 0 ? 7 : d
 }
 
-function weekRangeLabel(monday: dayjs.Dayjs): string {
-    const sunday = monday.add(6, 'day')
-    const mStart = MONTHS_ID[monday.month()]
-    const mEnd = MONTHS_ID[sunday.month()]
-    if (monday.month() === sunday.month()) {
-        return `${monday.format('D')} – ${sunday.format('D')} ${mStart} ${sunday.year()}`
-    }
-    return `${monday.format('D')} ${mStart} – ${sunday.format('D')} ${mEnd} ${sunday.year()}`
+/** "YYYY-MM-DD HH:MM:SS" atau "YYYY-MM-DDTHH:MM:SS" → hari 1-7 */
+function hariFromISO(iso: string): number {
+    const d = new Date(iso.replace(' ', 'T')).getDay()
+    return d === 0 ? 7 : d
+}
+
+/** "YYYY-MM-DD HH:MM:SS" atau "YYYY-MM-DDTHH:MM:SS" → "HH:MM" */
+function timeFromISO(iso: string): string {
+    const sep = iso.includes('T') ? 'T' : ' '
+    return iso.split(sep)[1]?.slice(0, 5) ?? '00:00'
+}
+
+/** Nama hari berdasarkan nilai hari (1–7) */
+function hariName(day: dayjs.Dayjs): string {
+    return HARI_NAMES[toHari(day) - 1]
 }
 
 function getShiftStyle(jamMulai: string) {
@@ -87,42 +91,79 @@ function getShiftStyle(jamMulai: string) {
 /* ─── types ──────────────────────────────────────────────── */
 
 interface JadwalKalenderProps {
-    data: IJadwalKelas[]
-    loading?: boolean
+    refreshToken?: number
     onEdit: (item: IJadwalKelas) => void
     onDelete: (item: IJadwalKelas) => void
 }
 
 /* ─── component ──────────────────────────────────────────── */
 
-const JadwalKalender = ({
-    data,
-    loading = false,
-    onEdit,
-    onDelete,
-}: JadwalKalenderProps) => {
+const JadwalKalender = ({ refreshToken, onEdit, onDelete }: JadwalKalenderProps) => {
     const today = dayjs().startOf('day')
-    const [weekStart, setWeekStart] = useState(() => getMondayOf(today))
+
+    const [rangeStart, setRangeStart] = useState<dayjs.Dayjs>(() => getMondayOf(today))
+    const [rangeEnd, setRangeEnd] = useState<dayjs.Dayjs>(() => getMondayOf(today).add(6, 'day'))
+
+    const [data, setData] = useState<IJadwalKelas[]>([])
+    const [loading, setLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [downloading, setDownloading] = useState(false)
 
-    /* 7 days of the displayed week, starting Monday */
-    const weekDays = useMemo(
-        () => Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day')),
-        [weekStart],
+    /* Range duration (days), used for prev/next shift */
+    const rangeDays = useMemo(
+        () => rangeEnd.diff(rangeStart, 'day') + 1,
+        [rangeStart, rangeEnd],
     )
 
-    const prevWeek = () => setWeekStart((w) => w.subtract(7, 'day'))
-    const nextWeek = () => setWeekStart((w) => w.add(7, 'day'))
-    const goToday = () => setWeekStart(getMondayOf(today))
+    /* All days in the selected range */
+    const weekDays = useMemo(
+        () => Array.from({ length: rangeDays }, (_, i) => rangeStart.add(i, 'day')),
+        [rangeStart, rangeDays],
+    )
 
-    /* ─── grouped data: instruktur → byHari ───────────────── */
+    /* ─── navigation ────────────────────────────────────── */
+    const prevRange = () => {
+        setRangeStart((s) => s.subtract(rangeDays, 'day'))
+        setRangeEnd((e) => e.subtract(rangeDays, 'day'))
+    }
+    const nextRange = () => {
+        setRangeStart((s) => s.add(rangeDays, 'day'))
+        setRangeEnd((e) => e.add(rangeDays, 'day'))
+    }
+    const goToday = () => {
+        const monday = getMondayOf(today)
+        setRangeStart(monday)
+        setRangeEnd(monday.add(6, 'day'))
+    }
+
+    const handleRangeChange = (val: DatePickerRangeValue) => {
+        const [start, end] = val
+        if (start) setRangeStart(dayjs(start).startOf('day'))
+        if (end) setRangeEnd(dayjs(end).startOf('day'))
+    }
+
+    /* ─── fetch data ─────────────────────────────────────── */
+    useEffect(() => {
+        setLoading(true)
+        JadwalKelasService.getAll({
+            week_start: rangeStart.format('YYYY-MM-DD'),
+            week_end: rangeEnd.format('YYYY-MM-DD'),
+            limit: 500,
+        })
+            .then((res) => { if (res.success) setData(res.data) })
+            .catch(() => {
+                toast.push(<Notification type="danger" title="Gagal memuat jadwal" />)
+            })
+            .finally(() => setLoading(false))
+    }, [rangeStart, rangeEnd, refreshToken])
+
+    /* ─── grouped data: instruktur → byHari ─────────────── */
     const grouped = useMemo(() => {
         const map = new Map<
             string,
             { items: IJadwalKelas[]; byHari: Record<number, IJadwalKelas[]> }
         >()
-        data.forEach((j) => {
+        data.forEach((j: IJadwalKelas) => {
             const key = j.instruktur?.trim() || '(Tanpa Instruktur)'
             if (!map.has(key)) {
                 const byHari: Record<number, IJadwalKelas[]> = {}
@@ -131,12 +172,34 @@ const JadwalKalender = ({
             }
             const g = map.get(key)!
             g.items.push(j)
-            if (g.byHari[j.hari]) g.byHari[j.hari].push(j)
+
+            // Masukkan jadwal ke semua hari yang dicakup range tanggal_mulai–tanggal_selesai
+            // Gunakan tanggal saja (bukan datetime) agar jam tidak mempengaruhi hitungan hari
+            const startD = new Date(j.tanggal_mulai.replace(' ', 'T'))
+            const endD = new Date(j.tanggal_selesai.replace(' ', 'T'))
+            const startDate = new Date(startD.getFullYear(), startD.getMonth(), startD.getDate())
+            const endDate = new Date(endD.getFullYear(), endD.getMonth(), endD.getDate())
+            const diffDays = Math.round(
+                (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+            )
+
+            if (diffDays >= 6) {
+                // Range ≥ 7 hari → tampil di semua kolom
+                for (let h = 1; h <= 7; h++) g.byHari[h].push(j)
+            } else {
+                for (let i = 0; i <= diffDays; i++) {
+                    const d = new Date(startDate)
+                    d.setDate(d.getDate() + i)
+                    const jsDay = d.getDay()
+                    const hari = jsDay === 0 ? 7 : jsDay
+                    g.byHari[hari].push(j)
+                }
+            }
         })
         map.forEach((g) => {
             for (let h = 1; h <= 7; h++) {
                 g.byHari[h].sort((a, b) =>
-                    a.jam_mulai.localeCompare(b.jam_mulai),
+                    timeFromISO(a.tanggal_mulai).localeCompare(timeFromISO(b.tanggal_mulai)),
                 )
             }
         })
@@ -150,79 +213,73 @@ const JadwalKalender = ({
         return keys.filter((k) => k.toLowerCase().includes(q))
     }, [grouped, searchQuery])
 
-    /* ─── Excel download (dari backend) ────────────────────── */
+    /* ─── Excel download ─────────────────────────────────── */
     const handleDownloadExcel = useCallback(async () => {
         setDownloading(true)
         try {
-            const weekEnd = weekStart.add(6, 'day')
             const url = API_ENDPOINTS.KURSUS.JADWAL.EXPORT(
-                weekStart.format('YYYY-MM-DD'),
-                weekEnd.format('YYYY-MM-DD'),
+                rangeStart.format('YYYY-MM-DD'),
+                rangeEnd.format('YYYY-MM-DD'),
             )
             const res = await fetch(url)
             if (!res.ok) throw new Error('Gagal mengunduh file')
-
             const blob = await res.blob()
             const objectUrl = URL.createObjectURL(blob)
             const anchor = document.createElement('a')
             anchor.href = objectUrl
-            anchor.download = `Jadwal_${weekStart.format('DDMMYYYY')}-${weekEnd.format('DDMMYYYY')}.xlsx`
+            anchor.download = `Jadwal_${rangeStart.format('DDMMYYYY')}-${rangeEnd.format('DDMMYYYY')}.xlsx`
             anchor.click()
             URL.revokeObjectURL(objectUrl)
         } catch {
-            toast.push(
-                <Notification type="danger" title="Gagal mengunduh file Excel" />,
-            )
+            toast.push(<Notification type="danger" title="Gagal mengunduh file Excel" />)
         } finally {
             setDownloading(false)
         }
-    }, [weekStart])
+    }, [rangeStart, rangeEnd])
 
-    /* ─── render ───────────────────────────────────────────── */
-
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center py-20 text-gray-400 text-sm">
-                Memuat jadwal...
-            </div>
-        )
+    /* ─── grid column style ──────────────────────────────── */
+    const gridStyle = {
+        gridTemplateColumns: `220px repeat(${weekDays.length}, minmax(0, 1fr))`,
     }
 
+    /* ─── render ─────────────────────────────────────────── */
     return (
         <div className="flex flex-col gap-3">
             {/* ── Navigation bar ──────────────────────────── */}
-            <div className="flex items-center justify-between">
-                {/* Week nav */}
-                <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                    {/* Prev */}
                     <button
                         type="button"
-                        onClick={prevWeek}
+                        onClick={prevRange}
                         className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 transition-colors"
                     >
                         <HiChevronLeft className="text-lg" />
                     </button>
 
-                    <div className="flex flex-col items-center min-w-[200px]">
-                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
-                            {monthLabel(weekStart)}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                            {weekRangeLabel(weekStart)}
-                        </span>
-                    </div>
+                    {/* Date range picker */}
+                    <DatePicker.DatePickerRange
+                        value={[rangeStart.toDate(), rangeEnd.toDate()]}
+                        inputFormat="DD MMM YYYY"
+                        separator="–"
+                        clearable={false}
+                        onChange={handleRangeChange}
+                    />
 
+                    {/* Next */}
                     <button
                         type="button"
-                        onClick={nextWeek}
+                        onClick={nextRange}
                         className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 transition-colors"
                     >
                         <HiChevronRight className="text-lg" />
                     </button>
 
+                    {/* Today */}
                     <button
                         type="button"
                         onClick={goToday}
-                        className="ml-2 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
+                        className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors whitespace-nowrap"
                     >
                         Hari Ini
                     </button>
@@ -242,175 +299,169 @@ const JadwalKalender = ({
             </div>
 
             {/* ── Calendar grid ───────────────────────────── */}
-            <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-xl">
-                <div className="min-w-[960px]">
-                    {/* Header row */}
-                    <div className="grid grid-cols-[220px_repeat(7,1fr)]">
-                        {/* Search */}
-                        <div className="px-3 py-2.5 border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center">
-                            <Input
-                                size="sm"
-                                placeholder="Cari karyawan..."
-                                prefix={
-                                    <HiOutlineSearch className="text-gray-400" />
-                                }
-                                suffix={
-                                    searchQuery ? (
-                                        <HiOutlineX
-                                            className="text-gray-400 cursor-pointer hover:text-gray-600"
-                                            onClick={() => setSearchQuery('')}
-                                        />
-                                    ) : null
-                                }
-                                value={searchQuery}
-                                onChange={(e) =>
-                                    setSearchQuery(e.target.value)
-                                }
-                            />
-                        </div>
+            {loading ? (
+                <div className="flex justify-center items-center py-20 text-gray-400 text-sm">
+                    Memuat jadwal...
+                </div>
+            ) : (
+                <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-xl">
+                    <div style={{ minWidth: `${220 + weekDays.length * 140}px` }}>
+                        {/* Header row */}
+                        <div className="grid" style={gridStyle}>
+                            {/* Search */}
+                            <div className="px-3 py-2.5 border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center">
+                                <Input
+                                    size="sm"
+                                    placeholder="Cari karyawan..."
+                                    prefix={<HiOutlineSearch className="text-gray-400" />}
+                                    suffix={
+                                        searchQuery ? (
+                                            <HiOutlineX
+                                                className="text-gray-400 cursor-pointer hover:text-gray-600"
+                                                onClick={() => setSearchQuery('')}
+                                            />
+                                        ) : null
+                                    }
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
 
-                        {/* Day + date headers */}
-                        {weekDays.map((day, i) => {
-                            const isToday = day.isSame(today, 'day')
-                            return (
-                                <div
-                                    key={i}
-                                    className="px-2 py-2 text-center border-b border-r last:border-r-0 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
-                                >
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        {HARI_NAMES[i]}
-                                    </p>
+                            {/* Day + date headers */}
+                            {weekDays.map((day, i) => {
+                                const isToday = day.isSame(today, 'day')
+                                return (
                                     <div
-                                        className={`mx-auto mt-0.5 flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${isToday
-                                            ? 'bg-primary text-white'
-                                            : 'text-gray-700 dark:text-gray-200'
-                                            }`}
+                                        key={i}
+                                        className="px-2 py-2 text-center border-b border-r last:border-r-0 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
                                     >
-                                        {day.format('D')}
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            {hariName(day)}
+                                        </p>
+                                        <div
+                                            className={`mx-auto mt-0.5 flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${isToday
+                                                ? 'bg-primary text-white'
+                                                : 'text-gray-700 dark:text-gray-200'
+                                                }`}
+                                        >
+                                            {day.format('D')}
+                                        </div>
                                     </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-
-                    {/* Body rows */}
-                    {filteredKeys.length === 0 ? (
-                        <div className="text-center py-16 text-gray-400 text-sm">
-                            {data.length === 0
-                                ? 'Belum ada jadwal'
-                                : 'Tidak ditemukan'}
+                                )
+                            })}
                         </div>
-                    ) : (
-                        filteredKeys.map((karyawan) => {
-                            const group = grouped.get(karyawan)!
-                            const initials = karyawan
-                                .split(' ')
-                                .slice(0, 2)
-                                .map((w) => w[0])
-                                .join('')
-                                .toUpperCase()
-                            const isTanpaInstruktur =
-                                karyawan === '(Tanpa Instruktur)'
-                            return (
-                                <div
-                                    key={karyawan}
-                                    className="grid grid-cols-[220px_repeat(7,1fr)] border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                                >
-                                    {/* Left: karyawan name + avatar */}
-                                    <div className="px-3 py-3 border-r border-gray-100 dark:border-gray-700 flex items-center gap-3 bg-white dark:bg-gray-900">
-                                        <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${isTanpaInstruktur ? 'bg-gray-100 dark:bg-gray-700 text-gray-400' : 'bg-primary/10 text-primary dark:bg-primary/20'}`}>
-                                            {isTanpaInstruktur ? '—' : initials}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-snug truncate">
-                                                {karyawan}
-                                            </p>
-                                            <p className="text-xs text-gray-400 mt-0.5">
-                                                {group.items.length} Shift
-                                            </p>
-                                        </div>
-                                    </div>
 
-                                    {/* Day cells */}
-                                    {weekDays.map((day, i) => {
-                                        const hari = i + 1
-                                        const isToday = day.isSame(today, 'day')
-                                        return (
+                        {/* Body rows */}
+                        {filteredKeys.length === 0 ? (
+                            <div className="text-center py-16 text-gray-400 text-sm">
+                                {data.length === 0 ? 'Belum ada jadwal' : 'Tidak ditemukan'}
+                            </div>
+                        ) : (
+                            filteredKeys.map((karyawan) => {
+                                const group = grouped.get(karyawan)!
+                                const initials = karyawan
+                                    .split(' ')
+                                    .slice(0, 2)
+                                    .map((w) => w[0])
+                                    .join('')
+                                    .toUpperCase()
+                                const isTanpaInstruktur = karyawan === '(Tanpa Instruktur)'
+                                return (
+                                    <div
+                                        key={karyawan}
+                                        className="grid border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                                        style={gridStyle}
+                                    >
+                                        {/* Left: karyawan name */}
+                                        <div className="px-3 py-3 border-r border-gray-100 dark:border-gray-700 flex items-center gap-3 bg-white dark:bg-gray-900">
                                             <div
-                                                key={i}
-                                                className={`p-2 border-r last:border-r-0 border-gray-100 dark:border-gray-700 flex flex-col gap-1.5 min-h-[80px] ${isToday
-                                                    ? 'bg-primary/[0.04] dark:bg-primary/10'
-                                                    : ''
+                                                className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${isTanpaInstruktur
+                                                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                                                    : 'bg-primary/10 text-primary dark:bg-primary/20'
                                                     }`}
                                             >
-                                                {group.byHari[hari].map((jadwal) => {
-                                                    const style = getShiftStyle(jadwal.jam_mulai)
-                                                    const isInactive = jadwal.aktif !== 1
-                                                    return (
-                                                        <div
-                                                            key={jadwal.id_jadwal}
-                                                            className={`relative p-2 rounded-lg border group transition-shadow hover:shadow-md ${style.bg} ${style.border} ${isInactive ? 'opacity-50 border-dashed' : ''}`}
-                                                        >
-                                                            {/* Shift badge */}
-                                                            <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded ${style.badge}`}>
-                                                                {style.label}
-                                                            </span>
-
-                                                            {/* Waktu */}
-                                                            <p className={`text-xs font-bold mt-1 ${style.text}`}>
-                                                                {jadwal.jam_mulai} – {jadwal.jam_selesai}
-                                                            </p>
-
-                                                            {/* Nama kelas */}
-                                                            <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 mt-0.5 leading-snug truncate">
-                                                                {jadwal.nama}
-                                                            </p>
-
-                                                            {/* Lokasi */}
-                                                            {jadwal.lokasi && (
-                                                                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">
-                                                                    {jadwal.lokasi}
-                                                                </p>
-                                                            )}
-
-                                                            {/* Nonaktif */}
-                                                            {isInactive && (
-                                                                <span className="text-[9px] font-medium text-gray-400 mt-0.5 block">
-                                                                    Nonaktif
-                                                                </span>
-                                                            )}
-
-                                                            {/* Hover actions */}
-                                                            <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
-                                                                <Tooltip title="Edit">
-                                                                    <span
-                                                                        className="cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 transition-colors"
-                                                                        onClick={(e) => { e.stopPropagation(); onEdit(jadwal) }}
-                                                                    >
-                                                                        <HiOutlinePencilAlt className="text-[11px]" />
-                                                                    </span>
-                                                                </Tooltip>
-                                                                <Tooltip title="Hapus">
-                                                                    <span
-                                                                        className="cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded bg-white dark:bg-gray-700 shadow-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 transition-colors"
-                                                                        onClick={(e) => { e.stopPropagation(); onDelete(jadwal) }}
-                                                                    >
-                                                                        <HiOutlineTrash className="text-[11px]" />
-                                                                    </span>
-                                                                </Tooltip>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                })}
+                                                {isTanpaInstruktur ? '—' : initials}
                                             </div>
-                                        )
-                                    })}
-                                </div>
-                            )
-                        })
-                    )}
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-snug truncate">
+                                                    {karyawan}
+                                                </p>
+                                                <p className="text-xs text-gray-400 mt-0.5">
+                                                    {group.items.length} Shift
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Day cells */}
+                                        {weekDays.map((day, i) => {
+                                            const hari = toHari(day)
+                                            const isToday = day.isSame(today, 'day')
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className={`p-2 border-r last:border-r-0 border-gray-100 dark:border-gray-700 flex flex-col gap-1.5 min-h-[80px] ${isToday ? 'bg-primary/[0.04] dark:bg-primary/10' : ''
+                                                        }`}
+                                                >
+                                                    {group.byHari[hari].map((jadwal) => {
+                                                        const jamMulai = timeFromISO(jadwal.tanggal_mulai)
+                                                        const jamSelesai = timeFromISO(jadwal.tanggal_selesai)
+                                                        const style = getShiftStyle(jamMulai)
+                                                        const isInactive = jadwal.aktif !== 1
+                                                        return (
+                                                            <div
+                                                                key={jadwal.id_jadwal}
+                                                                className={`relative p-2 rounded-lg border group transition-shadow hover:shadow-md ${style.bg} ${style.border} ${isInactive ? 'opacity-50 border-dashed' : ''}`}
+                                                            >
+                                                                <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded ${style.badge}`}>
+                                                                    {style.label}
+                                                                </span>
+                                                                <p className={`text-xs font-bold mt-1 ${style.text}`}>
+                                                                    {jamMulai} – {jamSelesai}
+                                                                </p>
+                                                                <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 mt-0.5 leading-snug truncate">
+                                                                    {jadwal.nama}
+                                                                </p>
+                                                                {jadwal.lokasi && (
+                                                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+                                                                        {jadwal.lokasi}
+                                                                    </p>
+                                                                )}
+                                                                {isInactive && (
+                                                                    <span className="text-[9px] font-medium text-gray-400 mt-0.5 block">
+                                                                        Nonaktif
+                                                                    </span>
+                                                                )}
+                                                                <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
+                                                                    <Tooltip title="Edit">
+                                                                        <span
+                                                                            className="cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 transition-colors"
+                                                                            onClick={(e) => { e.stopPropagation(); onEdit(jadwal) }}
+                                                                        >
+                                                                            <HiOutlinePencilAlt className="text-[11px]" />
+                                                                        </span>
+                                                                    </Tooltip>
+                                                                    <Tooltip title="Hapus">
+                                                                        <span
+                                                                            className="cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded bg-white dark:bg-gray-700 shadow-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 transition-colors"
+                                                                            onClick={(e) => { e.stopPropagation(); onDelete(jadwal) }}
+                                                                        >
+                                                                            <HiOutlineTrash className="text-[11px]" />
+                                                                        </span>
+                                                                    </Tooltip>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )
+                            })
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     )
 }

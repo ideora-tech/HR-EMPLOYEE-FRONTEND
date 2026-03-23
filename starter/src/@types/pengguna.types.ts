@@ -11,7 +11,6 @@ export interface IPengguna {
 
 export interface IPenggunaCreate {
     nama: string
-    email: string
     kata_sandi: string
     peran: string
     aktif?: number
@@ -19,7 +18,6 @@ export interface IPenggunaCreate {
 
 export interface IPenggunaUpdate {
     nama?: string
-    email?: string
     kata_sandi?: string
     peran?: string
     aktif?: number

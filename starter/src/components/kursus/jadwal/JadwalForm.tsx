@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
     Button,
+    DatePicker,
     Dialog,
     FormItem,
     Input,
@@ -17,19 +18,40 @@ import type {
     IProgramPengajaran,
 } from '@/@types/kursus.types'
 
-type HariOption = { value: string; label: string }
+/* ─── option types ───────────────────────────────────────── */
+
 type ProgramOption = { value: string; label: string }
 type InstrukturOption = { value: string; label: string }
 
-const HARI_OPTIONS: HariOption[] = [
-    { value: '1', label: 'Senin' },
-    { value: '2', label: 'Selasa' },
-    { value: '3', label: 'Rabu' },
-    { value: '4', label: 'Kamis' },
-    { value: '5', label: 'Jumat' },
-    { value: '6', label: 'Sabtu' },
-    { value: '7', label: 'Minggu' },
-]
+/* ─── helpers ────────────────────────────────────────────── */
+
+/** "YYYY-MM-DD HH:MM:SS" atau "YYYY-MM-DDTHH:MM:SS" → Date (bagian tanggal saja) */
+const isoToDate = (iso: string | null | undefined): Date | null => {
+    if (!iso) return null
+    const datePart = iso.split(/[T ]/)[0]
+    return datePart ? new Date(datePart) : null
+}
+
+/** "YYYY-MM-DD HH:MM:SS" atau "YYYY-MM-DDTHH:MM:SS" → "HH:MM" */
+const isoToTime = (iso: string | null | undefined): string => {
+    if (!iso) return ''
+    const sep = iso.includes('T') ? 'T' : ' '
+    return iso.split(sep)[1]?.slice(0, 5) ?? ''
+}
+
+/** Date → "YYYY-MM-DD" */
+const dateToYMD = (d: Date): string => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${dd}`
+}
+
+/** Date + "HH:MM" → "YYYY-MM-DD HH:MM:00" (untuk PATCH) */
+const toDateTime = (d: Date, time: string): string =>
+    `${dateToYMD(d)} ${time}:00`
+
+/* ─── props & state ──────────────────────────────────────── */
 
 interface JadwalFormProps {
     open: boolean
@@ -43,7 +65,8 @@ interface JadwalFormProps {
 interface FormState {
     id_program: string
     nama: string
-    hari: string
+    tanggal_mulai: Date | null
+    tanggal_selesai: Date | null
     jam_mulai: string
     jam_selesai: string
     instruktur: string
@@ -55,7 +78,8 @@ interface FormState {
 const INITIAL_STATE: FormState = {
     id_program: '',
     nama: '',
-    hari: '1',
+    tanggal_mulai: null,
+    tanggal_selesai: null,
     jam_mulai: '08:00',
     jam_selesai: '09:00',
     instruktur: '',
@@ -63,6 +87,8 @@ const INITIAL_STATE: FormState = {
     kuota: '20',
     aktif: true,
 }
+
+/* ─── component ──────────────────────────────────────────── */
 
 const JadwalForm = ({
     open,
@@ -104,7 +130,10 @@ const JadwalForm = ({
 
     const programOptions: ProgramOption[] = [
         { value: '', label: '— Pilih Program —' },
-        ...programList.map((p) => ({ value: p.id_program, label: `${p.kode_program} — ${p.nama}` })),
+        ...programList.map((p) => ({
+            value: p.id_program,
+            label: `${p.kode_program} — ${p.nama}`,
+        })),
     ]
 
     useEffect(() => {
@@ -112,9 +141,10 @@ const JadwalForm = ({
             setForm({
                 id_program: editData.id_program,
                 nama: editData.nama,
-                hari: String(editData.hari),
-                jam_mulai: editData.jam_mulai,
-                jam_selesai: editData.jam_selesai,
+                tanggal_mulai: isoToDate(editData.tanggal_mulai),
+                tanggal_selesai: isoToDate(editData.tanggal_selesai),
+                jam_mulai: isoToTime(editData.tanggal_mulai) || '08:00',
+                jam_selesai: isoToTime(editData.tanggal_selesai) || '09:00',
                 instruktur: editData.instruktur ?? '',
                 lokasi: editData.lokasi ?? '',
                 kuota: String(editData.kuota),
@@ -130,8 +160,11 @@ const JadwalForm = ({
         const newErrors: Partial<Record<keyof FormState, string>> = {}
         if (!form.id_program) newErrors.id_program = 'Program wajib dipilih'
         if (!form.nama.trim()) newErrors.nama = 'Nama kelas wajib diisi'
+        if (!form.tanggal_mulai || !form.tanggal_selesai)
+            newErrors.tanggal_mulai = 'Periode jadwal wajib diisi'
         if (!form.jam_mulai) newErrors.jam_mulai = 'Jam mulai wajib diisi'
         if (!form.jam_selesai) newErrors.jam_selesai = 'Jam selesai wajib diisi'
+        if (!form.instruktur) newErrors.instruktur = 'Instruktur wajib dipilih'
         if (!form.kuota || Number(form.kuota) < 1) newErrors.kuota = 'Kuota minimal 1'
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
@@ -140,33 +173,43 @@ const JadwalForm = ({
     const handleSubmit = () => {
         if (!validate()) return
 
-        const base: ICreateJadwalKelas = {
-            id_program: form.id_program,
-            nama: form.nama.trim(),
-            hari: Number(form.hari) as 1 | 2 | 3 | 4 | 5 | 6 | 7,
-            jam_mulai: form.jam_mulai,
-            jam_selesai: form.jam_selesai,
-            instruktur: form.instruktur.trim() || undefined,
-            lokasi: form.lokasi.trim() || undefined,
-            kuota: Number(form.kuota),
-        }
-
         if (isEdit) {
-            onSubmit({ ...base, aktif: form.aktif ? 1 : 0 } as IUpdateJadwalKelas)
+            const updatePayload: IUpdateJadwalKelas = {
+                id_program: form.id_program,
+                nama: form.nama.trim(),
+                tanggal_mulai: toDateTime(form.tanggal_mulai!, form.jam_mulai),
+                tanggal_selesai: toDateTime(form.tanggal_selesai!, form.jam_selesai),
+                instruktur: form.instruktur.trim() || undefined,
+                lokasi: form.lokasi.trim() || undefined,
+                kuota: Number(form.kuota),
+                aktif: form.aktif ? 1 : 0,
+            }
+            onSubmit(updatePayload)
         } else {
-            onSubmit(base)
+            const createPayload: ICreateJadwalKelas = {
+                id_program: form.id_program,
+                nama: form.nama.trim(),
+                tanggal_mulai: dateToYMD(form.tanggal_mulai!),
+                tanggal_selesai: dateToYMD(form.tanggal_selesai!),
+                jam_mulai: form.jam_mulai,
+                jam_selesai: form.jam_selesai,
+                instruktur: form.instruktur.trim() || undefined,
+                lokasi: form.lokasi.trim() || undefined,
+                kuota: Number(form.kuota),
+            }
+            onSubmit(createPayload)
         }
     }
 
-    const selectedProgram = programOptions.find((o) => o.value === form.id_program) ?? programOptions[0]
-    const selectedHari = HARI_OPTIONS.find((o) => o.value === form.hari) ?? HARI_OPTIONS[0]
+    const selectedProgram =
+        programOptions.find((o) => o.value === form.id_program) ?? programOptions[0]
 
     return (
         <Dialog
             isOpen={open}
             onClose={submitting ? undefined : onClose}
             closable={!submitting}
-            width={540}
+            width={560}
         >
             <h5 className="mb-6">{isEdit ? 'Edit Jadwal Kelas' : 'Tambah Jadwal Kelas'}</h5>
 
@@ -200,16 +243,43 @@ const JadwalForm = ({
                     />
                 </FormItem>
 
-                <div className="grid grid-cols-3 gap-3">
-                    <FormItem label="Hari" asterisk>
-                        <Select<HariOption>
-                            options={HARI_OPTIONS}
-                            value={selectedHari}
-                            onChange={(opt) =>
-                                setForm((p) => ({ ...p, hari: (opt as HariOption).value }))
+                <div className="grid grid-cols-2 gap-3">
+                    <FormItem
+                        label="Tanggal Mulai"
+                        asterisk
+                        invalid={!!errors.tanggal_mulai}
+                        errorMessage={errors.tanggal_mulai}
+                    >
+                        <DatePicker
+                            value={form.tanggal_mulai}
+                            inputFormat="DD MMM YYYY"
+                            placeholder="Pilih tanggal mulai"
+                            clearable
+                            onChange={(d) =>
+                                setForm((p) => ({
+                                    ...p,
+                                    tanggal_mulai: d,
+                                    // auto-isi selesai jika belum dipilih
+                                    tanggal_selesai: p.tanggal_selesai ?? d,
+                                }))
                             }
                         />
                     </FormItem>
+                    <FormItem label="Tanggal Selesai" asterisk>
+                        <DatePicker
+                            value={form.tanggal_selesai}
+                            inputFormat="DD MMM YYYY"
+                            placeholder="Pilih tanggal selesai"
+                            clearable
+                            minDate={form.tanggal_mulai ?? undefined}
+                            onChange={(d) =>
+                                setForm((p) => ({ ...p, tanggal_selesai: d }))
+                            }
+                        />
+                    </FormItem>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
                     <FormItem
                         label="Jam Mulai"
                         asterisk
@@ -220,7 +290,9 @@ const JadwalForm = ({
                             type="time"
                             value={form.jam_mulai}
                             invalid={!!errors.jam_mulai}
-                            onChange={(e) => setForm((p) => ({ ...p, jam_mulai: e.target.value }))}
+                            onChange={(e) =>
+                                setForm((p) => ({ ...p, jam_mulai: e.target.value }))
+                            }
                         />
                     </FormItem>
                     <FormItem
@@ -233,13 +305,20 @@ const JadwalForm = ({
                             type="time"
                             value={form.jam_selesai}
                             invalid={!!errors.jam_selesai}
-                            onChange={(e) => setForm((p) => ({ ...p, jam_selesai: e.target.value }))}
+                            onChange={(e) =>
+                                setForm((p) => ({ ...p, jam_selesai: e.target.value }))
+                            }
                         />
                     </FormItem>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                    <FormItem label="Instruktur">
+                    <FormItem
+                        label="Instruktur"
+                        asterisk
+                        invalid={!!errors.instruktur}
+                        errorMessage={errors.instruktur}
+                    >
                         <Select<InstrukturOption>
                             options={instrukturOptions}
                             value={
@@ -293,7 +372,9 @@ const JadwalForm = ({
                                 onChange={(val) => setForm((p) => ({ ...p, aktif: val }))}
                             />
                             <span className="text-sm text-gray-600">
-                                {form.aktif ? 'Aktif — terbuka untuk pendaftaran' : 'Nonaktif — ditutup'}
+                                {form.aktif
+                                    ? 'Aktif — terbuka untuk pendaftaran'
+                                    : 'Nonaktif — ditutup'}
                             </span>
                         </div>
                     </FormItem>

@@ -25,8 +25,7 @@ interface PenggunaFormProps {
 }
 
 interface FormState {
-    nama: string
-    email: string
+    username: string
     kata_sandi: string
     konfirmasi_sandi: string
     peran: string
@@ -36,8 +35,7 @@ interface FormState {
 type FormErrors = Partial<Record<keyof FormState, string>>
 
 const INITIAL_STATE: FormState = {
-    nama: '',
-    email: '',
+    username: '',
     kata_sandi: '',
     konfirmasi_sandi: '',
     peran: 'EMPLOYEE',
@@ -88,8 +86,7 @@ const PenggunaForm = ({
     useEffect(() => {
         if (editData) {
             setForm({
-                nama: editData.nama,
-                email: editData.email,
+                username: editData.nama,
                 kata_sandi: '',
                 konfirmasi_sandi: '',
                 peran: editData.peran,
@@ -106,11 +103,7 @@ const PenggunaForm = ({
     const validate = (): boolean => {
         const newErrors: FormErrors = {}
 
-        if (!form.nama.trim()) newErrors.nama = 'Nama wajib diisi'
-
-        if (!form.email.trim()) newErrors.email = 'Email wajib diisi'
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-            newErrors.email = 'Format email tidak valid'
+        if (!form.username.trim()) newErrors.username = 'Username wajib diisi'
 
         const passwordFilled = form.kata_sandi.trim().length > 0
         if (!isEdit && !passwordFilled) {
@@ -138,8 +131,7 @@ const PenggunaForm = ({
 
         if (isEdit) {
             const payload: IPenggunaUpdate = {
-                nama: form.nama.trim(),
-                email: form.email.trim(),
+                nama: form.username.trim(),
                 peran: form.peran,
                 aktif: form.aktif ? 1 : 0,
             }
@@ -149,8 +141,7 @@ const PenggunaForm = ({
             onSubmit(payload)
         } else {
             const payload: IPenggunaCreate = {
-                nama: form.nama.trim(),
-                email: form.email.trim(),
+                nama: form.username.trim(),
                 kata_sandi: form.kata_sandi.trim(),
                 peran: form.peran,
                 aktif: form.aktif ? 1 : 0,
@@ -174,34 +165,17 @@ const PenggunaForm = ({
 
             <div className="flex flex-col gap-1">
                 <FormItem
-                    label="Nama"
+                    label="Username"
                     asterisk
-                    invalid={!!errors.nama}
-                    errorMessage={errors.nama}
+                    invalid={!!errors.username}
+                    errorMessage={errors.username}
                 >
                     <Input
-                        placeholder="Nama lengkap pengguna"
-                        value={form.nama}
-                        invalid={!!errors.nama}
+                        placeholder="contoh: budi.santoso"
+                        value={form.username}
+                        invalid={!!errors.username}
                         onChange={(e) =>
-                            setForm((p) => ({ ...p, nama: e.target.value }))
-                        }
-                    />
-                </FormItem>
-
-                <FormItem
-                    label="Email"
-                    asterisk
-                    invalid={!!errors.email}
-                    errorMessage={errors.email}
-                >
-                    <Input
-                        type="email"
-                        placeholder="email@perusahaan.com"
-                        value={form.email}
-                        invalid={!!errors.email}
-                        onChange={(e) =>
-                            setForm((p) => ({ ...p, email: e.target.value }))
+                            setForm((p) => ({ ...p, username: e.target.value }))
                         }
                     />
                 </FormItem>
