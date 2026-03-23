@@ -112,7 +112,6 @@ const PenggunaTable = ({
                 ),
             },
         ],
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete],
     )
 

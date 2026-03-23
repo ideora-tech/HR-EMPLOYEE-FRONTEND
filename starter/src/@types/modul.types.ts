@@ -19,7 +19,7 @@ export interface IModulCreate {
     aktif: number
 }
 
-export interface IModulUpdate extends Partial<IModulCreate> {}
+export type IModulUpdate = Partial<IModulCreate>
 
 // ─── API Response Wrapper ─────────────────────────────────────────────────────
 

@@ -1,13 +1,14 @@
 'use client'
 
 import { createContext } from 'react'
-import type { User } from 'next-auth'
 
 type Session = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    user?: User & Record<string, any>
+    user?: Record<string, any>
     expires: string
 }
+
+export type { Session }
 
 const SessionContext = createContext<Session | null>({
     expires: '',

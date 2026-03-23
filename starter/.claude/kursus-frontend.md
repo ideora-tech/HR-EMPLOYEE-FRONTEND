@@ -38,6 +38,27 @@ export interface ICreateSiswa {
 export type IUpdateSiswa = Partial<ICreateSiswa> & { aktif?: 0 | 1 }
 
 // ============================================================
+// TINGKAT PROGRAM (master data)
+// ============================================================
+export interface ITingkatProgram {
+  id_tingkat: string
+  kode: string                    // contoh: "PEMULA", "MENENGAH", "MAHIR"
+  nama: string                    // contoh: "Pemula", "Menengah", "Mahir"
+  urutan: number
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+}
+
+export interface ICreateTingkatProgram {
+  kode: string                    // format: A-Z0-9_
+  nama: string
+  urutan?: number
+}
+
+export type IUpdateTingkatProgram = Partial<ICreateTingkatProgram> & { aktif?: 0 | 1 }
+
+// ============================================================
 // PROGRAM PENGAJARAN
 // ============================================================
 export interface IProgramPengajaran {
@@ -45,7 +66,7 @@ export interface IProgramPengajaran {
   kode_program: string            // format: A-Z0-9_ (contoh: "TARI_BALI_01")
   nama: string
   deskripsi: string | null
-  tingkat: 'PEMULA' | 'MENENGAH' | 'MAHIR' | null
+  tingkat: string | null          // kode dari master data tingkat_program
   durasi_menit: number            // default: 60
   aktif: number
   dibuat_pada: string
@@ -56,7 +77,7 @@ export interface ICreateProgramPengajaran {
   kode_program: string
   nama: string
   deskripsi?: string
-  tingkat?: 'PEMULA' | 'MENENGAH' | 'MAHIR'
+  tingkat?: string                // kode dari GET /kursus/tingkat-program
   durasi_menit?: number
 }
 

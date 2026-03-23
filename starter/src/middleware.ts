@@ -1,4 +1,5 @@
 import NextAuth from 'next-auth'
+import { NextResponse } from 'next/server'
 
 import authConfig from '@/configs/auth.config'
 import {
@@ -36,7 +37,7 @@ export default auth((req) => {
         return
     }
 
-    /** Redirect to authenticated entry path if signed in & path is public route */
+    /** Redirect to sign-in if not authenticated */
     if (!isSignedIn && !isPublicRoute) {
         let callbackUrl = nextUrl.pathname
         if (nextUrl.search) {
@@ -51,16 +52,13 @@ export default auth((req) => {
         )
     }
 
-    /** Uncomment this and `import { protectedRoutes } from '@/configs/routes.config'` if you want to enable role based access */
-    // if (isSignedIn && nextUrl.pathname !== '/access-denied') {
-    //     const routeMeta = protectedRoutes[nextUrl.pathname]
-    //     const includedRole = routeMeta?.authority.some((role) => req.auth?.user?.authority.includes(role))
-    //     if (!includedRole) {
-    //         return Response.redirect(
-    //             new URL('/access-denied', nextUrl),
-    //         )
-    //     }
-    // }
+    /**
+     * Pass the current pathname via request header so server components
+     * (e.g. protected-pages layout) can read it for route-level access control.
+     */
+    const requestHeaders = new Headers(req.headers)
+    requestHeaders.set('x-pathname', nextUrl.pathname)
+    return NextResponse.next({ request: { headers: requestHeaders } })
 })
 
 export const config = {

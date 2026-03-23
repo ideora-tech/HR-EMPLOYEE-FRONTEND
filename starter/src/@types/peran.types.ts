@@ -15,7 +15,7 @@ export interface IPeranCreate {
     aktif?: number
 }
 
-export interface IPeranUpdate extends Partial<IPeranCreate> {}
+export type IPeranUpdate = Partial<IPeranCreate>
 
 // ─── API Response Wrapper ─────────────────────────────────────────────────────
 

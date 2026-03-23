@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { auth } from '@/auth'
 import navigationConfig from '@/configs/navigation.config'
 import {
@@ -32,13 +33,20 @@ function toNavTree(item: ApiMenuItem): NavigationTree {
     }
 }
 
-export async function getNavigation(): Promise<NavigationTree[]> {
+/**
+ * Internal cached fetch — deduplicated within a single render pass (React cache).
+ * Returns the navigation tree and a flag indicating whether it came from the backend.
+ */
+const fetchNavigation = cache(async (): Promise<{
+    tree: NavigationTree[]
+    fromBackend: boolean
+}> => {
     try {
         const session = await auth()
-        if (!session?.accessToken) return navigationConfig
+        if (!session?.accessToken) return { tree: navigationConfig, fromBackend: false }
 
         const backendUrl = process.env.BACKEND_API_URL
-        if (!backendUrl) return navigationConfig
+        if (!backendUrl) return { tree: navigationConfig, fromBackend: false }
 
         const res = await fetch(`${backendUrl}/menu/me`, {
             headers: {
@@ -48,13 +56,29 @@ export async function getNavigation(): Promise<NavigationTree[]> {
             cache: 'no-store',
         })
 
-        if (!res.ok) return navigationConfig
+        if (!res.ok) return { tree: navigationConfig, fromBackend: false }
 
         const json = await res.json()
-        if (!json.success || !Array.isArray(json.data)) return navigationConfig
+        if (!json.success || !Array.isArray(json.data))
+            return { tree: navigationConfig, fromBackend: false }
 
-        return json.data.map(toNavTree)
+        return { tree: json.data.map(toNavTree), fromBackend: true }
     } catch {
-        return navigationConfig
+        return { tree: navigationConfig, fromBackend: false }
     }
+})
+
+/** Returns the navigation tree (backward-compatible). */
+export async function getNavigation(): Promise<NavigationTree[]> {
+    const { tree } = await fetchNavigation()
+    return tree
+}
+
+/**
+ * Returns the navigation tree together with a `fromBackend` flag.
+ * Use this when you need to distinguish backend data from the static fallback
+ * (e.g. for route-level access control).
+ */
+export async function getNavigationWithMeta() {
+    return fetchNavigation()
 }

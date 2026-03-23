@@ -62,7 +62,7 @@ const PerusahaanTable = ({
                                 alt={row.original.nama}
                                 className="w-8 h-8 rounded object-contain border border-gray-100 dark:border-gray-700 bg-white shrink-0"
                                 onError={(e) => {
-                                    ;(e.target as HTMLImageElement).style.display =
+                                    ; (e.target as HTMLImageElement).style.display =
                                         'none'
                                 }}
                             />
@@ -175,7 +175,6 @@ const PerusahaanTable = ({
                 ),
             },
         ],
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [pagingData.pageIndex, pagingData.pageSize, onDetail, onEdit, onDelete],
     )
 

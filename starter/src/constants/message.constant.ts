@@ -29,4 +29,10 @@ export const ENTITY = {
     PERUSAHAAN: 'Perusahaan',
     PENGGUNA: 'Pengguna',
     MENU_MODUL: 'Menu Modul',
+    SISWA: 'Siswa',
+    TINGKAT_PROGRAM: 'Tingkat Program',
+    PROGRAM_PENGAJARAN: 'Program Pengajaran',
+    TARIF: 'Tarif',
+    JADWAL_KELAS: 'Jadwal Kelas',
+    DAFTAR_KELAS: 'Pendaftaran',
 } as const

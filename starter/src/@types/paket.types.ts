@@ -21,7 +21,7 @@ export interface IPaketCreate {
     aktif: number
 }
 
-export interface IPaketUpdate extends Partial<IPaketCreate> { }
+export type IPaketUpdate = Partial<IPaketCreate>
 
 // ─── API Response Wrapper ─────────────────────────────────────────────────────
 

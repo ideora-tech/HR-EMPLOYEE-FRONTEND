@@ -16,4 +16,11 @@ export const ROUTES = {
     SIGN_IN: '/sign-in',
     SIGN_UP: '/sign-up',
     FORGOT_PASSWORD: '/forgot-password',
+
+    // Kursus
+    KURSUS_SISWA: '/kursus/siswa',
+    KURSUS_PROGRAM: '/kursus/program-pengajaran',
+    KURSUS_TARIF: '/kursus/tarif',
+    KURSUS_JADWAL: '/kursus/jadwal-kelas',
+    KURSUS_DAFTAR: '/kursus/daftar-kelas',
 } as const

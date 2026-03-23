@@ -7,9 +7,9 @@
     }
   
     &.menu-item-active {
-      @apply text-primary hover:text-primary;
+      @apply text-primary hover:text-primary bg-primary-subtle hover:bg-primary-subtle;
     }
-  
+
     a {
       @apply outline-0
     }
@@ -44,8 +44,8 @@
       }
 
       &.menu-item-active {
-        @apply text-primary hover:text-primary;
-      } 
+        @apply text-primary hover:text-primary bg-primary-subtle hover:bg-primary-subtle;
+      }
     }
 
     .menu-item-divider {

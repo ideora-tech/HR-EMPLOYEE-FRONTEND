@@ -136,15 +136,24 @@ const MenuFormPage = ({
         >
             {/* Page header */}
             <div className="flex flex-col gap-1">
-                <div>
-                    <h3 className="font-bold">
-                        {isEdit ? 'Edit Menu' : 'Tambah Menu Baru'}
-                    </h3>
-                    <p className="text-gray-500 text-sm mt-0.5">
-                        {isEdit
-                            ? 'Ubah informasi dan konfigurasi menu navigasi'
-                            : 'Tambahkan menu baru ke struktur navigasi aplikasi'}
-                    </p>
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 transition-colors"
+                    >
+                        <HiArrowLeft className="text-xl" />
+                    </button>
+                    <div>
+                        <h3 className="font-bold">
+                            {isEdit ? 'Edit Menu' : 'Tambah Menu Baru'}
+                        </h3>
+                        <p className="text-gray-500 text-sm mt-0.5">
+                            {isEdit
+                                ? 'Ubah informasi dan konfigurasi menu navigasi'
+                                : 'Tambahkan menu baru ke struktur navigasi aplikasi'}
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -153,11 +162,8 @@ const MenuFormPage = ({
                 <div className="flex flex-col gap-8">
                     {/* Section: Informasi Menu */}
                     <div>
-                        <div className="mb-5">
+                        <div className="mb-2">
                             <h5 className="font-semibold">Informasi Menu</h5>
-                            <p className="text-gray-500 text-sm mt-0.5">
-                                Nama menu dan posisinya dalam hierarki navigasi
-                            </p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                             <FormItem
@@ -197,15 +203,12 @@ const MenuFormPage = ({
                         </div>
                     </div>
 
-                    <div className="border-t border-gray-100 dark:border-gray-700" />
+                    <div className="border-t border-gray-100 mb-0 mt-0 dark:border-gray-700" />
 
                     {/* Section: Konfigurasi Navigasi */}
                     <div>
-                        <div className="mb-5">
+                        <div>
                             <h5 className="font-semibold">Konfigurasi Navigasi</h5>
-                            <p className="text-gray-500 text-sm mt-0.5">
-                                Path URL, icon, dan pengaturan tampilan di sidebar
-                            </p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                             <FormItem

@@ -67,4 +67,39 @@ export const API_ENDPOINTS = {
         BY_PAKET_MODUL: (paket: string, kode_modul: string) =>
             `${PROXY}/akses-modul-tier/paket/${paket}/modul/${kode_modul}`,
     },
+
+    // Kursus Dansa
+    KURSUS: {
+        TINGKAT: {
+            BASE: `${PROXY}/kursus/tingkat-program`,
+            BY_ID: (id: string) => `${PROXY}/kursus/tingkat-program/${id}`,
+        },
+        SISWA: {
+            BASE: `${PROXY}/kursus/siswa`,
+            BY_ID: (id: string) => `${PROXY}/kursus/siswa/${id}`,
+        },
+        PROGRAM: {
+            BASE: `${PROXY}/kursus/program-pengajaran`,
+            BY_ID: (id: string) => `${PROXY}/kursus/program-pengajaran/${id}`,
+        },
+        TARIF: {
+            BASE: `${PROXY}/kursus/tarif`,
+            BY_ID: (id: string) => `${PROXY}/kursus/tarif/${id}`,
+            BY_PROGRAM: (idProgram: string) =>
+                `${PROXY}/kursus/tarif/program/${idProgram}`,
+        },
+        JADWAL: {
+            BASE: `${PROXY}/kursus/jadwal-kelas`,
+            BY_ID: (id: string) => `${PROXY}/kursus/jadwal-kelas/${id}`,
+            KUOTA: (id: string) => `${PROXY}/kursus/jadwal-kelas/${id}/kuota`,
+        },
+        DAFTAR: {
+            BASE: `${PROXY}/kursus/daftar-kelas`,
+            BY_ID: (id: string) => `${PROXY}/kursus/daftar-kelas/${id}`,
+            BY_SISWA: (idSiswa: string) =>
+                `${PROXY}/kursus/daftar-kelas/siswa/${idSiswa}`,
+            BY_JADWAL: (idJadwal: string) =>
+                `${PROXY}/kursus/daftar-kelas/jadwal/${idJadwal}`,
+        },
+    },
 } as const
