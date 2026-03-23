@@ -553,6 +553,70 @@ export function UserTable() {
 
 ---
 
+## Modul yang Sudah Dibangun — Referensi Aktual
+
+### Modul Kursus Dansa
+
+```
+src/
+├── @types/
+│   └── kursus.types.ts                         ← Semua types modul kursus
+│
+├── constants/
+│   └── api.constant.ts                         ← KURSUS.SISWA, KURSUS.JADWAL, dll
+│
+├── services/
+│   └── kursus/
+│       ├── siswa.service.ts                    ← + importExcel(), downloadTemplate()
+│       ├── tingkat-program.service.ts
+│       ├── program-pengajaran.service.ts
+│       ├── tarif.service.ts                    ← + getByProgram(idProgram)
+│       ├── jadwal-kelas.service.ts             ← getAll() support week_start/week_end
+│       └── daftar-kelas.service.ts             ← + getBySiswa(), getByJadwal()
+│
+├── components/
+│   └── kursus/
+│       ├── jadwal/
+│       │   ├── JadwalKalender.tsx              ← Kalender self-fetching, group by instruktur
+│       │   ├── JadwalForm.tsx                  ← Create/edit, beda payload POST vs PATCH
+│       │   └── JadwalDetailDrawer.tsx          ← Drawer assign siswa ke jadwal
+│       └── siswa/
+│           ├── SiswaTable.tsx
+│           └── SiswaImportModal.tsx            ← Upload Excel + tampil hasil import
+│
+└── app/(protected-pages)/kursus/
+    ├── siswa/
+    │   ├── page.tsx                            ← List + Import Excel + Download Template
+    │   ├── tambah/page.tsx
+    │   └── [id]/edit/page.tsx
+    ├── tingkat-program/
+    │   └── page.tsx
+    ├── program-pengajaran/
+    │   ├── page.tsx
+    │   ├── tambah/page.tsx
+    │   └── [id]/edit/page.tsx
+    ├── tarif/
+    │   └── page.tsx
+    ├── jadwal-kelas/
+    │   └── page.tsx                            ← Kalender only (no tabel), drawer siswa
+    └── daftar-kelas/
+        ├── page.tsx
+        ├── tambah/page.tsx
+        └── [id]/edit/page.tsx
+```
+
+**Pola khusus di modul kursus yang berbeda dari template standar:**
+
+| Pola | Keterangan |
+|------|-----------|
+| Self-fetching calendar | `JadwalKalender` fetch sendiri — parent hanya kirim `refreshToken` |
+| Drawer instead of page | Detail + manajemen siswa pakai `Drawer` (slide kanan), bukan halaman terpisah |
+| Import Excel modal | `SiswaImportModal` dengan `Upload` component (drag & drop) + result view |
+| Split create/update payload | `ICreateJadwalKelas` ≠ `IUpdateJadwalKelas` — format datetime berbeda antara POST dan PATCH |
+| Multipart upload | `fetchDataWithAxios<Response, FormData>({ data: formData })` untuk upload file |
+
+---
+
 ## Aturan Review Folder Structure Frontend
 
 | Deviasi | Severity | Saran |

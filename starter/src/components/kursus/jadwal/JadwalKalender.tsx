@@ -92,13 +92,14 @@ function getShiftStyle(jamMulai: string) {
 
 interface JadwalKalenderProps {
     refreshToken?: number
+    onView: (item: IJadwalKelas) => void
     onEdit: (item: IJadwalKelas) => void
     onDelete: (item: IJadwalKelas) => void
 }
 
 /* ─── component ──────────────────────────────────────────── */
 
-const JadwalKalender = ({ refreshToken, onEdit, onDelete }: JadwalKalenderProps) => {
+const JadwalKalender = ({ refreshToken, onView, onEdit, onDelete }: JadwalKalenderProps) => {
     const today = dayjs().startOf('day')
 
     const [rangeStart, setRangeStart] = useState<dayjs.Dayjs>(() => getMondayOf(today))
@@ -410,7 +411,8 @@ const JadwalKalender = ({ refreshToken, onEdit, onDelete }: JadwalKalenderProps)
                                                         return (
                                                             <div
                                                                 key={jadwal.id_jadwal}
-                                                                className={`relative p-2 rounded-lg border group transition-shadow hover:shadow-md ${style.bg} ${style.border} ${isInactive ? 'opacity-50 border-dashed' : ''}`}
+                                                                className={`relative p-2 rounded-lg border group transition-shadow hover:shadow-md cursor-pointer ${style.bg} ${style.border} ${isInactive ? 'opacity-50 border-dashed' : ''}`}
+                                                                onClick={() => onView(jadwal)}
                                                             >
                                                                 <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded ${style.badge}`}>
                                                                     {style.label}

@@ -5,6 +5,7 @@ import type {
     ICreateSiswa,
     IUpdateSiswa,
     IKursusQuery,
+    IImportResult,
     ApiResponse,
     ApiPaginatedResponse,
 } from '@/@types/kursus.types'
@@ -56,6 +57,28 @@ const SiswaService = {
             url: API_ENDPOINTS.KURSUS.SISWA.BY_ID(id),
             method: 'DELETE',
         })
+    },
+
+    async importExcel(file: File): Promise<ApiResponse<IImportResult>> {
+        const formData = new FormData()
+        formData.append('file', file)
+        return ApiService.fetchDataWithAxios<ApiResponse<IImportResult>, FormData>({
+            url: API_ENDPOINTS.KURSUS.SISWA.IMPORT,
+            method: 'POST',
+            data: formData,
+        })
+    },
+
+    async downloadTemplate(): Promise<void> {
+        const res = await fetch(API_ENDPOINTS.KURSUS.SISWA.TEMPLATE)
+        if (!res.ok) throw new Error('Gagal mengunduh template')
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'Template_Import_Siswa.xlsx'
+        a.click()
+        URL.revokeObjectURL(url)
     },
 }
 

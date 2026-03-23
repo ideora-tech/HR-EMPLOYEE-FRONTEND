@@ -6,6 +6,7 @@ import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { HiPlusCircle } from 'react-icons/hi'
 import JadwalKalender from '@/components/kursus/jadwal/JadwalKalender'
 import JadwalForm from '@/components/kursus/jadwal/JadwalForm'
+import JadwalDetailDrawer from '@/components/kursus/jadwal/JadwalDetailDrawer'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
 import ProgramPengajaranService from '@/services/kursus/program-pengajaran.service'
 import { parseApiError } from '@/utils/parseApiError'
@@ -25,6 +26,9 @@ const JadwalKelasPage = () => {
     const [formOpen, setFormOpen] = useState(false)
     const [editTarget, setEditTarget] = useState<IJadwalKelas | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<IJadwalKelas | null>(null)
+
+    const [drawerOpen, setDrawerOpen] = useState(false)
+    const [drawerJadwal, setDrawerJadwal] = useState<IJadwalKelas | null>(null)
 
     useEffect(() => {
         ProgramPengajaranService.getAll({ aktif: 1, limit: 100 })
@@ -100,6 +104,7 @@ const JadwalKelasPage = () => {
                 <div className="px-4 pb-4">
                     <JadwalKalender
                         refreshToken={kalenderRefresh}
+                        onView={(item) => { setDrawerJadwal(item); setDrawerOpen(true) }}
                         onEdit={(item) => { setEditTarget(item); setFormOpen(true) }}
                         onDelete={setDeleteTarget}
                     />
@@ -113,6 +118,13 @@ const JadwalKelasPage = () => {
                 submitting={submitting}
                 onClose={() => { setFormOpen(false); setEditTarget(null) }}
                 onSubmit={handleSubmit}
+            />
+
+            <JadwalDetailDrawer
+                open={drawerOpen}
+                jadwal={drawerJadwal}
+                onClose={() => setDrawerOpen(false)}
+                onRefresh={() => setKalenderRefresh((n) => n + 1)}
             />
 
             <ConfirmDialog

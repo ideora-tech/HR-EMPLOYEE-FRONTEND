@@ -85,6 +85,8 @@ export const API_ENDPOINTS = {
         SISWA: {
             BASE: `${PROXY}/kursus/siswa`,
             BY_ID: (id: string) => `${PROXY}/kursus/siswa/${id}`,
+            IMPORT: `${PROXY}/kursus/siswa/upload/excel`,
+            TEMPLATE: `${PROXY}/kursus/siswa/template/excel`,
         },
         PROGRAM: {
             BASE: `${PROXY}/kursus/program-pengajaran`,

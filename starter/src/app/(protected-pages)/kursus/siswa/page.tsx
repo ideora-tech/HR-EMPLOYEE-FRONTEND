@@ -11,8 +11,9 @@ import {
     toast,
 } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
+import { HiPlusCircle, HiOutlineSearch, HiOutlineX, HiOutlineUpload, HiOutlineDownload } from 'react-icons/hi'
 import SiswaTable from '@/components/kursus/siswa/SiswaTable'
+import SiswaImportModal from '@/components/kursus/siswa/SiswaImportModal'
 import SiswaService from '@/services/kursus/siswa.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
@@ -40,6 +41,19 @@ const SiswaPage = () => {
     const [total, setTotal] = useState(0)
 
     const [deleteTarget, setDeleteTarget] = useState<ISiswa | null>(null)
+    const [importOpen, setImportOpen] = useState(false)
+    const [downloading, setDownloading] = useState(false)
+
+    const handleDownloadTemplate = async () => {
+        setDownloading(true)
+        try {
+            await SiswaService.downloadTemplate()
+        } catch {
+            toast.push(<Notification type="danger" title="Gagal mengunduh template" />)
+        } finally {
+            setDownloading(false)
+        }
+    }
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -113,14 +127,33 @@ const SiswaPage = () => {
                 header={{
                     content: <h4>Manajemen Siswa</h4>,
                     extra: (
-                        <Button
-                            variant="solid"
-                            size="sm"
-                            icon={<HiPlusCircle />}
-                            onClick={() => router.push('/kursus/siswa/tambah')}
-                        >
-                            Tambah Siswa
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                size="sm"
+                                variant="default"
+                                icon={<HiOutlineDownload />}
+                                loading={downloading}
+                                onClick={handleDownloadTemplate}
+                            >
+                                Template Excel
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="default"
+                                icon={<HiOutlineUpload />}
+                                onClick={() => setImportOpen(true)}
+                            >
+                                Import Excel
+                            </Button>
+                            <Button
+                                variant="solid"
+                                size="sm"
+                                icon={<HiPlusCircle />}
+                                onClick={() => router.push('/kursus/siswa/tambah')}
+                            >
+                                Tambah Siswa
+                            </Button>
+                        </div>
                     ),
                     bordered: false,
                 }}
@@ -179,6 +212,12 @@ const SiswaPage = () => {
                     onDelete={setDeleteTarget}
                 />
             </Card>
+
+            <SiswaImportModal
+                open={importOpen}
+                onClose={() => setImportOpen(false)}
+                onSuccess={() => { setImportOpen(false); fetchData() }}
+            />
 
             <ConfirmDialog
                 isOpen={!!deleteTarget}

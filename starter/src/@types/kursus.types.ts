@@ -22,6 +22,14 @@ export interface ApiPaginatedResponse<T> {
     timestamp: string
 }
 
+// ─── Import Result ────────────────────────────────────────────────────────────
+
+export interface IImportResult {
+    berhasil: number
+    gagal: number
+    errors: string[]
+}
+
 // ─── Query Params ─────────────────────────────────────────────────────────────
 
 export interface IKursusQuery {
