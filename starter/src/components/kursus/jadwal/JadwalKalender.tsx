@@ -218,25 +218,14 @@ const JadwalKalender = ({ refreshToken, onView, onEdit, onDelete }: JadwalKalend
     const handleDownloadExcel = useCallback(async () => {
         setDownloading(true)
         try {
-            const url = API_ENDPOINTS.KURSUS.JADWAL.EXPORT(
-                rangeStart.format('YYYY-MM-DD'),
-                rangeEnd.format('YYYY-MM-DD'),
-            )
-            const res = await fetch(url)
-            if (!res.ok) throw new Error('Gagal mengunduh file')
-            const blob = await res.blob()
-            const objectUrl = URL.createObjectURL(blob)
-            const anchor = document.createElement('a')
-            anchor.href = objectUrl
-            anchor.download = `Jadwal_${rangeStart.format('DDMMYYYY')}-${rangeEnd.format('DDMMYYYY')}.xlsx`
-            anchor.click()
-            URL.revokeObjectURL(objectUrl)
+            const bulan = rangeStart.format('YYYY-MM')
+            await JadwalKelasService.exportExcel(bulan)
         } catch {
             toast.push(<Notification type="danger" title="Gagal mengunduh file Excel" />)
         } finally {
             setDownloading(false)
         }
-    }, [rangeStart, rangeEnd])
+    }, [rangeStart])
 
     /* ─── grid column style ──────────────────────────────── */
     const gridStyle = {

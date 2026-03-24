@@ -6,6 +6,7 @@ import type {
     IUpdateSiswa,
     IKursusQuery,
     IImportResult,
+    ISiswaMonitoring,
     ApiResponse,
     ApiPaginatedResponse,
 } from '@/@types/kursus.types'
@@ -70,15 +71,30 @@ const SiswaService = {
     },
 
     async downloadTemplate(): Promise<void> {
-        const res = await fetch(API_ENDPOINTS.KURSUS.SISWA.TEMPLATE)
-        if (!res.ok) throw new Error('Gagal mengunduh template')
-        const blob = await res.blob()
-        const url = URL.createObjectURL(blob)
+        const res = await ApiService.fetchDataWithAxios<Blob>({
+            url: API_ENDPOINTS.KURSUS.SISWA.TEMPLATE,
+            method: 'GET',
+            responseType: 'blob',
+        })
+        const url = URL.createObjectURL(res)
         const a = document.createElement('a')
         a.href = url
         a.download = 'Template_Import_Siswa.xlsx'
         a.click()
         URL.revokeObjectURL(url)
+    },
+
+    async getMonitoring(expiringDays?: number): Promise<ApiResponse<ISiswaMonitoring>> {
+        const params = new URLSearchParams()
+        if (expiringDays !== undefined) params.append('expiring_days', String(expiringDays))
+        const qs = params.toString()
+        const url = qs
+            ? `${API_ENDPOINTS.KURSUS.SISWA.MONITORING}?${qs}`
+            : API_ENDPOINTS.KURSUS.SISWA.MONITORING
+        return ApiService.fetchDataWithAxios<ApiResponse<ISiswaMonitoring>>({
+            url,
+            method: 'GET',
+        })
     },
 }
 

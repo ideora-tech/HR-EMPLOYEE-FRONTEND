@@ -8,12 +8,14 @@ import {
     Input,
     Select,
     Notification,
+    Tabs,
     toast,
 } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { HiPlusCircle, HiOutlineSearch, HiOutlineX, HiOutlineUpload, HiOutlineDownload } from 'react-icons/hi'
 import SiswaTable from '@/components/kursus/siswa/SiswaTable'
 import SiswaImportModal from '@/components/kursus/siswa/SiswaImportModal'
+import SiswaMonitoring from '@/components/kursus/siswa/SiswaMonitoring'
 import SiswaService from '@/services/kursus/siswa.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
@@ -123,10 +125,10 @@ const SiswaPage = () => {
 
     return (
         <div className="flex flex-col gap-4">
-            <Card
-                header={{
-                    content: <h4>Manajemen Siswa</h4>,
-                    extra: (
+            <Card bodyClass="p-0">
+                <Tabs defaultValue="daftar">
+                    <div className="flex items-center justify-between px-4 pt-4 pb-0">
+                        <h4>Manajemen Siswa</h4>
                         <div className="flex items-center gap-2">
                             <Button
                                 size="sm"
@@ -154,63 +156,73 @@ const SiswaPage = () => {
                                 Tambah Siswa
                             </Button>
                         </div>
-                    ),
-                    bordered: false,
-                }}
-                bodyClass="p-0"
-            >
-                <div className="flex items-center gap-3 px-4 pb-3">
-                    <Input
-                        className="flex-1"
-                        placeholder="Cari nama, email, telepon... (tekan Enter)"
-                        suffix={
-                            searchInput ? (
-                                <HiOutlineX
-                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
-                                    onClick={handleSearchClear}
+                    </div>
+                    <div className="px-4 pt-3">
+                        <Tabs.TabList>
+                            <Tabs.TabNav value="daftar">Daftar Siswa</Tabs.TabNav>
+                            <Tabs.TabNav value="monitoring">Monitoring</Tabs.TabNav>
+                        </Tabs.TabList>
+                    </div>
+
+                    <Tabs.TabContent value="daftar">
+                        <div className="flex items-center gap-3 px-4 pb-3 pt-3">
+                            <Input
+                                className="flex-1"
+                                placeholder="Cari nama, email, telepon... (tekan Enter)"
+                                suffix={
+                                    searchInput ? (
+                                        <HiOutlineX
+                                            className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                            onClick={handleSearchClear}
+                                        />
+                                    ) : (
+                                        <HiOutlineSearch
+                                            className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                            onClick={handleSearchSubmit}
+                                        />
+                                    )
+                                }
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSearchSubmit()
+                                }}
+                            />
+                            <div className="w-44 shrink-0">
+                                <Select<AktifOption>
+                                    options={AKTIF_OPTIONS}
+                                    value={
+                                        AKTIF_OPTIONS.find((o) => o.value === aktifFilter) ??
+                                        AKTIF_OPTIONS[0]
+                                    }
+                                    onChange={(opt) => {
+                                        setAktifFilter((opt as AktifOption).value)
+                                        setCurrentPage(1)
+                                    }}
                                 />
-                            ) : (
-                                <HiOutlineSearch
-                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
-                                    onClick={handleSearchSubmit}
-                                />
-                            )
-                        }
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSearchSubmit()
-                        }}
-                    />
-                    <div className="w-44 shrink-0">
-                        <Select<AktifOption>
-                            options={AKTIF_OPTIONS}
-                            value={
-                                AKTIF_OPTIONS.find((o) => o.value === aktifFilter) ??
-                                AKTIF_OPTIONS[0]
-                            }
-                            onChange={(opt) => {
-                                setAktifFilter((opt as AktifOption).value)
+                            </div>
+                        </div>
+
+                        <SiswaTable
+                            data={list}
+                            loading={loading}
+                            pagingData={{ total, pageIndex: currentPage, pageSize }}
+                            onPaginationChange={setCurrentPage}
+                            onSelectChange={(size) => {
+                                setPageSize(size)
                                 setCurrentPage(1)
                             }}
+                            onEdit={(item) =>
+                                router.push(`/kursus/siswa/${item.id_siswa}/edit`)
+                            }
+                            onDelete={setDeleteTarget}
                         />
-                    </div>
-                </div>
+                    </Tabs.TabContent>
 
-                <SiswaTable
-                    data={list}
-                    loading={loading}
-                    pagingData={{ total, pageIndex: currentPage, pageSize }}
-                    onPaginationChange={setCurrentPage}
-                    onSelectChange={(size) => {
-                        setPageSize(size)
-                        setCurrentPage(1)
-                    }}
-                    onEdit={(item) =>
-                        router.push(`/kursus/siswa/${item.id_siswa}/edit`)
-                    }
-                    onDelete={setDeleteTarget}
-                />
+                    <Tabs.TabContent value="monitoring">
+                        <SiswaMonitoring />
+                    </Tabs.TabContent>
+                </Tabs>
             </Card>
 
             <SiswaImportModal

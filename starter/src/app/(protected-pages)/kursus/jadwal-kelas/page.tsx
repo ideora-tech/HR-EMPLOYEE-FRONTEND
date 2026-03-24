@@ -33,7 +33,7 @@ const JadwalKelasPage = () => {
     useEffect(() => {
         ProgramPengajaranService.getAll({ aktif: 1, limit: 100 })
             .then((res) => { if (res.success) setProgramList(res.data) })
-            .catch(() => {})
+            .catch(() => { })
     }, [])
 
     const handleSubmit = async (payload: ICreateJadwalKelas | IUpdateJadwalKelas) => {

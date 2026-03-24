@@ -1507,6 +1507,70 @@ Download template Excel untuk import bulk siswa.
 
 ---
 
+### GET `/kursus/siswa/monitoring`
+
+Monitoring siswa aktif — siapa yang sudah berhenti dan siapa yang masa berlaku kelasnya akan habis.
+
+**Query Parameters:**
+
+| Parameter | Tipe | Default | Keterangan |
+|-----------|------|---------|-----------|
+| `expiring_days` | number | `30` | Rentang hari ke depan untuk filter "akan expired" |
+
+**Contoh:** `GET /kursus/siswa/monitoring?expiring_days=14`
+
+**Response 200:**
+```json
+{
+  "message": "Berhasil mengambil data monitoring siswa",
+  "data": {
+    "berhenti": [
+      {
+        "id_siswa": "uuid-siswa",
+        "nama": "Budi Santoso",
+        "email": "budi@email.com",
+        "telepon": "081234567890",
+        "kelas": [
+          {
+            "id_daftar": "uuid-daftar",
+            "id_jadwal": "uuid-jadwal",
+            "nama_jadwal": "Ballet Senin 10:00",
+            "tanggal_selesai": "2026-03-31 10:00:00",
+            "status_daftar": 3,
+            "hari_tersisa": null
+          }
+        ]
+      }
+    ],
+    "akan_expired": [
+      {
+        "id_siswa": "uuid-siswa-2",
+        "nama": "Sari Dewi",
+        "email": null,
+        "telepon": "082345678901",
+        "kelas": [
+          {
+            "id_daftar": "uuid-daftar-2",
+            "id_jadwal": "uuid-jadwal-2",
+            "nama_jadwal": "Jazz Rabu 16:00",
+            "tanggal_selesai": "2026-04-05 16:00:00",
+            "status_daftar": 1,
+            "hari_tersisa": 12
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Catatan:**
+- `berhenti` — siswa yang punya `daftar_kelas.status = 3` (Berhenti). `hari_tersisa` selalu `null`.
+- `akan_expired` — siswa aktif (`status = 1`) yang `jadwal_kelas.tanggal_selesai` jatuh dalam rentang `expiring_days` hari ke depan. `hari_tersisa` = sisa hari hingga kelas berakhir.
+- Satu siswa bisa muncul dengan beberapa kelas sekaligus jika punya lebih dari satu enrollment yang relevan.
+
+---
+
 ### GET `/kursus/siswa/:id`
 
 **Response `404`:** jika tidak ditemukan.

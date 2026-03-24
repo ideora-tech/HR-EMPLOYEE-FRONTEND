@@ -30,6 +30,7 @@ interface DefaultItemProps {
     userAuthority: string[]
     showIcon?: boolean
     showTitle?: boolean
+    currentKey?: string
 }
 
 interface VerticalMenuItemProps extends CollapsedItemProps, DefaultItemProps {}
@@ -88,11 +89,12 @@ const DefaultItem = (props: DefaultItemProps) => {
         showIcon = true,
         userAuthority,
         t,
+        currentKey,
     } = props
 
     return (
         <AuthorityCheck userAuthority={userAuthority} authority={nav.authority}>
-            <MenuItem key={nav.key} eventKey={nav.key} dotIndent={indent}>
+            <MenuItem key={nav.key} eventKey={nav.key} dotIndent={indent} isActive={currentKey === nav.key}>
                 <Link
                     href={nav.path}
                     className="flex items-center gap-2 h-full w-full"
@@ -153,6 +155,7 @@ const VerticalSingleMenuItem = ({
             ) : (
                 <DefaultItem
                     nav={nav}
+                    currentKey={currentKey}
                     sideCollapsed={sideCollapsed}
                     userAuthority={userAuthority}
                     showIcon={showIcon}

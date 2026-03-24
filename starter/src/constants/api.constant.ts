@@ -87,6 +87,7 @@ export const API_ENDPOINTS = {
             BY_ID: (id: string) => `${PROXY}/kursus/siswa/${id}`,
             IMPORT: `${PROXY}/kursus/siswa/upload/excel`,
             TEMPLATE: `${PROXY}/kursus/siswa/template/excel`,
+            MONITORING: `${PROXY}/kursus/siswa/monitoring`,
         },
         PROGRAM: {
             BASE: `${PROXY}/kursus/program-pengajaran`,
@@ -102,6 +103,8 @@ export const API_ENDPOINTS = {
             BASE: `${PROXY}/kursus/jadwal-kelas`,
             BY_ID: (id: string) => `${PROXY}/kursus/jadwal-kelas/${id}`,
             KUOTA: (id: string) => `${PROXY}/kursus/jadwal-kelas/${id}/kuota`,
+            EXPORT_EXCEL: (bulan: string) => `${PROXY}/kursus/jadwal-kelas/export/excel?bulan=${bulan}`,
+
             EXPORT: (weekStart: string, weekEnd: string) =>
                 `${PROXY}/kursus/jadwal-kelas/export?week_start=${weekStart}&week_end=${weekEnd}`,
         },
@@ -118,6 +121,17 @@ export const API_ENDPOINTS = {
             BY_ID: (id: string) => `${PROXY}/kursus/presensi/${id}`,
             BY_JADWAL: (idJadwal: string) => `${PROXY}/kursus/presensi/jadwal/${idJadwal}`,
             BATCH: `${PROXY}/kursus/presensi/batch`,
+        },
+        TAGIHAN: {
+            BASE: `${PROXY}/kursus/tagihan`,
+            BY_ID: (id: string) => `${PROXY}/kursus/tagihan/${id}`,
+            BY_SISWA: (idSiswa: string) => `${PROXY}/kursus/tagihan/siswa/${idSiswa}`,
+            GENERATE_BULANAN: `${PROXY}/kursus/tagihan/generate-bulanan`,
+        },
+        PEMBAYARAN: {
+            BASE: `${PROXY}/kursus/pembayaran`,
+            BY_ID: (id: string) => `${PROXY}/kursus/pembayaran/${id}`,
+            BY_TAGIHAN: (idTagihan: string) => `${PROXY}/kursus/pembayaran/tagihan/${idTagihan}`,
         },
     },
 } as const

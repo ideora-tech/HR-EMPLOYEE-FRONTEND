@@ -67,6 +67,20 @@ const JadwalKelasService = {
             method: 'DELETE',
         })
     },
+
+    async exportExcel(bulan: string): Promise<void> {
+        const res = await ApiService.fetchDataWithAxios<Blob>({
+            url: API_ENDPOINTS.KURSUS.JADWAL.EXPORT_EXCEL(bulan),
+            method: 'GET',
+            responseType: 'blob',
+        })
+        const url = URL.createObjectURL(res)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `Jadwal_Kelas_${bulan}.xlsx`
+        a.click()
+        URL.revokeObjectURL(url)
+    },
 }
 
 export default JadwalKelasService

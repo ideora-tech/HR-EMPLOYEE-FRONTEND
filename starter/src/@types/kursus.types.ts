@@ -69,6 +69,28 @@ export interface ICreateSiswa {
 
 export type IUpdateSiswa = Partial<ICreateSiswa> & { aktif?: 0 | 1 }
 
+export interface ISiswaMonitoringKelas {
+    id_daftar: string
+    id_jadwal: string
+    nama_jadwal: string
+    tanggal_selesai: string
+    status_daftar: number
+    hari_tersisa: number | null
+}
+
+export interface ISiswaMonitoringEntry {
+    id_siswa: string
+    nama: string
+    email: string | null
+    telepon: string | null
+    kelas: ISiswaMonitoringKelas[]
+}
+
+export interface ISiswaMonitoring {
+    berhenti: ISiswaMonitoringEntry[]
+    akan_expired: ISiswaMonitoringEntry[]
+}
+
 // ─── Tingkat Program ──────────────────────────────────────────────────────────
 
 export interface ITingkatProgram {
@@ -322,3 +344,92 @@ export interface IPresensiQuery {
     page?: number
     limit?: number
 }
+
+// ─── Tagihan ──────────────────────────────────────────────────────────────────
+// status: 1=MENUNGGU, 2=SEBAGIAN, 3=LUNAS, 4=DIBATALKAN
+// jenis: "PAKET" | "BULANAN" | "LAINNYA"
+
+export interface ITagihan {
+    id_tagihan: string
+    jenis: 'PAKET' | 'BULANAN' | 'LAINNYA'
+    periode: string | null          // "YYYY-MM"
+    jumlah_sesi: number | null
+    total_harga: number
+    total_bayar: number
+    status: 1 | 2 | 3 | 4
+    catatan: string | null
+    aktif: number
+    dibuat_pada: string
+    diubah_pada: string | null
+    siswa: {
+        id_siswa: string
+        nama: string
+        email: string | null
+        telepon: string | null
+    }
+}
+
+export interface ICreateTagihan {
+    id_siswa: string
+    jenis: 'PAKET' | 'BULANAN' | 'LAINNYA'
+    periode?: string | null
+    jumlah_sesi?: number | null
+    total_harga: number
+    catatan?: string | null
+}
+
+export interface IUpdateTagihan {
+    jenis?: 'PAKET' | 'BULANAN' | 'LAINNYA'
+    periode?: string | null
+    jumlah_sesi?: number | null
+    total_harga?: number
+    status?: 1 | 2 | 3 | 4
+    catatan?: string | null
+    aktif?: number
+}
+
+export interface ITagihanQuery {
+    search?: string
+    aktif?: number
+    page?: number
+    limit?: number
+}
+
+// ─── Pembayaran ───────────────────────────────────────────────────────────────
+// metode: "TUNAI" | "TRANSFER" | "QRIS"
+
+export interface IPembayaran {
+    id_pembayaran: string
+    id_tagihan: string
+    jumlah: number
+    tanggal_bayar: string           // "YYYY-MM-DD"
+    metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
+    referensi: string | null
+    catatan: string | null
+    dibuat_pada: string
+    diubah_pada: string | null
+    tagihan: {
+        id_tagihan: string
+        jenis: 'PAKET' | 'BULANAN' | 'LAINNYA'
+        periode: string | null
+        total_harga: number
+        total_bayar: number
+        status: 1 | 2 | 3 | 4
+    }
+}
+
+export interface ICreatePembayaran {
+    id_tagihan: string
+    jumlah: number
+    tanggal_bayar: string           // "YYYY-MM-DD"
+    metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
+    referensi?: string | null
+    catatan?: string | null
+}
+
+export interface IPembayaranQuery {
+    search?: string
+    page?: number
+    limit?: number
+}
+

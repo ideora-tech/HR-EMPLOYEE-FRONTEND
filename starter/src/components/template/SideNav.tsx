@@ -57,7 +57,26 @@ const SideNav = ({
     const direction = useTheme((state) => state.direction)
     const sideNavCollapse = useTheme((state) => state.layout.sideNavCollapse)
 
-    const currentRouteKey = route?.key || ''
+    /** Find the nav key by matching pathname against nav tree paths (fallback for backend-driven nav) */
+    const findKeyByPath = (
+        tree: typeof navigationTree,
+        path: string,
+    ): string => {
+        for (const node of tree) {
+            if (node.path && node.path === path) return node.key
+            if (node.subMenu?.length) {
+                const found = findKeyByPath(node.subMenu, path)
+                if (found) return found
+            }
+        }
+        return ''
+    }
+
+    const currentRouteKey =
+        route?.key ||
+        findKeyByPath(navigationTree, pathname) ||
+        ''
+
     const { session } = useCurrentSession()
 
     return (

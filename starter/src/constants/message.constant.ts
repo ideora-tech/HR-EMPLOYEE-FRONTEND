@@ -36,4 +36,6 @@ export const ENTITY = {
     JADWAL_KELAS: 'Jadwal Kelas',
     DAFTAR_KELAS: 'Pendaftaran',
     PRESENSI: 'Presensi',
+    TAGIHAN: 'Tagihan',
+    PEMBAYARAN: 'Pembayaran',
 } as const
