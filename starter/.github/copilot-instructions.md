@@ -67,6 +67,7 @@ Sebelum mengerjakan task, SELALU baca file referensi yang relevan menggunakan to
 | Review query SQL / Knex | `.claude/checklist-sql.md` |
 | Buat guard/permission/menu | `.claude/module-access.md` |
 | Feature gating per paket tenant | `.claude/module-access.md` |
+| API backend | `docs/API.md` |
 
 **Cara baca:** Gunakan tool `read_file` sebelum menulis kode apapun.
 

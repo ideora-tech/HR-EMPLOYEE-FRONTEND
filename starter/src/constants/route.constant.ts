@@ -26,4 +26,5 @@ export const ROUTES = {
     KURSUS_TARIF: '/kursus/tarif',
     KURSUS_JADWAL: '/kursus/jadwal-kelas',
     KURSUS_DAFTAR: '/kursus/daftar-kelas',
+    KURSUS_PRESENSI: '/kursus/presensi',
 } as const

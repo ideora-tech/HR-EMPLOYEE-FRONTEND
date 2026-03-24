@@ -26,7 +26,6 @@ interface FormState {
     nama: string
     path: string
     icon: string
-    kode_modul: string
     parent_id: string   // '' = root (null)
     urutan: string
     aktif: boolean
@@ -36,7 +35,6 @@ const INITIAL_STATE: FormState = {
     nama: '',
     path: '',
     icon: '',
-    kode_modul: '',
     parent_id: '',
     urutan: '1',
     aktif: true,
@@ -76,7 +74,6 @@ const MenuForm = ({
                 nama: editData.nama,
                 path: editData.path ?? '',
                 icon: editData.icon ?? '',
-                kode_modul: editData.kode_modul ?? '',
                 parent_id: editData.parent_id ?? '',
                 urutan: String(editData.urutan),
                 aktif: editData.aktif === 1,
@@ -106,7 +103,6 @@ const MenuForm = ({
                 nama: form.nama.trim(),
                 path: form.path.trim() || null,
                 icon: form.icon.trim() || null,
-                kode_modul: form.kode_modul.trim().toUpperCase() || null,
                 parent_id: parentId,
                 urutan: Number(form.urutan),
                 aktif: form.aktif ? 1 : 0,
@@ -117,7 +113,6 @@ const MenuForm = ({
                 nama: form.nama.trim(),
                 path: form.path.trim() || undefined,
                 icon: form.icon.trim() || undefined,
-                kode_modul: form.kode_modul.trim().toUpperCase() || undefined,
                 parent_id: parentId,
                 urutan: Number(form.urutan),
             }
@@ -206,26 +201,6 @@ const MenuForm = ({
                         value={form.icon}
                         onChange={(e) =>
                             setForm((p) => ({ ...p, icon: e.target.value }))
-                        }
-                    />
-                </FormItem>
-
-                <FormItem
-                    label="Kode Modul"
-                    extra={
-                        <span className="text-xs text-gray-400">
-                            Kosongkan = menu selalu tampil (tidak tergantung modul)
-                        </span>
-                    }
-                >
-                    <Input
-                        placeholder="contoh: PAYROLL, ATTENDANCE"
-                        value={form.kode_modul}
-                        onChange={(e) =>
-                            setForm((p) => ({
-                                ...p,
-                                kode_modul: e.target.value.toUpperCase(),
-                            }))
                         }
                     />
                 </FormItem>

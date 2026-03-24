@@ -90,43 +90,126 @@ melaporkan deviasi sebagai temuan di modul Code Quality Review.
 │   │   │       ├── update-user.dto.ts
 │   │   │       └── user-response.dto.ts
 │   │   │
-│   │   ├── roles/                               ── MODULE: Role & Permission
-│   │   │   ├── roles.module.ts
-│   │   │   ├── roles.controller.ts
-│   │   │   ├── roles.service.ts
-│   │   │   ├── roles.repository.ts              ← Query Knex untuk roles
+│   │   ├── peran/                               ── MODULE: Peran (Role)
+│   │   │   ├── peran.module.ts
+│   │   │   ├── peran.controller.ts              ← GET/POST/PATCH/DELETE /peran
+│   │   │   ├── peran.service.ts
+│   │   │   ├── peran.repository.ts
 │   │   │   ├── interfaces/
-│   │   │   │   ├── role.interface.ts            ← IRole, IUserRole
-│   │   │   │   ├── assign-role.interface.ts     ← IAssignRole
-│   │   │   │   └── role-repository.interface.ts ← IRolesRepository (contract)
 │   │   │   └── dto/
-│   │   │       ├── create-role.dto.ts
-│   │   │       └── assign-role.dto.ts
 │   │   │
-│   │   └── [feature]/                           ── Template module baru
-│   │       ├── [feature].module.ts
-│   │       ├── [feature].controller.ts          ← Hanya terima & validasi request
-│   │       ├── [feature].service.ts             ← Business logic
-│   │       ├── [feature].repository.ts          ← Semua query Knex di sini
-│   │       ├── interfaces/
-│   │       │   ├── [feature].interface.ts       ← I[Feature], I[Feature]Public
-│   │       │   ├── create-[feature].interface.ts← ICreate[Feature], IUpdate[Feature]
-│   │       │   └── [feature]-repository.interface.ts ← I[Feature]Repository
-│   │       └── dto/
-│   │           ├── create-[feature].dto.ts
-│   │           └── update-[feature].dto.ts
+│   │   ├── izin-peran/                          ── MODULE: Izin Peran (Permission)
+│   │   │   ├── izin-peran.module.ts
+│   │   │   ├── izin-peran.controller.ts         ← CRUD izin + bulk assign per peran
+│   │   │   ├── izin-peran.service.ts
+│   │   │   ├── izin-peran.repository.ts
+│   │   │   ├── interfaces/
+│   │   │   └── dto/
+│   │   │
+│   │   ├── menu/                                ── MODULE: Menu
+│   │   │   ├── menu.module.ts
+│   │   │   ├── menu.controller.ts               ← GET /menu, GET /menu/me (tree)
+│   │   │   ├── menu.service.ts                  ← buildTree, company override logic
+│   │   │   ├── menu.repository.ts
+│   │   │   ├── interfaces/
+│   │   │   └── dto/
+│   │   │
+│   │   ├── modul/                               ── MODULE: Modul
+│   │   │   ├── modul.module.ts
+│   │   │   ├── modul.controller.ts              ← CRUD + assign menu ke modul
+│   │   │   ├── modul.service.ts
+│   │   │   ├── modul.repository.ts
+│   │   │   ├── interfaces/
+│   │   │   └── dto/
+│   │   │
+│   │   ├── akses-modul-tier/                    ── MODULE: Akses Modul per Paket
+│   │   │   ├── akses-modul-tier.module.ts
+│   │   │   ├── akses-modul-tier.controller.ts   ← CRUD akses modul per paket
+│   │   │   ├── akses-modul-tier.service.ts
+│   │   │   ├── akses-modul-tier.repository.ts
+│   │   │   ├── interfaces/
+│   │   │   └── dto/
+│   │   │
+│   │   ├── paket/                               ── MODULE: Paket Langganan
+│   │   │   ├── paket.module.ts
+│   │   │   ├── paket.controller.ts
+│   │   │   ├── paket.service.ts
+│   │   │   ├── paket.repository.ts
+│   │   │   ├── interfaces/
+│   │   │   └── dto/
+│   │   │
+│   │   ├── perusahaan/                          ── MODULE: Perusahaan (Company)
+│   │   │   ├── perusahaan.module.ts
+│   │   │   ├── perusahaan.controller.ts         ← CRUD perusahaan + overview stats
+│   │   │   ├── perusahaan.service.ts
+│   │   │   ├── perusahaan.repository.ts
+│   │   │   ├── interfaces/
+│   │   │   └── dto/
+│   │   │
+│   │   ├── pengguna/                            ── MODULE: Pengguna (User)
+│   │   │   ├── pengguna.module.ts
+│   │   │   ├── pengguna.controller.ts           ← CRUD user dalam perusahaan
+│   │   │   ├── pengguna.service.ts
+│   │   │   ├── pengguna.repository.ts
+│   │   │   ├── interfaces/
+│   │   │   └── dto/
+│   │   │
+│   │   ├── karyawan/                            ── MODULE: Karyawan (Employee)
+│   │   │   ├── karyawan.module.ts
+│   │   │   ├── karyawan.controller.ts           ← CRUD + download template + upload Excel
+│   │   │   ├── karyawan.service.ts              ← NIK uniqueness, batch import logic
+│   │   │   ├── karyawan.repository.ts           ← findNiksByPerusahaan, batchInsert
+│   │   │   ├── interfaces/
+│   │   │   │   ├── karyawan.interface.ts        ← IKaryawan, IKaryawanPublic
+│   │   │   │   └── karyawan-repository.interface.ts ← ICreateKaryawan, IKaryawanQuery
+│   │   │   └── dto/
+│   │   │       ├── create-karyawan.dto.ts
+│   │   │       ├── update-karyawan.dto.ts
+│   │   │       └── karyawan-response.dto.ts
+│   │   │
+│   │   ├── module-access/                       ── MODULE: Module Access (internal)
+│   │   │   └── ...                              ← Service untuk cek akses modul user
+│   │   │
+│   │   └── kursus/                              ── GROUP: Modul Kursus Dansa
+│   │       ├── siswa/                           ── MODULE: Siswa
+│   │       │   ├── siswa.controller.ts          ← CRUD + download template + upload Excel
+│   │       │   ├── siswa.service.ts
+│   │       │   ├── siswa.repository.ts
+│   │       │   ├── interfaces/
+│   │       │   └── dto/
+│   │       │
+│   │       ├── program-pengajaran/              ── MODULE: Program Pengajaran
+│   │       │   ├── program-pengajaran.controller.ts ← CRUD, 409 on kode duplikat
+│   │       │   ├── ...
+│   │       │
+│   │       ├── tarif/                           ── MODULE: Tarif
+│   │       │   ├── tarif.controller.ts          ← CRUD + GET /tarif/program/:id
+│   │       │   ├── ...
+│   │       │
+│   │       ├── jadwal-kelas/                    ── MODULE: Jadwal Kelas
+│   │       │   ├── jadwal-kelas.controller.ts   ← CRUD + GET /:id/kuota
+│   │       │   ├── ...
+│   │       │
+│   │       ├── daftar-kelas/                    ── MODULE: Daftar Kelas
+│   │       │   ├── daftar-kelas.controller.ts   ← CRUD + by siswa + by jadwal
+│   │       │   ├── ...                          ← Kuota check on create
+│   │       │
+│   │       └── tingkat-program/                 ── MODULE: Tingkat Program (master)
+│   │           ├── tingkat-program.controller.ts
+│   │           └── ...
 │   │
-│   ├── export/                                  ── MODULE: Export (Excel & PDF)
-│   │   ├── export.module.ts
-│   │   ├── export.controller.ts                 ← GET /export/excel, GET /export/pdf
-│   │   ├── excel.service.ts                     ← Generate file Excel (exceljs)
-│   │   ├── pdf.service.ts                       ← Generate file PDF (puppeteer)
+│   ├── [feature]/                               ── Template module baru
+│   │   ├── [feature].module.ts
+│   │   ├── [feature].controller.ts              ← Hanya terima & validasi request
+│   │   ├── [feature].service.ts                 ← Business logic
+│   │   ├── [feature].repository.ts              ← Semua query Knex di sini
 │   │   ├── interfaces/
-│   │   │   └── export-options.interface.ts      ← IExcelOptions, IPdfOptions
-│   │   ├── templates/
-│   │   │   └── report.template.html             ← HTML template untuk PDF
+│   │   │   ├── [feature].interface.ts           ← I[Feature], I[Feature]Public
+│   │   │   └── [feature]-repository.interface.ts ← I[Feature]Repository (contract)
 │   │   └── dto/
-│   │       └── export-query.dto.ts              ← filter: dateFrom, dateTo, format
+│   │       ├── create-[feature].dto.ts
+│   │       ├── update-[feature].dto.ts
+│   │       └── [feature]-response.dto.ts
 │   │
 ├── test/
 │   ├── app.e2e-spec.ts
@@ -1307,3 +1390,251 @@ Ketika mereview project NestJS, periksa deviasi berikut dan laporkan:
 | PDF generate pakai `pdfkit` tanpa HTML template | INFO | Pertimbangkan `puppeteer` untuk hasil lebih fleksibel |
 | Browser puppeteer di-launch tiap request | HIGH | Reuse browser instance via singleton service |
 | Template HTML PDF di-hardcode di service | MEDIUM | Pisahkan ke file `templates/*.html` |
+
+---
+
+## Kursus Modules — Detail Lengkap
+
+Group module untuk aplikasi kursus dansa. Semua controller prefix `/kursus/[nama]`.
+
+### Database Schema
+
+#### `siswa`
+| Kolom | Tipe | Keterangan |
+|-------|------|------------|
+| id_siswa | VARCHAR(36) PK | UUID |
+| nama | VARCHAR(100) NOT NULL | |
+| email | VARCHAR(100) NULL | |
+| telepon | VARCHAR(20) NULL | |
+| tanggal_lahir | DATE NULL | |
+| alamat | TEXT NULL | |
+| jenis_kelamin | TINYINT NULL | 1=L, 2=P |
+| foto_url | VARCHAR(255) NULL | |
+| aktif + 6 audit cols | | |
+
+#### `program_pengajaran`
+| Kolom | Tipe | Keterangan |
+|-------|------|------------|
+| id_program | VARCHAR(36) PK | UUID |
+| kode_program | VARCHAR(50) UNIQUE | 409 jika duplikat |
+| nama | VARCHAR(100) NOT NULL | |
+| deskripsi | TEXT NULL | |
+| tingkat | VARCHAR(20) NULL | PEMULA/MENENGAH/MAHIR |
+| durasi_menit | INT DEFAULT 60 | |
+| aktif + 6 audit cols | | |
+
+#### `tarif`
+| Kolom | Tipe | Keterangan |
+|-------|------|------------|
+| id_tarif | VARCHAR(36) PK | UUID |
+| id_program | VARCHAR(36) FK | → program_pengajaran |
+| nama | VARCHAR(100) NOT NULL | |
+| jenis | VARCHAR(20) NOT NULL | PER_SESI / PAKET |
+| jumlah_pertemuan | INT NULL | Hanya untuk PAKET |
+| harga | DECIMAL(12,2) NOT NULL | |
+| aktif + 6 audit cols | | |
+
+#### `jadwal_kelas`
+| Kolom | Tipe | Keterangan |
+|-------|------|------------|
+| id_jadwal | VARCHAR(36) PK | UUID |
+| id_program | VARCHAR(36) FK | → program_pengajaran |
+| nama | VARCHAR(100) NOT NULL | |
+| tanggal_mulai | DATETIME NOT NULL | Tanggal+jam mulai sesi |
+| tanggal_selesai | DATETIME NOT NULL | Tanggal+jam selesai sesi |
+| instruktur | VARCHAR(100) NULL | |
+| lokasi | VARCHAR(100) NULL | |
+| kuota | INT DEFAULT 10 | Max siswa |
+| aktif + 6 audit cols | | |
+
+> **Penting**: Setiap row = 1 sesi per hari. POST create menerima date range + jam_mulai/jam_selesai lalu generate N row (satu per hari dalam range tersebut).
+
+#### `daftar_kelas`
+| Kolom | Tipe | Keterangan |
+|-------|------|------------|
+| id_daftar | VARCHAR(36) PK | UUID |
+| id_siswa | VARCHAR(36) FK | → siswa |
+| id_jadwal | VARCHAR(36) FK | → jadwal_kelas |
+| id_tarif | VARCHAR(36) FK NULL | → tarif |
+| tanggal_daftar | DATE NOT NULL | |
+| status | TINYINT DEFAULT 1 | 1=AKTIF, 2=SELESAI, 3=BERHENTI |
+| catatan | TEXT NULL | |
+| aktif + 6 audit cols | | |
+
+---
+
+### Endpoints
+
+#### `GET /kursus/siswa`
+- Query: `page`, `limit`, `search` (nama/email/telepon), `aktif`
+- Response: `PaginatedResult<ISiswaPublic>`
+
+#### `POST /kursus/siswa`
+- Body: `CreateSiswaDto` (nama wajib, sisanya optional)
+- Excel import: `POST /kursus/siswa/upload` (multipart, field `file`)
+- Excel template: `GET /kursus/siswa/template`
+
+#### `GET /kursus/program-pengajaran`
+- Query: `page`, `limit`, `search` (nama/kode_program), `aktif`
+
+#### `POST /kursus/program-pengajaran`
+- 409 `ConflictException` jika `kode_program` sudah ada
+
+#### `GET /kursus/tarif/program/:id_program`
+- Deklarasi route ini **sebelum** `/:id` di controller
+
+#### `GET /kursus/jadwal-kelas`
+- Query tambahan: `week_start` (YYYY-MM-DD), `week_end` (YYYY-MM-DD)
+- Filter: `tanggal_mulai >= week_start AND tanggal_mulai <= week_end 23:59:59`
+- Menggunakan `JadwalKelasQueryDto extends PaginationQueryDto` (bukan PaginationQueryDto langsung)
+
+#### `POST /kursus/jadwal-kelas`
+- Input: `tanggal_mulai` (date), `tanggal_selesai` (date), `jam_mulai` (HH:MM), `jam_selesai` (HH:MM)
+- Service looping per hari: `new Date(\`${dateStr}T${dto.jam_mulai}:00\`)`
+- Return: `IJadwalKelasPublic[]` (array semua row yang dibuat)
+- Conflict check instruktur per hari sebelum insert
+
+#### `DELETE /kursus/jadwal-kelas/:id`
+- Cek `countAktifByJadwal` — jika > 0, throw `BadRequestException` (tidak boleh hapus jika ada siswa aktif)
+
+#### `GET /kursus/jadwal-kelas/:id/kuota`
+- Return: `{ kuota, terisi, sisa }`
+
+#### `GET /kursus/daftar-kelas`
+- Enriched JOIN: siswa + jadwal_kelas + program_pengajaran + tarif (leftJoin)
+- Query: `search` (nama/email siswa), `aktif`
+
+#### `GET /kursus/daftar-kelas/siswa/:id_siswa`
+- `GET /kursus/daftar-kelas/jadwal/:id_jadwal`
+- Deklarasi kedua route ini **sebelum** `/:id` di controller
+
+#### `POST /kursus/daftar-kelas`
+- Cek siswa ada → cek jadwal ada → cek duplikat aktif → cek kuota → optional cek tarif → insert
+
+#### `POST /kursus/daftar-kelas/batch`
+- Body: `CreateBatchDaftarKelasDto` (`id_jadwal: string[]` — array jadwal)
+- Per jadwal: duplicate check + kuota check
+- Return: `IDaftarKelasPublic[]`
+- Deklarasi route ini **sebelum** `POST /` di controller
+
+---
+
+### Business Logic Kritis
+
+#### Jadwal Kelas — Generate per hari
+```typescript
+// service create
+for (const current = new Date(start); current <= end; current.setDate(current.getDate() + 1)) {
+    const dateStr = current.toISOString().split('T')[0];
+    const tanggalMulai = new Date(`${dateStr}T${dto.jam_mulai}:00`);
+    const tanggalSelesai = new Date(`${dateStr}T${dto.jam_selesai}:00`);
+    // cek benturan instruktur...
+    // insert...
+}
+```
+
+#### Jadwal Kelas — Conflict instruktur
+```typescript
+// repository
+.where('tanggal_mulai', '<', tanggalSelesai)   // overlap check
+.where('tanggal_selesai', '>', tanggalMulai)
+.whereNot({ id_jadwal: excludeId })             // exclude self saat update
+```
+
+#### Daftar Kelas — Duplicate check
+```typescript
+// Siswa dianggap "sudah terdaftar" jika aktif=1 DAN status != 3 (Berhenti)
+// Status Berhenti (3) boleh di-assign ulang
+```
+
+#### Daftar Kelas — Kuota check
+```typescript
+// countAktifByJadwal: WHERE id_jadwal=X AND aktif=1 AND status=1
+// status=1 (AKTIF) saja yang dihitung terhadap kuota
+```
+
+---
+
+### Timezone — `dateStrings: true`
+
+Database config (`src/config/database.config.ts`) menggunakan `dateStrings: true` pada koneksi mysql2.
+Ini membuat DATETIME dikembalikan sebagai string `"2026-03-23 08:00:00"` (bukan `Date` object UTC).
+Tanpa ini, mysql2 mengkonversi ke UTC (WIB UTC+7 → 08:00 jadi 01:00).
+
+---
+
+### File Structure Detail
+
+```
+src/modules/kursus/
+├── siswa/
+│   ├── interfaces/
+│   │   ├── siswa.interface.ts              ← ISiswa, ISiswaPublic
+│   │   └── siswa-repository.interface.ts  ← ICreateSiswa, ISiswaQuery, ISiswaRepository
+│   ├── dto/
+│   │   ├── create-siswa.dto.ts
+│   │   ├── update-siswa.dto.ts
+│   │   └── siswa-response.dto.ts
+│   ├── siswa.repository.ts
+│   ├── siswa.service.ts                   ← Excel import/export logic
+│   ├── siswa.module.ts
+│   └── siswa.controller.ts               ← GET /template, POST /upload, CRUD
+│
+├── program-pengajaran/
+│   ├── interfaces/
+│   ├── dto/
+│   ├── program-pengajaran.repository.ts  ← findByKode untuk 409 check
+│   ├── program-pengajaran.service.ts
+│   ├── program-pengajaran.module.ts
+│   └── program-pengajaran.controller.ts
+│
+├── tarif/
+│   ├── interfaces/
+│   ├── dto/
+│   ├── tarif.repository.ts               ← findByProgram
+│   ├── tarif.service.ts
+│   ├── tarif.module.ts
+│   └── tarif.controller.ts              ← GET /program/:id_program sebelum /:id
+│
+├── jadwal-kelas/
+│   ├── interfaces/
+│   │   ├── jadwal-kelas.interface.ts           ← tanggal_mulai/tanggal_selesai: Date
+│   │   └── jadwal-kelas-repository.interface.ts ← IJadwalKelasQuery (week_start/week_end)
+│   ├── dto/
+│   │   ├── create-jadwal-kelas.dto.ts          ← date range + jam_mulai/jam_selesai
+│   │   ├── update-jadwal-kelas.dto.ts          ← tanggal_mulai/selesai sebagai ISO datetime
+│   │   ├── jadwal-kelas-query.dto.ts           ← extends PaginationQueryDto + week_start/end
+│   │   └── jadwal-kelas-response.dto.ts
+│   ├── jadwal-kelas.repository.ts             ← findBenturanInstruktur, countAktifByJadwal
+│   ├── jadwal-kelas.service.ts               ← loop per hari, block delete jika ada siswa aktif
+│   ├── jadwal-kelas.module.ts
+│   └── jadwal-kelas.controller.ts           ← GET /:id/kuota, return array dari POST
+│
+└── daftar-kelas/
+    ├── interfaces/
+    │   ├── daftar-kelas.interface.ts          ← jadwal.{tanggal_mulai, tanggal_selesai, id_program}
+    │   └── daftar-kelas-repository.interface.ts ← batchCreate, findAktifBySiswaAndJadwal
+    ├── dto/
+    │   ├── create-daftar-kelas.dto.ts
+    │   ├── create-batch-daftar-kelas.dto.ts  ← id_jadwal: string[] (IsArray + IsUUID each)
+    │   ├── update-daftar-kelas.dto.ts
+    │   └── daftar-kelas-response.dto.ts
+    ├── daftar-kelas.repository.ts            ← baseQuery JOIN 4 tabel, batchCreate, findAktif...
+    ├── daftar-kelas.service.ts              ← duplicate check, kuota check, batchCreate
+    ├── daftar-kelas.module.ts              ← import Siswa+JadwalKelas+TarifModule
+    └── daftar-kelas.controller.ts          ← /batch sebelum /, /siswa/:id sebelum /:id
+```
+
+---
+
+### Migrations Kursus
+
+| File | Isi |
+|------|-----|
+| `20260322_18_create_siswa_table.ts` | Buat tabel `siswa` |
+| `20260322_19_create_program_pengajaran_table.ts` | Buat tabel `program_pengajaran` |
+| `20260322_20_create_tarif_table.ts` | Buat tabel `tarif` |
+| `20260322_21_create_jadwal_kelas_table.ts` | Buat tabel `jadwal_kelas` (dengan hari/jam) |
+| `20260322_22_create_daftar_kelas_table.ts` | Buat tabel `daftar_kelas` |
+| `20260322_23_create_tingkat_program_table.ts` | Buat tabel `tingkat_program` |
+| `20260323_26_alter_jadwal_kelas_datetime.ts` | Drop hari/jam_mulai/jam_selesai, tambah tanggal_mulai/tanggal_selesai DATETIME |

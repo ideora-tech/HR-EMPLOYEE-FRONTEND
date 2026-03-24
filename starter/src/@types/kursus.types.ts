@@ -235,3 +235,90 @@ export interface IUpdateDaftarKelas {
     id_tarif?: string
     aktif?: 0 | 1
 }
+
+// ─── Presensi ─────────────────────────────────────────────────────────────────
+// Keterangan: 1=Hadir, 2=Izin, 3=Sakit, 4=Alpha
+
+export interface IPresensi {
+    id_presensi: string
+    status: 1 | 2 | 3 | 4
+    catatan: string | null
+    aktif: number
+    dibuat_pada: string
+    diubah_pada: string | null
+    daftar?: { id_daftar: string }
+    siswa?: {
+        id_siswa: string
+        nama: string
+        email?: string | null
+        telepon?: string | null
+    }
+    jadwal: {
+        id_jadwal: string
+        nama: string
+        tanggal_mulai: string     // "YYYY-MM-DD HH:MM:SS"
+        tanggal_selesai: string   // "YYYY-MM-DD HH:MM:SS"
+        // fields below may not be returned by the API (legacy compat)
+        hari?: number
+        jam_mulai?: string
+        jam_selesai?: string
+        instruktur?: string | null
+        program?: { id_program: string; nama: string }
+    }
+}
+
+/** Entry dari GET /kursus/presensi/jadwal/:id_jadwal */
+export interface IPresensiJadwalEntry {
+    id_daftar: string
+    siswa: {
+        id_siswa: string
+        nama: string
+        email: string | null
+        telepon: string | null
+    }
+    presensi: {
+        id_presensi: string
+        status: 1 | 2 | 3 | 4
+        catatan: string | null
+    } | null
+}
+
+export interface IPresensiDetail {
+    id_detail: string
+    id_presensi: string
+    keterangan: 1 | 2 | 3 | 4    // 1=Hadir, 2=Izin, 3=Sakit, 4=Alpha
+    catatan: string | null
+    siswa: {
+        id_siswa: string
+        nama: string
+        telepon: string | null
+    }
+    daftar: {
+        id_daftar: string
+        tanggal_daftar: string
+    }
+}
+
+export interface IPresensiWithDetail extends IPresensi {
+    detail: IPresensiDetail[]
+}
+
+export interface ICreatePresensi {
+    id_daftar: string
+    status: 1 | 2 | 3 | 4
+    catatan?: string | null
+}
+
+export interface ICreateBatchPresensi {
+    id_jadwal: string
+    items: Array<{ id_daftar: string; status: 1 | 2 | 3 | 4; catatan?: string | null }>
+}
+
+export type IUpdatePresensi = { catatan?: string }
+
+export interface IPresensiQuery {
+    id_jadwal?: string
+    bulan?: string                // "YYYY-MM"
+    page?: number
+    limit?: number
+}

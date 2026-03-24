@@ -35,4 +35,5 @@ export const ENTITY = {
     TARIF: 'Tarif',
     JADWAL_KELAS: 'Jadwal Kelas',
     DAFTAR_KELAS: 'Pendaftaran',
+    PRESENSI: 'Presensi',
 } as const

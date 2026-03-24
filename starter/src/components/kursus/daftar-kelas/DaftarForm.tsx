@@ -35,6 +35,16 @@ const HARI_MAP: Record<number, string> = {
     5: 'Jumat', 6: 'Sabtu', 7: 'Minggu',
 }
 
+const hariFromISO = (iso: string): number => {
+    const clean = iso.includes('T') ? iso : iso.replace(' ', 'T')
+    const d = new Date(clean)
+    const day = d.getDay()
+    return day === 0 ? 7 : day
+}
+
+const timeFromISO = (iso: string): string =>
+    iso.includes('T') ? iso.slice(11, 16) : iso.slice(11, 16)
+
 interface DaftarFormProps {
     open: boolean
     editData?: IDaftarKelas | null
@@ -97,7 +107,7 @@ const DaftarForm = ({
             .filter((j) => j.aktif === 1)
             .map((j) => ({
                 value: j.id_jadwal,
-                label: `${j.nama} — ${HARI_MAP[j.hari]} ${j.jam_mulai}–${j.jam_selesai}`,
+                label: `${j.nama} — ${HARI_MAP[hariFromISO(j.tanggal_mulai)]} ${timeFromISO(j.tanggal_mulai)}–${timeFromISO(j.tanggal_selesai)}`,
                 id_program: j.id_program,
             })),
     ]
@@ -185,10 +195,10 @@ const DaftarForm = ({
     const tarifHint = loadingTarif
         ? 'Memuat tarif...'
         : !form.id_jadwal
-        ? 'Pilih jadwal dulu untuk melihat tarif tersedia'
-        : tarifList.length === 0
-        ? 'Tidak ada tarif aktif untuk program ini'
-        : ''
+            ? 'Pilih jadwal dulu untuk melihat tarif tersedia'
+            : tarifList.length === 0
+                ? 'Tidak ada tarif aktif untuk program ini'
+                : ''
 
     return (
         <Dialog

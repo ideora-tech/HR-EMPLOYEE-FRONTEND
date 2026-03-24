@@ -1,537 +1,1373 @@
-# Dokumentasi Modul Kursus — Frontend (Next.js)
+# Dokumentasi API Kursus — Panduan Frontend (Next.js)
 
-> Panduan ini mencerminkan **implementasi aktual** modul Kursus Dansa per 2026-03-23.
-> Berisi types, service, endpoint, komponen, dan catatan perilaku penting.
+> Panduan ini khusus untuk frontend developer.
+> Berisi types, service, konstanta, dan contoh konsumsi API modul Kursus Dansa.
 
 ---
 
 ## 1. Types — `src/@types/kursus.types.ts`
 
 ```typescript
-// ─── API Response Wrapper ─────────────────────────────────────────────────────
-
-export interface ApiResponse<T> {
-    success: boolean
-    message: string
-    data: T
-    timestamp: string
-}
-
-export interface IPaginationMeta {
-    total: number
-    page: number
-    limit: number
-    totalPages?: number
-}
-
-export interface ApiPaginatedResponse<T> {
-    success: boolean
-    message: string
-    data: T[]
-    meta: IPaginationMeta
-    timestamp: string
-}
-
-// ─── Import Result ────────────────────────────────────────────────────────────
-
-export interface IImportResult {
-    berhasil: number
-    gagal: number
-    errors: string[]
-}
-
-// ─── Query Params ─────────────────────────────────────────────────────────────
-
-export interface IKursusQuery {
-    search?: string
-    aktif?: number
-    page?: number
-    limit?: number
-    week_start?: string   // "YYYY-MM-DD" — filter jadwal yang overlap dengan range
-    week_end?: string     // "YYYY-MM-DD"
-}
-
-// ─── Siswa ────────────────────────────────────────────────────────────────────
-
+// ============================================================
+// SISWA
+// ============================================================
 export interface ISiswa {
-    id_siswa: string
-    nama: string
-    email: string | null
-    telepon: string | null
-    tanggal_lahir: string | null   // "YYYY-MM-DD"
-    alamat: string | null
-    jenis_kelamin: number | null   // 1 = Laki-laki, 2 = Perempuan
-    foto_url: string | null
-    aktif: number                  // 1 = aktif, 0 = nonaktif
-    dibuat_pada: string
-    diubah_pada: string | null
+  id_siswa: string
+  nama: string
+  email: string | null
+  telepon: string | null
+  tanggal_lahir: string | null   // ISO date string: "2000-01-15"
+  alamat: string | null
+  jenis_kelamin: number | null   // 1 = Laki-laki, 2 = Perempuan
+  foto_url: string | null
+  aktif: number                   // 1 = aktif, 0 = nonaktif
+  dibuat_pada: string
+  diubah_pada: string | null
 }
 
 export interface ICreateSiswa {
-    nama: string
-    email?: string
-    telepon?: string
-    tanggal_lahir?: string
-    alamat?: string
-    jenis_kelamin?: 1 | 2
-    foto_url?: string
+  nama: string
+  email?: string
+  telepon?: string
+  tanggal_lahir?: string          // "YYYY-MM-DD"
+  alamat?: string
+  jenis_kelamin?: 1 | 2
+  foto_url?: string
 }
 
 export type IUpdateSiswa = Partial<ICreateSiswa> & { aktif?: 0 | 1 }
 
-// ─── Tingkat Program ──────────────────────────────────────────────────────────
-
+// ============================================================
+// TINGKAT PROGRAM (master data)
+// ============================================================
 export interface ITingkatProgram {
-    id_tingkat: string
-    kode: string
-    nama: string
-    urutan: number
-    aktif: number
-    dibuat_pada: string
-    diubah_pada: string | null
+  id_tingkat: string
+  kode: string                    // contoh: "PEMULA", "MENENGAH", "MAHIR"
+  nama: string                    // contoh: "Pemula", "Menengah", "Mahir"
+  urutan: number
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
 }
 
 export interface ICreateTingkatProgram {
-    kode: string
-    nama: string
-    urutan?: number
+  kode: string                    // format: A-Z0-9_
+  nama: string
+  urutan?: number
 }
 
 export type IUpdateTingkatProgram = Partial<ICreateTingkatProgram> & { aktif?: 0 | 1 }
 
-// ─── Program Pengajaran ───────────────────────────────────────────────────────
-
+// ============================================================
+// PROGRAM PENGAJARAN
+// ============================================================
 export interface IProgramPengajaran {
-    id_program: string
-    kode_program: string
-    nama: string
-    deskripsi: string | null
-    tingkat: string | null
-    durasi_menit: number
-    aktif: number
-    dibuat_pada: string
-    diubah_pada: string | null
+  id_program: string
+  kode_program: string            // format: A-Z0-9_ (contoh: "TARI_BALI_01")
+  nama: string
+  deskripsi: string | null
+  tingkat: string | null          // kode dari master data tingkat_program
+  durasi_menit: number            // default: 60
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
 }
 
 export interface ICreateProgramPengajaran {
-    kode_program: string
-    nama: string
-    deskripsi?: string
-    tingkat?: string
-    durasi_menit?: number
+  kode_program: string
+  nama: string
+  deskripsi?: string
+  tingkat?: string                // kode dari GET /kursus/tingkat-program
+  durasi_menit?: number
 }
 
 export type IUpdateProgramPengajaran = Partial<ICreateProgramPengajaran> & { aktif?: 0 | 1 }
 
-// ─── Tarif ────────────────────────────────────────────────────────────────────
-
+// ============================================================
+// TARIF
+// ============================================================
 export interface ITarif {
-    id_tarif: string
-    id_program: string
-    nama: string
-    jenis: 'PER_SESI' | 'PAKET'
-    jumlah_pertemuan: number | null
-    harga: string                    // DECIMAL dari MySQL → string, pakai parseFloat()
-    aktif: number
-    dibuat_pada: string
-    diubah_pada: string | null
+  id_tarif: string
+  id_program: string
+  nama: string
+  jenis: 'PER_SESI' | 'PAKET'
+  jumlah_pertemuan: number | null  // hanya untuk jenis PAKET
+  harga: string                    // DECIMAL dari MySQL → string, parse dengan parseFloat()
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
 }
 
 export interface ICreateTarif {
-    id_program: string
-    nama: string
-    jenis: 'PER_SESI' | 'PAKET'
-    harga: number
-    jumlah_pertemuan?: number
+  id_program: string
+  nama: string
+  jenis: 'PER_SESI' | 'PAKET'
+  harga: number
+  jumlah_pertemuan?: number
 }
 
 export type IUpdateTarif = Partial<ICreateTarif> & { aktif?: 0 | 1 }
 
-// ─── Jadwal Kelas ─────────────────────────────────────────────────────────────
-// ⚠️ PENTING: Backend mengembalikan datetime dengan SPASI sebagai separator
-//    contoh: "2026-03-23 08:00:00" — BUKAN "2026-03-23T08:00:00"
-//    Selalu gunakan .replace(' ', 'T') sebelum new Date()
-
+// ============================================================
+// JADWAL KELAS
+// ============================================================
 export interface IJadwalKelas {
-    id_jadwal: string
-    id_program: string
-    nama: string
-    instruktur: string | null
-    lokasi: string | null
-    kuota: number
-    aktif: number
-    tanggal_mulai: string   // "YYYY-MM-DD HH:MM:SS" — jam mulai tertanam di sini
-    tanggal_selesai: string // "YYYY-MM-DD HH:MM:SS" — jam selesai tertanam di sini
-    dibuat_pada: string
-    diubah_pada: string | null
+  id_jadwal: string
+  id_program: string
+  nama: string
+  tanggal_mulai: string    // "2026-03-23 08:00:00" — string langsung dari DB (dateStrings: true)
+  tanggal_selesai: string  // "2026-03-23 17:00:00"
+  instruktur: string | null
+  lokasi: string | null
+  kuota: number
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
 }
 
 export interface IKuotaJadwal {
-    kuota: number
-    terisi: number
-    sisa: number
+  kuota: number
+  terisi: number
+  sisa: number
 }
 
-// ⚠️ CREATE dan UPDATE pakai format BERBEDA
-
+// POST /kursus/jadwal-kelas — generate N row (1 per hari dalam range)
 export interface ICreateJadwalKelas {
-    id_program: string
-    nama: string
-    tanggal_mulai: string   // "YYYY-MM-DD" — tanggal saja
-    tanggal_selesai: string // "YYYY-MM-DD" — tanggal saja
-    jam_mulai: string       // "HH:MM" — dikirim terpisah saat CREATE
-    jam_selesai: string     // "HH:MM" — dikirim terpisah saat CREATE
-    instruktur?: string
-    lokasi?: string
-    kuota?: number
+  id_program: string
+  nama: string
+  tanggal_mulai: string   // "YYYY-MM-DD" — date range dari
+  tanggal_selesai: string // "YYYY-MM-DD" — date range sampai
+  jam_mulai: string       // "HH:MM" — jam yang sama untuk semua hari
+  jam_selesai: string     // "HH:MM"
+  instruktur?: string
+  lokasi?: string
+  kuota?: number
 }
 
+// PATCH /kursus/jadwal-kelas/:id — update 1 sesi
 export interface IUpdateJadwalKelas {
-    id_program?: string
-    nama?: string
-    tanggal_mulai?: string   // "YYYY-MM-DD HH:MM:00" — combined datetime saat UPDATE
-    tanggal_selesai?: string // "YYYY-MM-DD HH:MM:00" — combined datetime saat UPDATE
-    instruktur?: string
-    lokasi?: string
-    kuota?: number
-    aktif?: 0 | 1
+  nama?: string
+  tanggal_mulai?: string    // "YYYY-MM-DDThh:mm:ss" — ISO datetime untuk update 1 sesi
+  tanggal_selesai?: string  // "YYYY-MM-DDThh:mm:ss"
+  instruktur?: string | null
+  lokasi?: string | null
+  kuota?: number
+  id_program?: string
+  aktif?: 0 | 1
 }
 
-// ─── Daftar Kelas ─────────────────────────────────────────────────────────────
-
+// ============================================================
+// DAFTAR KELAS (enriched response)
+// ============================================================
 export interface IDaftarKelas {
-    id_daftar: string
-    tanggal_daftar: string
-    status: 1 | 2 | 3               // 1=Aktif, 2=Selesai, 3=Berhenti
-    catatan: string | null
-    aktif: number
-    dibuat_pada: string
-    diubah_pada: string | null
-    siswa: {
-        id_siswa: string
-        nama: string
-        email: string | null
-        telepon: string | null
+  id_daftar: string
+  tanggal_daftar: string
+  status: 1 | 2 | 3               // 1=Aktif, 2=Selesai, 3=Berhenti
+  catatan: string | null
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+  siswa: {
+    id_siswa: string
+    nama: string
+    email: string | null
+    telepon: string | null
+  }
+  jadwal: {
+    id_jadwal: string
+    id_program: string             // ← tersedia langsung
+    nama: string
+    tanggal_mulai: string          // "2026-03-23 08:00:00"
+    tanggal_selesai: string        // "2026-03-23 17:00:00"
+    instruktur: string | null
+    lokasi: string | null
+    program: {
+      id_program: string
+      nama: string
+      kode_program: string
     }
-    jadwal: {
-        id_jadwal: string
-        nama: string
-        hari: number
-        jam_mulai: string
-        jam_selesai: string
-        instruktur: string | null
-        lokasi: string | null
-        program: {
-            id_program: string
-            nama: string
-            kode_program: string
-        }
-    }
-    tarif: {
-        id_tarif: string
-        nama: string
-        jenis: 'PER_SESI' | 'PAKET'
-        harga: string
-    } | null
+  }
+  tarif: {
+    id_tarif: string
+    nama: string
+    jenis: 'PER_SESI' | 'PAKET'
+    harga: string
+  } | null
 }
 
 export interface ICreateDaftarKelas {
-    id_siswa: string
-    id_jadwal: string
-    tanggal_daftar: string   // "YYYY-MM-DD"
-    id_tarif?: string
-    status?: 1 | 2 | 3
-    catatan?: string
+  id_siswa: string
+  id_jadwal: string
+  tanggal_daftar: string          // "YYYY-MM-DD"
+  id_tarif?: string
+  status?: 1 | 2 | 3
+  catatan?: string
+}
+
+// POST /kursus/daftar-kelas/batch — assign ke banyak jadwal sekaligus
+export interface ICreateBatchDaftarKelas {
+  id_siswa: string
+  id_jadwal: string[]             // array UUID jadwal
+  tanggal_daftar: string          // "YYYY-MM-DD"
+  id_tarif?: string
+  status?: 1 | 2 | 3
+  catatan?: string
 }
 
 export interface IUpdateDaftarKelas {
-    status?: 1 | 2 | 3
+  status?: 1 | 2 | 3
+  catatan?: string
+  id_tarif?: string
+  aktif?: 0 | 1
+}
+
+// ============================================================
+// PRESENSI
+// ============================================================
+export interface IPresensi {
+  id_presensi: string
+  status: 1 | 2 | 3 | 4           // 1=HADIR, 2=TIDAK_HADIR, 3=SAKIT, 4=IZIN
+  catatan: string | null
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+  daftar: {
+    id_daftar: string
+  }
+  siswa: {
+    id_siswa: string
+    nama: string
+    email: string | null
+    telepon: string | null
+  }
+  jadwal: {
+    id_jadwal: string
+    nama: string
+    tanggal_mulai: string
+    tanggal_selesai: string
+  }
+}
+
+// Response GET /kursus/presensi/jadwal/:id_jadwal
+// Menampilkan semua siswa di sesi itu — presensi null jika belum diabsen
+export interface IPresensiJadwalItem {
+  id_daftar: string
+  siswa: {
+    id_siswa: string
+    nama: string
+    email: string | null
+    telepon: string | null
+  }
+  presensi: {
+    id_presensi: string
+    status: 1 | 2 | 3 | 4
+    catatan: string | null
+  } | null
+}
+
+export interface ICreatePresensi {
+  id_jadwal: string   // UUID jadwal — backend resolve id_daftar sendiri
+  id_siswa: string    // UUID siswa
+  status: 1 | 2 | 3 | 4
+  catatan?: string
+}
+
+export interface ICreateBatchPresensi {
+  id_jadwal: string
+  items: Array<{
+    id_daftar: string  // dari response GET /presensi/jadwal/:id_jadwal
+    status: 1 | 2 | 3 | 4
     catatan?: string
-    id_tarif?: string
-    aktif?: 0 | 1
+  }>
+}
+
+export type IUpdatePresensi = Partial<Pick<ICreatePresensi, 'status' | 'catatan'>>
+
+// ===== TAGIHAN =====
+export interface ITagihan {
+  id_tagihan: string
+  jenis: 'PAKET' | 'BULANAN' | 'LAINNYA'
+  periode: string | null    // YYYY-MM, isi untuk jenis BULANAN
+  jumlah_sesi: number | null
+  total_harga: number
+  total_bayar: number       // auto-calculated dari SUM(pembayaran.jumlah)
+  status: 1 | 2 | 3 | 4   // 1=MENUNGGU, 2=SEBAGIAN, 3=LUNAS, 4=DIBATALKAN
+  catatan: string | null
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+  siswa: {
+    id_siswa: string
+    nama: string
+    email: string | null
+    telepon: string | null
+  }
+}
+
+export interface ICreateTagihan {
+  id_siswa: string
+  jenis: 'PAKET' | 'BULANAN' | 'LAINNYA'
+  periode?: string          // YYYY-MM — wajib isi jika jenis = BULANAN
+  jumlah_sesi?: number
+  total_harga: number
+  catatan?: string
+}
+
+export type IUpdateTagihan = Partial<
+  Pick<ICreateTagihan, 'jenis' | 'periode' | 'jumlah_sesi' | 'total_harga' | 'catatan'> &
+  { status: 1 | 2 | 3 | 4 }
+>
+
+// ===== PEMBAYARAN =====
+export interface IPembayaran {
+  id_pembayaran: string
+  id_tagihan: string
+  jumlah: number
+  tanggal_bayar: string     // YYYY-MM-DD (MySQL DATE → string, dateStrings: true)
+  metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
+  referensi: string | null  // no. ref transfer / QRIS
+  catatan: string | null
+  dibuat_pada: string
+  diubah_pada: string | null
+  tagihan: {
+    id_tagihan: string
+    jenis: string
+    periode: string | null
+    total_harga: number
+    total_bayar: number
+    status: number
+  }
+}
+
+export interface ICreatePembayaran {
+  id_tagihan: string
+  jumlah: number            // boleh DP / cicilan, tidak harus lunas sekaligus
+  tanggal_bayar: string     // YYYY-MM-DD
+  metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
+  referensi?: string
+  catatan?: string
 }
 ```
 
 ---
 
-## 2. API Endpoint Constants — `src/constants/api.constant.ts`
+## 2. API Endpoint Constants — tambahkan ke `src/constants/api.constant.ts`
 
 ```typescript
-KURSUS: {
-    TINGKAT: {
-        BASE: `${PROXY}/kursus/tingkat-program`,
-        BY_ID: (id: string) => `${PROXY}/kursus/tingkat-program/${id}`,
-    },
-    SISWA: {
-        BASE: `${PROXY}/kursus/siswa`,
-        BY_ID: (id: string) => `${PROXY}/kursus/siswa/${id}`,
-        IMPORT: `${PROXY}/kursus/siswa/upload/excel`,
-        TEMPLATE: `${PROXY}/kursus/siswa/template/excel`,
-    },
-    PROGRAM: {
-        BASE: `${PROXY}/kursus/program-pengajaran`,
-        BY_ID: (id: string) => `${PROXY}/kursus/program-pengajaran/${id}`,
-    },
-    TARIF: {
-        BASE: `${PROXY}/kursus/tarif`,
-        BY_ID: (id: string) => `${PROXY}/kursus/tarif/${id}`,
-        BY_PROGRAM: (idProgram: string) => `${PROXY}/kursus/tarif/program/${idProgram}`,
-    },
-    JADWAL: {
-        BASE: `${PROXY}/kursus/jadwal-kelas`,
-        BY_ID: (id: string) => `${PROXY}/kursus/jadwal-kelas/${id}`,
-        KUOTA: (id: string) => `${PROXY}/kursus/jadwal-kelas/${id}/kuota`,
-        EXPORT: (weekStart: string, weekEnd: string) =>
-            `${PROXY}/kursus/jadwal-kelas/export?week_start=${weekStart}&week_end=${weekEnd}`,
-    },
-    DAFTAR: {
-        BASE: `${PROXY}/kursus/daftar-kelas`,
-        BY_ID: (id: string) => `${PROXY}/kursus/daftar-kelas/${id}`,
-        BY_SISWA: (idSiswa: string) => `${PROXY}/kursus/daftar-kelas/siswa/${idSiswa}`,
-        BY_JADWAL: (idJadwal: string) => `${PROXY}/kursus/daftar-kelas/jadwal/${idJadwal}`,
-    },
+// Tambahkan di dalam object API_ENDPOINTS yang sudah ada:
+
+kursus: {
+  // Siswa
+  siswa: {
+    list:   '/kursus/siswa',
+    detail: (id: string) => `/kursus/siswa/${id}`,
+    create: '/kursus/siswa',
+    update: (id: string) => `/kursus/siswa/${id}`,
+    delete: (id: string) => `/kursus/siswa/${id}`,
+  },
+  // Program Pengajaran
+  program: {
+    list:   '/kursus/program-pengajaran',
+    detail: (id: string) => `/kursus/program-pengajaran/${id}`,
+    create: '/kursus/program-pengajaran',
+    update: (id: string) => `/kursus/program-pengajaran/${id}`,
+    delete: (id: string) => `/kursus/program-pengajaran/${id}`,
+  },
+  // Tarif
+  tarif: {
+    list:       '/kursus/tarif',
+    byProgram:  (idProgram: string) => `/kursus/tarif/program/${idProgram}`,
+    detail:     (id: string) => `/kursus/tarif/${id}`,
+    create:     '/kursus/tarif',
+    update:     (id: string) => `/kursus/tarif/${id}`,
+    delete:     (id: string) => `/kursus/tarif/${id}`,
+  },
+  // Jadwal Kelas
+  jadwal: {
+    list:   '/kursus/jadwal-kelas',
+    kuota:  (id: string) => `/kursus/jadwal-kelas/${id}/kuota`,
+    detail: (id: string) => `/kursus/jadwal-kelas/${id}`,
+    create: '/kursus/jadwal-kelas',
+    update: (id: string) => `/kursus/jadwal-kelas/${id}`,
+    delete: (id: string) => `/kursus/jadwal-kelas/${id}`,
+  },
+  // Daftar Kelas
+  daftar: {
+    list:      '/kursus/daftar-kelas',
+    bySiswa:   (idSiswa: string) => `/kursus/daftar-kelas/siswa/${idSiswa}`,
+    byJadwal:  (idJadwal: string) => `/kursus/daftar-kelas/jadwal/${idJadwal}`,
+    detail:    (id: string) => `/kursus/daftar-kelas/${id}`,
+    create:    '/kursus/daftar-kelas',
+    update:    (id: string) => `/kursus/daftar-kelas/${id}`,
+    delete:    (id: string) => `/kursus/daftar-kelas/${id}`,
+  },
+  // Presensi
+  presensi: {
+    list:        '/kursus/presensi',
+    byJadwal:    (idJadwal: string) => `/kursus/presensi/jadwal/${idJadwal}`,
+    bySiswa:     (idSiswa: string) => `/kursus/presensi/siswa/${idSiswa}`,
+    byDaftar:    (idDaftar: string) => `/kursus/presensi/daftar/${idDaftar}`,
+    detail:      (id: string) => `/kursus/presensi/${id}`,
+    create:      '/kursus/presensi',
+    batch:       '/kursus/presensi/batch',
+    update:      (id: string) => `/kursus/presensi/${id}`,
+    delete:      (id: string) => `/kursus/presensi/${id}`,
+  },
+  // Tagihan
+  tagihan: {
+    list:            '/kursus/tagihan',
+    bySiswa:         (idSiswa: string) => `/kursus/tagihan/siswa/${idSiswa}`,
+    detail:          (id: string) => `/kursus/tagihan/${id}`,
+    create:          '/kursus/tagihan',
+    generateBulanan: '/kursus/tagihan/generate-bulanan',
+    update:          (id: string) => `/kursus/tagihan/${id}`,
+    delete:          (id: string) => `/kursus/tagihan/${id}`,
+  },
+  // Pembayaran
+  pembayaran: {
+    list:       '/kursus/pembayaran',
+    byTagihan:  (idTagihan: string) => `/kursus/pembayaran/tagihan/${idTagihan}`,
+    detail:     (id: string) => `/kursus/pembayaran/${id}`,
+    create:     '/kursus/pembayaran',
+    delete:     (id: string) => `/kursus/pembayaran/${id}`,
+  },
 },
 ```
 
 ---
 
-## 3. Services — `src/services/kursus/`
-
-### Method yang tersedia per service
-
-| Service | File | Methods |
-|---------|------|---------|
-| Siswa | `siswa.service.ts` | `getAll`, `getById`, `create`, `update`, `remove`, `importExcel(file)`, `downloadTemplate()` |
-| Program Pengajaran | `program-pengajaran.service.ts` | `getAll`, `getById`, `create`, `update`, `remove` |
-| Tarif | `tarif.service.ts` | `getAll`, `getByProgram(idProgram)`, `getById`, `create`, `update`, `remove` |
-| Jadwal Kelas | `jadwal-kelas.service.ts` | `getAll(query)`, `getKuota(id)`, `getById`, `create`, `update`, `remove` |
-| Daftar Kelas | `daftar-kelas.service.ts` | `getAll`, `getBySiswa(id)`, `getByJadwal(id)`, `getById`, `create`, `update`, `remove` |
-
-### Catatan penting service
+## 3. Route Constants — tambahkan ke `src/constants/route.constant.ts`
 
 ```typescript
-// Jadwal — getAll mendukung filter range tanggal (overlap logic di backend)
-JadwalKelasService.getAll({
-    week_start: '2026-03-23',  // Backend: WHERE tanggal_mulai <= week_end
-    week_end: '2026-03-29',    //         AND tanggal_selesai >= week_start
-    limit: 500,
-})
+// Tambahkan di dalam object ROUTES yang sudah ada:
 
-// Siswa — importExcel kirim multipart/form-data
-SiswaService.importExcel(file: File)
-// field: "file", response: { berhasil, gagal, errors[] }
+// Kursus
+kursus: {
+  siswa:          '/kursus/siswa',
+  siswaCreate:    '/kursus/siswa/create',
+  siswaDetail:    (id: string) => `/kursus/siswa/${id}`,
 
-// Siswa — downloadTemplate trigger download langsung (no return)
-SiswaService.downloadTemplate()
-// → GET /kursus/siswa/template/excel → file Template_Import_Siswa.xlsx
+  program:        '/kursus/program-pengajaran',
+  programCreate:  '/kursus/program-pengajaran/create',
+  programDetail:  (id: string) => `/kursus/program-pengajaran/${id}`,
+
+  tarif:          '/kursus/tarif',
+  tarifCreate:    '/kursus/tarif/create',
+  tarifDetail:    (id: string) => `/kursus/tarif/${id}`,
+
+  jadwal:         '/kursus/jadwal-kelas',
+  jadwalCreate:   '/kursus/jadwal-kelas/create',
+  jadwalDetail:   (id: string) => `/kursus/jadwal-kelas/${id}`,
+
+  daftar:         '/kursus/daftar-kelas',
+  daftarCreate:   '/kursus/daftar-kelas/create',
+  daftarDetail:   (id: string) => `/kursus/daftar-kelas/${id}`,
+
+  presensi:       '/kursus/presensi',
+
+  tagihan:        '/kursus/tagihan',
+  tagihanCreate:  '/kursus/tagihan/create',
+  tagihanDetail:  (id: string) => `/kursus/tagihan/${id}`,
+
+  pembayaran:     '/kursus/pembayaran',
+},
 ```
 
 ---
 
-## 4. Halaman — `src/app/(protected-pages)/kursus/`
+## 4. Services — `src/services/kursus/`
 
-```
-kursus/
-├── siswa/
-│   ├── page.tsx                  ← List + Import Excel + Download Template + Delete
-│   ├── tambah/
-│   │   └── page.tsx              ← Form tambah siswa
-│   └── [id]/
-│       └── edit/
-│           └── page.tsx          ← Form edit siswa
-│
-├── tingkat-program/
-│   └── page.tsx                  ← List master tingkat (CRUD inline modal)
-│
-├── program-pengajaran/
-│   ├── page.tsx                  ← List program + CRUD
-│   ├── tambah/
-│   │   └── page.tsx
-│   └── [id]/
-│       └── edit/
-│           └── page.tsx
-│
-├── tarif/
-│   └── page.tsx                  ← List tarif (filter per program)
-│
-├── jadwal-kelas/
-│   └── page.tsx                  ← Kalender view + Drawer siswa (NO tabel)
-│
-└── daftar-kelas/
-    ├── page.tsx
-    ├── tambah/
-    │   └── page.tsx
-    └── [id]/
-        └── edit/
-            └── page.tsx
-```
-
----
-
-## 5. Komponen — `src/components/kursus/`
-
-### `jadwal/JadwalKalender.tsx`
-
-Kalender jadwal per instruktur. **Self-fetching** — mengambil data sendiri berdasarkan range tanggal.
+### `siswa.service.ts`
 
 ```typescript
-interface JadwalKalenderProps {
-    refreshToken?: number           // increment untuk trigger re-fetch dari parent
-    onView: (item: IJadwalKelas) => void   // klik card → buka drawer detail
-    onEdit: (item: IJadwalKelas) => void   // klik ikon edit → buka form edit
-    onDelete: (item: IJadwalKelas) => void // klik ikon hapus → confirm dialog
+import apiClient from '@/services/api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { ISiswa, ICreateSiswa, IUpdateSiswa } from '@/@types/kursus.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export interface SiswaListParams {
+  page?: number
+  limit?: number
+  search?: string        // cari di nama, email, telepon
+  aktif?: 0 | 1
+}
+
+export const siswaService = {
+  getAll: (params?: SiswaListParams) =>
+    apiClient.get<ApiResponse<PaginatedResult<ISiswa>>>(
+      API_ENDPOINTS.kursus.siswa.list, { params }
+    ),
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<ISiswa>>(
+      API_ENDPOINTS.kursus.siswa.detail(id)
+    ),
+
+  create: (data: ICreateSiswa) =>
+    apiClient.post<ApiResponse<ISiswa>>(
+      API_ENDPOINTS.kursus.siswa.create, data
+    ),
+
+  update: (id: string, data: IUpdateSiswa) =>
+    apiClient.patch<ApiResponse<ISiswa>>(
+      API_ENDPOINTS.kursus.siswa.update(id), data
+    ),
+
+  remove: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(
+      API_ENDPOINTS.kursus.siswa.delete(id)
+    ),
 }
 ```
 
-**Perilaku penting:**
-- Navigasi dengan `DatePickerRange` + tombol prev/next + "Hari Ini"
-- Fetch otomatis saat `rangeStart`/`rangeEnd` berubah atau `refreshToken` naik
-- Group by instruktur → tiap baris 1 instruktur
-- Jadwal ditampilkan di **semua hari yang dicakup** range tanggal_mulai–tanggal_selesai
-- `diffDays` dihitung dari **tanggal saja** (tanpa jam) agar jam tidak mempengaruhi hitungan
-- Klik card → `onView`, tombol edit/hapus di dalam card pakai `e.stopPropagation()`
-- Ada tombol "Unduh Excel" (kirim ke endpoint EXPORT)
-- Ada search instruktur (filter lokal, tidak re-fetch)
-
-**Helper functions di dalam file:**
-```typescript
-hariFromISO(iso: string): number   // "YYYY-MM-DD HH:MM:SS" → hari 1-7
-timeFromISO(iso: string): string   // "YYYY-MM-DD HH:MM:SS" → "HH:MM"
-// ⚠️ Backend pakai spasi, bukan T — helper handle keduanya
-```
-
----
-
-### `jadwal/JadwalForm.tsx`
-
-Dialog create/edit jadwal kelas.
+### `program-pengajaran.service.ts`
 
 ```typescript
-interface JadwalFormProps {
-    open: boolean
-    editData?: IJadwalKelas | null
-    programList?: IProgramPengajaran[]
-    submitting?: boolean
-    onClose: () => void
-    onSubmit: (payload: ICreateJadwalKelas | IUpdateJadwalKelas) => void
+import apiClient from '@/services/api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { IProgramPengajaran, ICreateProgramPengajaran, IUpdateProgramPengajaran } from '@/@types/kursus.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export interface ProgramListParams {
+  page?: number
+  limit?: number
+  search?: string        // cari di nama, kode_program
+  aktif?: 0 | 1
+}
+
+export const programPengajaranService = {
+  getAll: (params?: ProgramListParams) =>
+    apiClient.get<ApiResponse<PaginatedResult<IProgramPengajaran>>>(
+      API_ENDPOINTS.kursus.program.list, { params }
+    ),
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<IProgramPengajaran>>(
+      API_ENDPOINTS.kursus.program.detail(id)
+    ),
+
+  create: (data: ICreateProgramPengajaran) =>
+    apiClient.post<ApiResponse<IProgramPengajaran>>(
+      API_ENDPOINTS.kursus.program.create, data
+    ),
+  // ⚠️ 409 ConflictException jika kode_program sudah digunakan
+
+  update: (id: string, data: IUpdateProgramPengajaran) =>
+    apiClient.patch<ApiResponse<IProgramPengajaran>>(
+      API_ENDPOINTS.kursus.program.update(id), data
+    ),
+  // ⚠️ 409 ConflictException jika kode_program baru sudah dipakai program lain
+
+  remove: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(
+      API_ENDPOINTS.kursus.program.delete(id)
+    ),
 }
 ```
 
-**Perbedaan CREATE vs UPDATE payload:**
-```typescript
-// CREATE → field terpisah
-{ tanggal_mulai: "2026-03-23", tanggal_selesai: "2026-03-30", jam_mulai: "08:00", jam_selesai: "17:00" }
-
-// UPDATE (PATCH) → combined datetime, TANPA jam_mulai/jam_selesai
-{ tanggal_mulai: "2026-03-23 08:00:00", tanggal_selesai: "2026-03-30 17:00:00" }
-```
-
-**Helper functions di dalam file:**
-```typescript
-isoToDate(iso)   // "YYYY-MM-DD HH:MM:SS" → Date (bagian tanggal saja)
-isoToTime(iso)   // "YYYY-MM-DD HH:MM:SS" → "HH:MM"
-dateToYMD(d)     // Date → "YYYY-MM-DD"
-toDateTime(d, t) // Date + "HH:MM" → "YYYY-MM-DD HH:MM:00" (untuk PATCH)
-```
-
-- Instruktur diambil dari `KaryawanService.getAll({ limit: 200, aktif: 1 })` saat dialog buka
-- Tanggal Selesai auto-fill dari Tanggal Mulai jika belum diisi
-- `minDate` pada DatePicker Selesai = tanggal mulai yang dipilih
-- Status aktif/nonaktif hanya muncul saat mode edit
-
----
-
-### `jadwal/JadwalDetailDrawer.tsx`
-
-Drawer (slide dari kanan) untuk manajemen siswa dalam satu jadwal.
+### `tarif.service.ts`
 
 ```typescript
-interface JadwalDetailDrawerProps {
-    open: boolean
-    jadwal: IJadwalKelas | null
-    onClose: () => void
-    onRefresh?: () => void   // dipanggil setelah enroll/hapus siswa berhasil
+import apiClient from '@/services/api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { ITarif, ICreateTarif, IUpdateTarif } from '@/@types/kursus.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export interface TarifListParams {
+  page?: number
+  limit?: number
+  search?: string        // cari di nama tarif
+  aktif?: 0 | 1
+}
+
+export const tarifService = {
+  getAll: (params?: TarifListParams) =>
+    apiClient.get<ApiResponse<PaginatedResult<ITarif>>>(
+      API_ENDPOINTS.kursus.tarif.list, { params }
+    ),
+
+  getByProgram: (idProgram: string) =>
+    apiClient.get<ApiResponse<ITarif[]>>(
+      API_ENDPOINTS.kursus.tarif.byProgram(idProgram)
+    ),
+  // Gunakan ini untuk dropdown pilih tarif saat daftar kelas
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<ITarif>>(
+      API_ENDPOINTS.kursus.tarif.detail(id)
+    ),
+
+  create: (data: ICreateTarif) =>
+    apiClient.post<ApiResponse<ITarif>>(
+      API_ENDPOINTS.kursus.tarif.create, data
+    ),
+
+  update: (id: string, data: IUpdateTarif) =>
+    apiClient.patch<ApiResponse<ITarif>>(
+      API_ENDPOINTS.kursus.tarif.update(id), data
+    ),
+
+  remove: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(
+      API_ENDPOINTS.kursus.tarif.delete(id)
+    ),
 }
 ```
 
-**Sections dalam drawer:**
-1. **Header info** — nama jadwal, jam, tanggal range, instruktur, lokasi
-2. **Kuota bar** — progress bar terisi/total, label "Penuh" jika kuota habis
-3. **List siswa terdaftar** — dari `DaftarSiswaService.getByJadwal(id_jadwal)`
-4. **Tombol "Daftarkan Siswa"** → buka `Dialog` enroll (disabled jika kuota penuh)
-
-**Sub-modal Enroll Siswa:**
-- Search siswa dengan debounce 400ms → `SiswaService.getAll({ search, limit: 20, aktif: 1 })`
-- Pilih siswa dari hasil pencarian → tampil badge konfirmasi
-- Pilih tarif (opsional) dari `TarifService.getByProgram(id_program)`
-- Input tanggal daftar (DatePicker, default = hari ini)
-- Submit → `DaftarSiswaService.create({ id_siswa, id_jadwal, tanggal_daftar, id_tarif? })`
-
-**Sub-modal Edit Status:**
-- Select status: Aktif (1) / Selesai (2) / Berhenti (3)
-- Input catatan opsional
-- Submit → `DaftarSiswaService.update(id_daftar, { status, catatan? })`
-
-**Auto-close:** `onRequestClose={onClose}` — menutup saat klik backdrop
-
----
-
-### `siswa/SiswaImportModal.tsx`
-
-Dialog import siswa dari file Excel.
+### `jadwal-kelas.service.ts`
 
 ```typescript
-interface SiswaImportModalProps {
-    open: boolean
-    onClose: () => void
-    onSuccess: () => void   // dipanggil setelah import berhasil → trigger fetchData()
+import apiClient from '@/services/api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { IJadwalKelas, IKuotaJadwal, ICreateJadwalKelas, IUpdateJadwalKelas } from '@/@types/kursus.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export interface JadwalListParams {
+  page?: number
+  limit?: number
+  search?: string        // cari di nama, instruktur, lokasi
+  aktif?: 0 | 1
+}
+
+export const jadwalKelasService = {
+  getAll: (params?: JadwalListParams) =>
+    apiClient.get<ApiResponse<PaginatedResult<IJadwalKelas>>>(
+      API_ENDPOINTS.kursus.jadwal.list, { params }
+    ),
+
+  getKuota: (id: string) =>
+    apiClient.get<ApiResponse<IKuotaJadwal>>(
+      API_ENDPOINTS.kursus.jadwal.kuota(id)
+    ),
+  // Gunakan untuk tampilkan sisa slot sebelum daftar
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<IJadwalKelas>>(
+      API_ENDPOINTS.kursus.jadwal.detail(id)
+    ),
+
+  create: (data: ICreateJadwalKelas) =>
+    apiClient.post<ApiResponse<IJadwalKelas>>(
+      API_ENDPOINTS.kursus.jadwal.create, data
+    ),
+
+  update: (id: string, data: IUpdateJadwalKelas) =>
+    apiClient.patch<ApiResponse<IJadwalKelas>>(
+      API_ENDPOINTS.kursus.jadwal.update(id), data
+    ),
+
+  remove: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(
+      API_ENDPOINTS.kursus.jadwal.delete(id)
+    ),
 }
 ```
 
-**Flow:**
-1. Drag & drop atau pilih file `.xlsx` (validasi tipe file dengan `beforeUpload`)
-2. Klik "Import" → `SiswaService.importExcel(file)` → POST ke `/kursus/siswa/upload/excel`
-3. Setelah berhasil → tampil hasil: jumlah berhasil, gagal, dan list error per baris
-4. Tombol "Import Lagi" untuk reset form, "Selesai" untuk tutup
+### `daftar-kelas.service.ts`
 
-**Kolom template Excel yang didukung backend:**
-| Kolom | Keterangan |
-|-------|-----------|
-| `nama` | Wajib |
-| `email` | Opsional |
-| `telepon` | Opsional |
-| `tanggal_lahir` | Format YYYY-MM-DD |
-| `jenis_kelamin` | 1 = Laki-laki, 2 = Perempuan |
-| `alamat` | Opsional |
+```typescript
+import apiClient from '@/services/api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { IDaftarKelas, ICreateDaftarKelas, IUpdateDaftarKelas } from '@/@types/kursus.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export interface DaftarListParams {
+  page?: number
+  limit?: number
+  search?: string
+  aktif?: 0 | 1
+}
+
+export const daftarKelasService = {
+  getAll: (params?: DaftarListParams) =>
+    apiClient.get<ApiResponse<PaginatedResult<IDaftarKelas>>>(
+      API_ENDPOINTS.kursus.daftar.list, { params }
+    ),
+
+  getBySiswa: (idSiswa: string) =>
+    apiClient.get<ApiResponse<IDaftarKelas[]>>(
+      API_ENDPOINTS.kursus.daftar.bySiswa(idSiswa)
+    ),
+  // Gunakan di halaman detail siswa — riwayat kelas yang diikuti
+
+  getByJadwal: (idJadwal: string) =>
+    apiClient.get<ApiResponse<IDaftarKelas[]>>(
+      API_ENDPOINTS.kursus.daftar.byJadwal(idJadwal)
+    ),
+  // Gunakan di halaman detail jadwal — siapa saja peserta kelas ini
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<IDaftarKelas>>(
+      API_ENDPOINTS.kursus.daftar.detail(id)
+    ),
+
+  create: (data: ICreateDaftarKelas) =>
+    apiClient.post<ApiResponse<IDaftarKelas>>(
+      API_ENDPOINTS.kursus.daftar.create, data
+    ),
+  // ⚠️ 400 BadRequestException jika kuota kelas sudah penuh
+
+  update: (id: string, data: IUpdateDaftarKelas) =>
+    apiClient.patch<ApiResponse<IDaftarKelas>>(
+      API_ENDPOINTS.kursus.daftar.update(id), data
+    ),
+
+  remove: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(
+      API_ENDPOINTS.kursus.daftar.delete(id)
+    ),
+}
+```
+
+### `presensi.service.ts`
+
+```typescript
+import apiClient from '@/services/api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { IPresensi, IPresensiJadwalItem, ICreatePresensi, ICreateBatchPresensi, IUpdatePresensi } from '@/@types/kursus.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export interface PresensiListParams {
+  page?: number
+  limit?: number
+  search?: string       // cari nama siswa
+  bulan?: string        // YYYY-MM — filter berdasarkan bulan sesi
+  aktif?: 0 | 1
+}
+
+export const presensiService = {
+  getAll: (params?: PresensiListParams) =>
+    apiClient.get<ApiResponse<PaginatedResult<IPresensi>>>(
+      API_ENDPOINTS.kursus.presensi.list, { params }
+    ),
+
+  getByJadwal: (idJadwal: string) =>
+    apiClient.get<ApiResponse<IPresensiJadwalItem[]>>(
+      API_ENDPOINTS.kursus.presensi.byJadwal(idJadwal)
+    ),
+  // Gunakan untuk render absen list (admin klik sesi di kalender)
+  // Returns: semua siswa terdaftar + presensi null jika belum diisi
+
+  getBySiswa: (idSiswa: string) =>
+    apiClient.get<ApiResponse<{ data: IPresensi[]; sesi_terpakai: number }>>(
+      API_ENDPOINTS.kursus.presensi.bySiswa(idSiswa)
+    ),
+  // sesi_terpakai = COUNT status=1 (HADIR) — untuk paket sesi
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<IPresensi>>(
+      API_ENDPOINTS.kursus.presensi.detail(id)
+    ),
+
+  create: (data: ICreatePresensi) =>
+    apiClient.post<ApiResponse<IPresensi>>(
+      API_ENDPOINTS.kursus.presensi.create, data
+    ),
+  // Body: { id_jadwal, id_siswa, status, catatan? }
+  // ⚠️ 409 jika presensi sudah ada — gunakan PATCH atau batch
+
+  batch: (data: ICreateBatchPresensi) =>
+    apiClient.post<ApiResponse<IPresensi[]>>(
+      API_ENDPOINTS.kursus.presensi.batch, data
+    ),
+  // Body: { id_jadwal, items: [{ id_daftar, status }] }
+  // Upsert — aman dipanggil berkali-kali untuk sesi yang sama
+
+  update: (id: string, data: IUpdatePresensi) =>
+    apiClient.patch<ApiResponse<IPresensi>>(
+      API_ENDPOINTS.kursus.presensi.update(id), data
+    ),
+
+  remove: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(
+      API_ENDPOINTS.kursus.presensi.delete(id)
+    ),
+}
+```
+
+### `tagihan.service.ts`
+
+```typescript
+import apiClient from '@/services/api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { ITagihan, ICreateTagihan, IUpdateTagihan } from '@/@types/kursus.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export interface TagihanListParams {
+  page?: number
+  limit?: number
+  search?: string       // cari nama siswa
+  aktif?: 0 | 1
+}
+
+export const tagihanService = {
+  getAll: (params?: TagihanListParams) =>
+    apiClient.get<ApiResponse<PaginatedResult<ITagihan>>>(
+      API_ENDPOINTS.kursus.tagihan.list, { params }
+    ),
+
+  getBySiswa: (idSiswa: string) =>
+    apiClient.get<ApiResponse<ITagihan[]>>(
+      API_ENDPOINTS.kursus.tagihan.bySiswa(idSiswa)
+    ),
+  // Gunakan di halaman detail siswa — tampilkan riwayat tagihan
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<ITagihan>>(
+      API_ENDPOINTS.kursus.tagihan.detail(id)
+    ),
+
+  create: (data: ICreateTagihan) =>
+    apiClient.post<ApiResponse<ITagihan>>(
+      API_ENDPOINTS.kursus.tagihan.create, data
+    ),
+
+  generateBulanan: (periode: string) =>
+    apiClient.post<ApiResponse<ITagihan[]> & { count: number }>(
+      API_ENDPOINTS.kursus.tagihan.generateBulanan, { periode }
+    ),
+  // Otomatis buat tagihan dari presensi HADIR (tarif PER_SESI) di bulan tsb
+  // Panggil setiap awal bulan oleh admin
+
+  update: (id: string, data: IUpdateTagihan) =>
+    apiClient.patch<ApiResponse<ITagihan>>(
+      API_ENDPOINTS.kursus.tagihan.update(id), data
+    ),
+  // Untuk koreksi manual atau set status DIBATALKAN (status: 4)
+
+  remove: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(
+      API_ENDPOINTS.kursus.tagihan.delete(id)
+    ),
+}
+```
+
+### `pembayaran.service.ts`
+
+```typescript
+import apiClient from '@/services/api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { IPembayaran, ICreatePembayaran } from '@/@types/kursus.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export interface PembayaranListParams {
+  page?: number
+  limit?: number
+  search?: string       // cari nama siswa
+  aktif?: 0 | 1
+}
+
+export const pembayaranService = {
+  getAll: (params?: PembayaranListParams) =>
+    apiClient.get<ApiResponse<PaginatedResult<IPembayaran>>>(
+      API_ENDPOINTS.kursus.pembayaran.list, { params }
+    ),
+
+  getByTagihan: (idTagihan: string) =>
+    apiClient.get<ApiResponse<IPembayaran[]>>(
+      API_ENDPOINTS.kursus.pembayaran.byTagihan(idTagihan)
+    ),
+  // Gunakan di halaman detail tagihan — tampilkan riwayat pembayaran
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<IPembayaran>>(
+      API_ENDPOINTS.kursus.pembayaran.detail(id)
+    ),
+
+  create: (data: ICreatePembayaran) =>
+    apiClient.post<ApiResponse<IPembayaran>>(
+      API_ENDPOINTS.kursus.pembayaran.create, data
+    ),
+  // ⚠️ Setelah create, tagihan.total_bayar dan tagihan.status otomatis ter-update
+  // Fetch ulang tagihan setelah create pembayaran untuk tampilkan status terbaru
+
+  remove: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(
+      API_ENDPOINTS.kursus.pembayaran.delete(id)
+    ),
+  // ⚠️ Setelah delete, tagihan.total_bayar dan tagihan.status ikut recalculate
+}
+```
 
 ---
 
-## 6. Halaman `/kursus/siswa` — Fitur di Header
+## 5. Contoh Penggunaan di Komponen
+
+### List Siswa dengan Pagination
 
 ```tsx
-// 3 tombol di header card:
-<Button icon={<HiOutlineDownload />} onClick={handleDownloadTemplate}>Template Excel</Button>
-<Button icon={<HiOutlineUpload />} onClick={() => setImportOpen(true)}>Import Excel</Button>
-<Button variant="solid" icon={<HiPlusCircle />} onClick={() => router.push('/kursus/siswa/tambah')}>Tambah Siswa</Button>
+'use client'
+import { useEffect, useState } from 'react'
+import { siswaService } from '@/services/kursus/siswa.service'
+import { parseApiError } from '@/utils/error.util'
+import type { ISiswa } from '@/@types/kursus.types'
+
+export function SiswaTable() {
+  const [data, setData] = useState<ISiswa[]>([])
+  const [meta, setMeta] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 })
+  const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const fetchData = (page = 1) => {
+    setLoading(true)
+    siswaService.getAll({ page, limit: meta.limit, search })
+      .then(res => {
+        setData(res.data.data.data)
+        setMeta(res.data.data.meta)
+      })
+      .catch(err => setError(parseApiError(err)))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { fetchData() }, [search])
+
+  return (
+    <div>
+      <input
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Cari nama, email, telepon..."
+      />
+      {/* render tabel siswa */}
+      {/* render pagination dengan meta.page, meta.totalPages */}
+    </div>
+  )
+}
+```
+
+### Daftar Siswa ke Kelas (dengan cek kuota)
+
+```tsx
+'use client'
+import { useState } from 'react'
+import { jadwalKelasService } from '@/services/kursus/jadwal-kelas.service'
+import { daftarKelasService } from '@/services/kursus/daftar-kelas.service'
+import { parseApiError } from '@/utils/error.util'
+import type { ICreateDaftarKelas } from '@/@types/kursus.types'
+
+export function DaftarKelasForm({ idJadwal }: { idJadwal: string }) {
+  const [kuota, setKuota] = useState<{ kuota: number; terisi: number; sisa: number } | null>(null)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  // Cek kuota sebelum render form
+  const checkKuota = async () => {
+    try {
+      const res = await jadwalKelasService.getKuota(idJadwal)
+      setKuota(res.data.data)
+    } catch (err) {
+      setError(parseApiError(err))
+    }
+  }
+
+  const handleSubmit = async (formData: ICreateDaftarKelas) => {
+    setLoading(true)
+    setError('')
+    try {
+      await daftarKelasService.create(formData)
+      // redirect atau refresh
+    } catch (err) {
+      // ⚠️ Backend akan throw 400 jika kuota penuh
+      setError(parseApiError(err))  // "Kuota kelas penuh"
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div>
+      {kuota && (
+        <p>Kuota: {kuota.sisa} tempat tersisa dari {kuota.kuota}</p>
+      )}
+      {kuota?.sisa === 0 && (
+        <p className="text-red-500">Kelas sudah penuh!</p>
+      )}
+      {/* form input: id_siswa, id_jadwal, tanggal_daftar, id_tarif, catatan */}
+    </div>
+  )
+}
+```
+
+### Absen List dari Kalender
+
+```tsx
+'use client'
+import { useEffect, useState } from 'react'
+import { presensiService } from '@/services/kursus/presensi.service'
+import { parseApiError } from '@/utils/error.util'
+import type { IPresensiJadwalItem, ICreateBatchPresensi } from '@/@types/kursus.types'
+
+export function AbsenList({ idJadwal }: { idJadwal: string }) {
+  const [items, setItems] = useState<IPresensiJadwalItem[]>([])
+  const [statuses, setStatuses] = useState<Record<string, number>>({})
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    presensiService.getByJadwal(idJadwal)
+      .then(res => {
+        const data = res.data.data
+        setItems(data)
+        // Pre-fill status dari presensi yang sudah ada
+        const init: Record<string, number> = {}
+        data.forEach(item => {
+          init[item.id_daftar] = item.presensi?.status ?? 1
+        })
+        setStatuses(init)
+      })
+      .catch(err => console.error(parseApiError(err)))
+      .finally(() => setLoading(false))
+  }, [idJadwal])
+
+  const handleSave = async () => {
+    setSaving(true)
+    const payload: ICreateBatchPresensi = {
+      id_jadwal: idJadwal,
+      items: items.map(item => ({
+        id_daftar: item.id_daftar,
+        status: statuses[item.id_daftar] ?? 1,
+      })),
+    }
+    try {
+      await presensiService.batch(payload)
+      // tampilkan toast sukses
+    } catch (err) {
+      console.error(parseApiError(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div>
+      {items.map(item => (
+        <div key={item.id_daftar} className="flex justify-between items-center py-2">
+          <span>{item.siswa.nama}</span>
+          <select
+            value={statuses[item.id_daftar] ?? 1}
+            onChange={e => setStatuses(prev => ({ ...prev, [item.id_daftar]: Number(e.target.value) }))}
+          >
+            <option value={1}>Hadir</option>
+            <option value={2}>Tidak Hadir</option>
+            <option value={3}>Sakit</option>
+            <option value={4}>Izin</option>
+          </select>
+        </div>
+      ))}
+      <button onClick={handleSave} disabled={saving}>
+        {saving ? 'Menyimpan...' : 'Simpan Absen'}
+      </button>
+    </div>
+  )
+}
+```
+
+### Detail Tagihan + Catat Pembayaran
+
+```tsx
+'use client'
+import { useEffect, useState } from 'react'
+import { tagihanService } from '@/services/kursus/tagihan.service'
+import { pembayaranService } from '@/services/kursus/pembayaran.service'
+import { parseApiError } from '@/utils/error.util'
+import { formatStatusTagihan, formatRupiah } from '@/utils/format.util'
+import type { ITagihan, IPembayaran, ICreatePembayaran } from '@/@types/kursus.types'
+
+export function TagihanDetail({ idTagihan }: { idTagihan: string }) {
+  const [tagihan, setTagihan] = useState<ITagihan | null>(null)
+  const [pembayaranList, setPembayaranList] = useState<IPembayaran[]>([])
+
+  const refresh = async () => {
+    const [t, p] = await Promise.all([
+      tagihanService.getById(idTagihan),
+      pembayaranService.getByTagihan(idTagihan),
+    ])
+    setTagihan(t.data.data)
+    setPembayaranList(p.data.data)
+  }
+
+  useEffect(() => { refresh() }, [idTagihan])
+
+  const handleBayar = async (form: ICreatePembayaran) => {
+    try {
+      await pembayaranService.create(form)
+      await refresh()  // ⚠️ Fetch ulang — total_bayar & status otomatis berubah
+    } catch (err) {
+      console.error(parseApiError(err))
+    }
+  }
+
+  if (!tagihan) return null
+
+  const sisa = tagihan.total_harga - tagihan.total_bayar
+
+  return (
+    <div>
+      <p>Status: <span>{formatStatusTagihan(tagihan.status)}</span></p>
+      <p>Total: {formatRupiah(tagihan.total_harga)}</p>
+      <p>Sudah dibayar: {formatRupiah(tagihan.total_bayar)}</p>
+      <p>Sisa: {formatRupiah(sisa)}</p>
+
+      <h3>Riwayat Pembayaran</h3>
+      {pembayaranList.map(p => (
+        <div key={p.id_pembayaran}>
+          {p.tanggal_bayar} — {formatRupiah(p.jumlah)} via {p.metode}
+        </div>
+      ))}
+
+      {tagihan.status !== 3 && tagihan.status !== 4 && (
+        <button onClick={() => handleBayar({
+          id_tagihan: idTagihan,
+          jumlah: sisa,
+          tanggal_bayar: new Date().toISOString().slice(0, 10),
+          metode: 'TRANSFER',
+        })}>
+          Lunasi Sekarang
+        </button>
+      )}
+    </div>
+  )
+}
+```
+
+### Dropdown Tarif berdasarkan Program
+
+```tsx
+'use client'
+import { useEffect, useState } from 'react'
+import { tarifService } from '@/services/kursus/tarif.service'
+import type { ITarif } from '@/@types/kursus.types'
+
+export function TarifSelect({ idProgram, value, onChange }: {
+  idProgram: string
+  value: string
+  onChange: (id: string) => void
+}) {
+  const [options, setOptions] = useState<ITarif[]>([])
+
+  useEffect(() => {
+    if (!idProgram) return
+    tarifService.getByProgram(idProgram)
+      .then(res => setOptions(res.data.data))
+  }, [idProgram])
+
+  return (
+    <select value={value} onChange={e => onChange(e.target.value)}>
+      <option value="">-- Pilih Tarif --</option>
+      {options.map(t => (
+        <option key={t.id_tarif} value={t.id_tarif}>
+          {t.nama} — Rp {parseFloat(t.harga).toLocaleString('id-ID')}
+        </option>
+      ))}
+    </select>
+  )
+}
 ```
 
 ---
 
-## 7. Catatan Penting
+## 6. Error Handling — Kasus Khusus Kursus
+
+| Endpoint | HTTP Status | Pesan | Penyebab |
+|----------|:-----------:|-------|---------|
+| `POST /kursus/daftar-kelas` | 400 | `Kuota kelas penuh` | Siswa aktif di jadwal >= kuota |
+| `POST /kursus/program-pengajaran` | 409 | `Kode program sudah digunakan` | `kode_program` duplikat |
+| `PATCH /kursus/program-pengajaran/:id` | 409 | `Kode program sudah digunakan` | `kode_program` baru milik program lain |
+| `POST /kursus/tarif` | 404 | `Program pengajaran dengan ID '...' tidak ditemukan` | `id_program` tidak valid |
+| `POST /kursus/jadwal-kelas` | 404 | `Program pengajaran dengan ID '...' tidak ditemukan` | `id_program` tidak valid |
+| `POST /kursus/presensi` | 404 | `Siswa tidak terdaftar di jadwal ini` | Siswa belum di-daftarkan ke jadwal |
+| `POST /kursus/presensi` | 409 | `Presensi siswa ini di jadwal ini sudah ada` | Gunakan PATCH atau batch |
+| Semua `GET /:id` | 404 | `[Entitas] dengan ID '...' tidak ditemukan` | UUID salah atau sudah dihapus |
+
+```typescript
+// Tangani error spesifik di komponen:
+try {
+  await daftarKelasService.create(formData)
+} catch (err) {
+  if (err instanceof AxiosError) {
+    const status = err.response?.status
+    const message = err.response?.data?.message
+
+    if (status === 400 && message === 'Kuota kelas penuh') {
+      setError('Maaf, kelas ini sudah penuh. Pilih jadwal lain.')
+      return
+    }
+    if (status === 409) {
+      setError('Kode program sudah digunakan, coba kode lain.')
+      return
+    }
+  }
+  setError(parseApiError(err))  // fallback generic
+}
+```
+
+---
+
+## 7. Helper — Format Data Kursus
+
+Tambahkan ke `src/utils/format.util.ts`:
+
+```typescript
+// Konversi angka hari ke nama hari Indonesia
+export const formatHari = (hari: number): string => {
+  const map: Record<number, string> = {
+    1: 'Senin', 2: 'Selasa', 3: 'Rabu', 4: 'Kamis',
+    5: 'Jumat', 6: 'Sabtu', 7: 'Minggu',
+  }
+  return map[hari] ?? '-'
+}
+
+// Format status daftar kelas
+export const formatStatusDaftar = (status: number): string => {
+  const map: Record<number, string> = {
+    1: 'Aktif', 2: 'Selesai', 3: 'Berhenti',
+  }
+  return map[status] ?? '-'
+}
+
+// Format jenis kelamin
+export const formatJenisKelamin = (jk: number | null): string => {
+  if (jk === 1) return 'Laki-laki'
+  if (jk === 2) return 'Perempuan'
+  return '-'
+}
+
+// Format harga tarif (harga dari backend adalah string DECIMAL)
+export const formatHarga = (harga: string | number): string =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' })
+    .format(typeof harga === 'string' ? parseFloat(harga) : harga)
+
+// Warna badge status daftar kelas (untuk Tailwind)
+export const statusDaftarColor = (status: number): string => {
+  if (status === 1) return 'bg-green-100 text-green-700'   // Aktif
+  if (status === 2) return 'bg-blue-100 text-blue-700'     // Selesai
+  if (status === 3) return 'bg-red-100 text-red-700'       // Berhenti
+  return 'bg-gray-100 text-gray-700'
+}
+
+// Format status presensi
+export const formatStatusPresensi = (status: number): string => {
+  const map: Record<number, string> = {
+    1: 'Hadir', 2: 'Tidak Hadir', 3: 'Sakit', 4: 'Izin',
+  }
+  return map[status] ?? '-'
+}
+
+export const statusPresensiColor = (status: number): string => {
+  if (status === 1) return 'bg-green-100 text-green-700'   // Hadir
+  if (status === 2) return 'bg-red-100 text-red-700'       // Tidak Hadir
+  if (status === 3) return 'bg-yellow-100 text-yellow-700' // Sakit
+  if (status === 4) return 'bg-blue-100 text-blue-700'     // Izin
+  return 'bg-gray-100 text-gray-700'
+}
+
+// Format status tagihan
+export const formatStatusTagihan = (status: number): string => {
+  const map: Record<number, string> = {
+    1: 'Menunggu', 2: 'Sebagian', 3: 'Lunas', 4: 'Dibatalkan',
+  }
+  return map[status] ?? '-'
+}
+
+export const statusTagihanColor = (status: number): string => {
+  if (status === 1) return 'bg-yellow-100 text-yellow-700' // Menunggu
+  if (status === 2) return 'bg-blue-100 text-blue-700'     // Sebagian
+  if (status === 3) return 'bg-green-100 text-green-700'   // Lunas
+  if (status === 4) return 'bg-red-100 text-red-700'       // Dibatalkan
+  return 'bg-gray-100 text-gray-700'
+}
+
+// Format metode pembayaran
+export const formatMetodePembayaran = (metode: string): string => {
+  const map: Record<string, string> = {
+    TUNAI: 'Tunai', TRANSFER: 'Transfer Bank', QRIS: 'QRIS',
+  }
+  return map[metode] ?? metode
+}
+
+// Format rupiah (untuk angka, bukan string DECIMAL)
+export const formatRupiah = (nominal: number): string =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 })
+    .format(nominal)
+```
+
+---
+
+## 8. Struktur Halaman yang Disarankan
+
+```
+src/app/(protected-pages)/kursus/
+├── siswa/
+│   ├── page.tsx                  ← List siswa (tabel + search + pagination)
+│   ├── create/
+│   │   └── page.tsx              ← Form tambah siswa
+│   └── [id]/
+│       └── page.tsx              ← Detail siswa + riwayat kelas yang diikuti
+
+├── program-pengajaran/
+│   ├── page.tsx                  ← List program (tabel + search)
+│   ├── create/
+│   │   └── page.tsx              ← Form tambah program
+│   └── [id]/
+│       └── page.tsx              ← Detail + tarif + jadwal terkait program
+
+├── tarif/
+│   ├── page.tsx                  ← List tarif (tabel, bisa filter per program)
+│   ├── create/
+│   │   └── page.tsx              ← Form tambah tarif (pilih program dulu)
+│   └── [id]/
+│       └── page.tsx              ← Detail tarif
+
+├── jadwal-kelas/
+│   ├── page.tsx                  ← List jadwal (tabel + search instruktur/lokasi)
+│   ├── create/
+│   │   └── page.tsx              ← Form tambah jadwal (pilih program)
+│   └── [id]/
+│       └── page.tsx              ← Detail jadwal + info kuota + peserta
+
+├── daftar-kelas/
+│   ├── page.tsx                  ← List semua pendaftaran (enriched)
+│   ├── create/
+│   │   └── page.tsx              ← Form daftarkan siswa (pilih siswa, jadwal, tarif)
+│   └── [id]/
+│       └── page.tsx              ← Detail pendaftaran + update status
+
+├── presensi/
+│   └── page.tsx                  ← Kalender absensi — klik tanggal → absen list
+
+├── tagihan/
+│   ├── page.tsx                  ← List tagihan (tabel + search + filter status)
+│   ├── create/
+│   │   └── page.tsx              ← Form buat tagihan manual
+│   └── [id]/
+│       └── page.tsx              ← Detail tagihan + riwayat pembayaran + form bayar
+
+└── pembayaran/
+    └── page.tsx                  ← List semua pembayaran (history global)
+```
+
+---
+
+## 9. Catatan Penting untuk Frontend
 
 | # | Catatan |
 |---|---------|
-| 1 | Backend mengembalikan datetime dengan **spasi** sebagai separator: `"2026-03-23 08:00:00"` — selalu `iso.replace(' ', 'T')` sebelum `new Date()` |
-| 2 | `CREATE` jadwal kirim field terpisah (`jam_mulai`, `jam_selesai`) — `UPDATE` jadwal kirim combined (`tanggal_mulai: "YYYY-MM-DD HH:MM:00"`) tanpa jam |
-| 3 | `diffDays` di kalender dihitung dari **tanggal saja** (bukan datetime) agar jam tidak menyebabkan jadwal bocor ke hari berikutnya |
-| 4 | Backend filter jadwal dengan overlap: `WHERE tanggal_mulai <= week_end AND tanggal_selesai >= week_start` |
-| 5 | `harga` pada `ITarif` adalah **string** (MySQL DECIMAL) — selalu `parseFloat(tarif.harga)` sebelum dihitung/ditampilkan |
-| 6 | `aktif` pada semua entitas adalah **number** (`0` atau `1`), bukan boolean |
-| 7 | Format Rupiah: gunakan `formatRupiah()` dari `@/utils/formatNumber` — jangan `toLocaleString('id-ID')` (hydration error) |
-| 8 | Untuk upload multipart: `ApiService.fetchDataWithAxios<Response, FormData>({ data: formData })` |
-| 9 | `JadwalKalender` adalah **self-fetching** — parent tidak perlu pass data, cukup `refreshToken` |
-| 10 | `JadwalDetailDrawer` load data (kuota + daftar siswa + tarif) saat pertama kali `open && jadwal` |
+| 1 | `harga` pada `ITarif` adalah **string** (MySQL DECIMAL) — selalu `parseFloat(tarif.harga)` sebelum dihitung/ditampilkan |
+| 2 | `aktif` pada semua entitas adalah **number** (`0` atau `1`), bukan boolean |
+| 3 | `jenis_kelamin`, `hari`, `status` adalah **number** — gunakan helper `formatHari()`, `formatStatusDaftar()`, `formatJenisKelamin()` untuk tampilan |
+| 4 | Cek kuota (`GET /jadwal-kelas/:id/kuota`) sebelum tampilkan form daftar kelas untuk UX yang lebih baik |
+| 5 | `GET /kursus/tarif/program/:id_program` berguna untuk dropdown pilih tarif di form daftar kelas |
+| 6 | Response `daftar-kelas` sudah enriched (nested siswa + jadwal + program + tarif) — tidak perlu request terpisah |
+| 7 | `tanggal_lahir` dan `tanggal_daftar` dikirim sebagai **string** format `"YYYY-MM-DD"` |
+| 8 | `total_bayar` pada tagihan adalah **auto-calculated** — jangan kirim field ini, akan salah |
+| 9 | Setelah `POST /pembayaran` atau `DELETE /pembayaran/:id`, **fetch ulang tagihan** untuk tampilkan `status` dan `total_bayar` terbaru |
+| 10 | `tanggal_bayar` pembayaran adalah **string** `"YYYY-MM-DD"` — bukan Date object |
+| 11 | Absen batch pakai `id_daftar` (dari `GET /presensi/jadwal/:id_jadwal`), bukan `id_siswa` |
+| 12 | `presensiService.getBySiswa()` return `{ data, sesi_terpakai }` — `sesi_terpakai` hitung sesi HADIR saja (untuk cek kuota paket) |
 
 ---
 
-**Last Updated:** 2026-03-23
+**Document Version:** 1.1
+**Last Updated:** 2026-03-24
+**Owner:** @ideora-tech

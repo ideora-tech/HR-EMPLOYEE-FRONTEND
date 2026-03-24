@@ -113,5 +113,11 @@ export const API_ENDPOINTS = {
             BY_JADWAL: (idJadwal: string) =>
                 `${PROXY}/kursus/daftar-kelas/jadwal/${idJadwal}`,
         },
+        PRESENSI: {
+            BASE: `${PROXY}/kursus/presensi`,
+            BY_ID: (id: string) => `${PROXY}/kursus/presensi/${id}`,
+            BY_JADWAL: (idJadwal: string) => `${PROXY}/kursus/presensi/jadwal/${idJadwal}`,
+            BATCH: `${PROXY}/kursus/presensi/batch`,
+        },
     },
 } as const
