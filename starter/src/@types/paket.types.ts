@@ -5,7 +5,7 @@ export type KodePaket = string
 export interface IPaket {
     id_paket: string
     kode_paket: KodePaket
-    nama: string
+    nama_paket: string
     harga: number
     maks_karyawan: number
     aktif: number             // MySQL int: 0 | 1
@@ -15,7 +15,7 @@ export interface IPaket {
 
 export interface IPaketCreate {
     kode_paket: KodePaket
-    nama: string
+    nama_paket: string
     harga: number
     maks_karyawan: number
     aktif: number
@@ -52,6 +52,7 @@ export interface ApiPaginatedResponse<T> {
 export interface IPaketQuery {
     search?: string
     kode_paket?: KodePaket
+    nama_paket?: string
     aktif?: number
     page?: number
     limit?: number

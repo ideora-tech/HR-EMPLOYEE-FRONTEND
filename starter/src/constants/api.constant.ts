@@ -5,6 +5,9 @@ const PROXY = '/proxy'
 export const API_ENDPOINTS = {
     // Auth
     AUTH: {
+        REGISTER: `${PROXY}/auth/register`,
+        LOGIN: `${PROXY}/auth/login`,
+        LOGOUT: `${PROXY}/auth/logout`,
         SIGN_IN: `${PROXY}/auth/sign-in`,
         SIGN_OUT: `${PROXY}/auth/sign-out`,
         REFRESH: `${PROXY}/auth/refresh`,
@@ -30,6 +33,7 @@ export const API_ENDPOINTS = {
     MENU: {
         BASE: `${PROXY}/menu`,
         BY_ID: (id: string) => `${PROXY}/menu/${id}`,
+        ME: `${PROXY}/menu/me`,
     },
 
     // Peran (Role Pengguna)
@@ -82,6 +86,7 @@ export const API_ENDPOINTS = {
     KARYAWAN: {
         BASE: `${PROXY}/karyawan`,
         BY_ID: (id: string) => `${PROXY}/karyawan/${id}`,
+        FOTO: (id: string) => `${PROXY}/karyawan/${id}/foto`,
         LOKASI: (id: string) => `${PROXY}/karyawan/${id}/lokasi`,
         TEMPLATE_EXCEL: `${PROXY}/karyawan/template/excel`,
         UPLOAD_EXCEL: `${PROXY}/karyawan/upload/excel`,

@@ -30,7 +30,7 @@ const SiswaCard = ({ entry, variant }: SiswaCardProps) => {
         <div className="border border-gray-100 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow transition-shadow">
             <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
-                    <p className="font-semibold text-gray-800 dark:text-gray-100">{entry.nama}</p>
+                    <p className="font-semibold text-gray-800 dark:text-gray-100">{entry.nama_siswa}</p>
                     {entry.telepon && (
                         <p className="text-xs text-gray-400 mt-0.5">{entry.telepon}</p>
                     )}
@@ -39,11 +39,10 @@ const SiswaCard = ({ entry, variant }: SiswaCardProps) => {
                     )}
                 </div>
                 <span
-                    className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                        isBerhenti
+                    className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${isBerhenti
                             ? 'bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400'
                             : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
-                    }`}
+                        }`}
                 >
                     {isBerhenti ? (
                         <><HiOutlineExclamationCircle className="text-sm" /> Berhenti</>
@@ -68,11 +67,10 @@ const SiswaCard = ({ entry, variant }: SiswaCardProps) => {
                             </p>
                             {k.hari_tersisa !== null && (
                                 <p
-                                    className={`text-xs font-semibold ${
-                                        k.hari_tersisa <= 7
+                                    className={`text-xs font-semibold ${k.hari_tersisa <= 7
                                             ? 'text-red-500'
                                             : 'text-amber-500'
-                                    }`}
+                                        }`}
                                 >
                                     {k.hari_tersisa} hari lagi
                                 </p>

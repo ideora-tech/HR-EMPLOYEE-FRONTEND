@@ -35,7 +35,7 @@ const StrukturOrganisasiPage = () => {
                         { value: '', label: 'Semua Perusahaan' },
                         ...res.data.map((p) => ({
                             value: p.id_perusahaan,
-                            label: p.nama,
+                            label: p.nama_perusahaan,
                         })),
                     ])
                 }

@@ -125,7 +125,7 @@ const PembayaranForm = ({ open, tagihan, onClose, onSaved }: PembayaranFormProps
         >
             <h5 className="font-bold mb-1">Catat Pembayaran</h5>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Tagihan: <span className="font-medium text-gray-700 dark:text-gray-200">{tagihan.siswa.nama}</span>
+                Tagihan: <span className="font-medium text-gray-700 dark:text-gray-200">{tagihan.siswa.nama_siswa}</span>
                 {sisa > 0 && (
                     <> — sisa{' '}
                         <span className="text-amber-500 font-medium">

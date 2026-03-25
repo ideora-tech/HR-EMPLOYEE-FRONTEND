@@ -229,7 +229,7 @@ const KursusDashboard = () => {
                                 return (
                                     <div key={j.id_jadwal} className="px-4 py-3 flex items-center justify-between gap-3">
                                         <div className="min-w-0">
-                                            <p className="font-medium text-sm truncate">{j.nama}</p>
+                                            <p className="font-medium text-sm truncate">{j.nama_jadwal}</p>
                                             <p className="text-xs text-gray-500">{j.instruktur} · {j.jam_mulai}–{j.jam_selesai}</p>
                                         </div>
                                         <div className="shrink-0 text-right">

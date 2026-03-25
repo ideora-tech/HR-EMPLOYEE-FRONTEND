@@ -45,7 +45,7 @@ export interface IKursusQuery {
 
 export interface ISiswa {
     id_siswa: string
-    nama: string
+    nama_siswa: string
     email: string | null
     telepon: string | null
     tanggal_lahir: string | null   // ISO date string: "2000-01-15"
@@ -58,7 +58,7 @@ export interface ISiswa {
 }
 
 export interface ICreateSiswa {
-    nama: string
+    nama_siswa: string
     email?: string
     telepon?: string
     tanggal_lahir?: string         // "YYYY-MM-DD"
@@ -80,7 +80,7 @@ export interface ISiswaMonitoringKelas {
 
 export interface ISiswaMonitoringEntry {
     id_siswa: string
-    nama: string
+    nama_siswa: string
     email: string | null
     telepon: string | null
     kelas: ISiswaMonitoringKelas[]
@@ -104,7 +104,7 @@ export interface IKursusDashboardSiswaProgram {
 
 export interface IKursusDashboardJadwal {
     id_jadwal: string
-    nama: string
+    nama_jadwal: string
     instruktur: string
     jam_mulai: string
     jam_selesai: string
@@ -137,8 +137,8 @@ export interface IKursusDashboard {
 
 export interface ITingkatProgram {
     id_tingkat: string
-    kode: string                   // contoh: "PEMULA", "MENENGAH", "MAHIR"
-    nama: string                   // contoh: "Pemula", "Menengah", "Mahir"
+    kode_tingkat: string                   // contoh: "PEMULA", "MENENGAH", "MAHIR"
+    nama_tingkat: string                   // contoh: "Pemula", "Menengah", "Mahir"
     urutan: number
     aktif: number
     dibuat_pada: string
@@ -146,8 +146,8 @@ export interface ITingkatProgram {
 }
 
 export interface ICreateTingkatProgram {
-    kode: string                   // format: A-Z0-9_
-    nama: string
+    kode_tingkat: string                   // format: A-Z0-9_
+    nama_tingkat: string
     urutan?: number
 }
 
@@ -158,9 +158,9 @@ export type IUpdateTingkatProgram = Partial<ICreateTingkatProgram> & { aktif?: 0
 export interface IProgramPengajaran {
     id_program: string
     kode_program: string           // format: A-Z0-9_ (contoh: "TARI_BALI_01")
-    nama: string
+    nama_program: string
     deskripsi: string | null
-    tingkat: string | null         // kode dari master data tingkat_program
+    tingkat: string | null         // kode_tingkat dari master data tingkat_program
     durasi_menit: number           // default: 60
     aktif: number
     dibuat_pada: string
@@ -169,9 +169,9 @@ export interface IProgramPengajaran {
 
 export interface ICreateProgramPengajaran {
     kode_program: string
-    nama: string
+    nama_program: string
     deskripsi?: string
-    tingkat?: string               // kode dari GET /kursus/tingkat-program
+    tingkat?: string               // kode_tingkat dari GET /kursus/tingkat-program
     durasi_menit?: number
 }
 
@@ -182,8 +182,8 @@ export type IUpdateProgramPengajaran = Partial<ICreateProgramPengajaran> & { akt
 export interface ITarif {
     id_tarif: string
     id_program: string
-    nama: string
-    jenis: 'PER_SESI' | 'PAKET'
+    nama_tarif: string
+    jenis_tarif: 'PER_SESI' | 'PAKET'
     jumlah_pertemuan: number | null  // hanya untuk jenis PAKET
     harga: string                    // DECIMAL dari MySQL → string, parse dengan parseFloat()
     aktif: number
@@ -193,8 +193,8 @@ export interface ITarif {
 
 export interface ICreateTarif {
     id_program: string
-    nama: string
-    jenis: 'PER_SESI' | 'PAKET'
+    nama_tarif: string
+    jenis_tarif: 'PER_SESI' | 'PAKET'
     harga: number
     jumlah_pertemuan?: number
 }
@@ -206,7 +206,7 @@ export type IUpdateTarif = Partial<ICreateTarif> & { aktif?: 0 | 1 }
 export interface IJadwalKelas {
     id_jadwal: string
     id_program: string
-    nama: string
+    nama_jadwal: string
     instruktur: string | null
     lokasi: string | null
     kuota: number
@@ -225,7 +225,7 @@ export interface IKuotaJadwal {
 
 export interface ICreateJadwalKelas {
     id_program: string
-    nama: string
+    nama_jadwal: string
     tanggal_mulai: string   // "YYYY-MM-DD"
     tanggal_selesai: string // "YYYY-MM-DD"
     jam_mulai: string       // "HH:MM"
@@ -237,7 +237,7 @@ export interface ICreateJadwalKelas {
 
 export interface IUpdateJadwalKelas {
     id_program?: string
-    nama?: string
+    nama_jadwal?: string
     tanggal_mulai?: string   // "YYYY-MM-DD HH:MM:SS" (combined datetime)
     tanggal_selesai?: string // "YYYY-MM-DD HH:MM:SS" (combined datetime)
     instruktur?: string
@@ -258,13 +258,13 @@ export interface IDaftarKelas {
     diubah_pada: string | null
     siswa: {
         id_siswa: string
-        nama: string
+        nama_siswa: string
         email: string | null
         telepon: string | null
     }
     jadwal: {
         id_jadwal: string
-        nama: string
+        nama_jadwal: string
         hari: number
         jam_mulai: string
         jam_selesai: string
@@ -272,14 +272,14 @@ export interface IDaftarKelas {
         lokasi: string | null
         program: {
             id_program: string
-            nama: string
+            nama_program: string
             kode_program: string
         }
     }
     tarif: {
         id_tarif: string
-        nama: string
-        jenis: 'PER_SESI' | 'PAKET'
+        nama_tarif: string
+        jenis_tarif: 'PER_SESI' | 'PAKET'
         harga: string
     } | null
 }
@@ -313,13 +313,13 @@ export interface IPresensi {
     daftar?: { id_daftar: string }
     siswa?: {
         id_siswa: string
-        nama: string
+        nama_siswa: string
         email?: string | null
         telepon?: string | null
     }
     jadwal: {
         id_jadwal: string
-        nama: string
+        nama_jadwal: string
         tanggal_mulai: string     // "YYYY-MM-DD HH:MM:SS"
         tanggal_selesai: string   // "YYYY-MM-DD HH:MM:SS"
         // fields below may not be returned by the API (legacy compat)
@@ -327,7 +327,7 @@ export interface IPresensi {
         jam_mulai?: string
         jam_selesai?: string
         instruktur?: string | null
-        program?: { id_program: string; nama: string }
+        program?: { id_program: string; nama_program: string }
     }
 }
 
@@ -336,7 +336,7 @@ export interface IPresensiJadwalEntry {
     id_daftar: string
     siswa: {
         id_siswa: string
-        nama: string
+        nama_siswa: string
         email: string | null
         telepon: string | null
     }
@@ -354,7 +354,7 @@ export interface IPresensiDetail {
     catatan: string | null
     siswa: {
         id_siswa: string
-        nama: string
+        nama_siswa: string
         telepon: string | null
     }
     daftar: {
@@ -393,7 +393,7 @@ export interface IPresensiQuery {
 
 export interface ITagihan {
     id_tagihan: string
-    jenis: 'PAKET' | 'BULANAN' | 'LAINNYA'
+    jenis_tagihan: 'PAKET' | 'BULANAN' | 'LAINNYA'
     periode: string | null          // "YYYY-MM"
     jumlah_sesi: number | null
     total_harga: number
@@ -405,7 +405,7 @@ export interface ITagihan {
     diubah_pada: string | null
     siswa: {
         id_siswa: string
-        nama: string
+        nama_siswa: string
         email: string | null
         telepon: string | null
     }
@@ -413,7 +413,7 @@ export interface ITagihan {
 
 export interface ICreateTagihan {
     id_siswa: string
-    jenis: 'PAKET' | 'BULANAN' | 'LAINNYA'
+    jenis_tagihan: 'PAKET' | 'BULANAN' | 'LAINNYA'
     periode?: string | null
     jumlah_sesi?: number | null
     total_harga: number
@@ -421,7 +421,7 @@ export interface ICreateTagihan {
 }
 
 export interface IUpdateTagihan {
-    jenis?: 'PAKET' | 'BULANAN' | 'LAINNYA'
+    jenis_tagihan?: 'PAKET' | 'BULANAN' | 'LAINNYA'
     periode?: string | null
     jumlah_sesi?: number | null
     total_harga?: number
@@ -452,7 +452,7 @@ export interface IPembayaran {
     diubah_pada: string | null
     tagihan: {
         id_tagihan: string
-        jenis: 'PAKET' | 'BULANAN' | 'LAINNYA'
+        jenis_tagihan: 'PAKET' | 'BULANAN' | 'LAINNYA'
         periode: string | null
         total_harga: number
         total_bayar: number

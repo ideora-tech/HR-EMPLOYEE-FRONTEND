@@ -70,7 +70,7 @@ const TagihanTable = ({
                 cell: ({ row }: CellContext<ITagihan, unknown>) => (
                     <div>
                         <p className="font-semibold text-gray-800 dark:text-gray-100">
-                            {row.original.siswa.nama}
+                            {row.original.siswa.nama_siswa}
                         </p>
                         {row.original.siswa.telepon && (
                             <p className="text-xs text-gray-400">{row.original.siswa.telepon}</p>
@@ -80,11 +80,11 @@ const TagihanTable = ({
             },
             {
                 header: 'Jenis',
-                accessorKey: 'jenis',
+                accessorKey: 'jenis_tagihan',
                 size: 100,
                 cell: ({ row }: CellContext<ITagihan, unknown>) => (
                     <Tag className="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300 text-xs">
-                        {row.original.jenis}
+                        {row.original.jenis_tagihan}
                     </Tag>
                 ),
             },

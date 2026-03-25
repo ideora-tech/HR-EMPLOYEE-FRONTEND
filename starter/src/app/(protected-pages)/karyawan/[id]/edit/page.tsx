@@ -80,6 +80,7 @@ const EditKaryawanPage = () => {
     const handleSubmit = async (
         payload: ICreateKaryawan | IUpdateKaryawan,
         lokasiIds: string[],
+        fotoFile?: File | null,
     ) => {
         if (!editData) return
         setSubmitting(true)
@@ -88,6 +89,9 @@ const EditKaryawanPage = () => {
                 editData.id_karyawan,
                 payload as IUpdateKaryawan,
             )
+            if (fotoFile) {
+                await KaryawanService.uploadFoto(editData.id_karyawan, fotoFile)
+            }
             await KaryawanService.setLokasi(editData.id_karyawan, lokasiIds)
             toast.push(
                 <Notification
@@ -128,86 +132,6 @@ const EditKaryawanPage = () => {
             jabatanList={jabatanList}
             lokasiList={lokasiList}
             existingLokasiIds={existingLokasiIds}
-            onSubmit={handleSubmit}
-            onCancel={() => router.push('/karyawan')}
-        />
-    )
-}
-
-export default EditKaryawanPage
-
-const EditKaryawanPage = () => {
-    const router = useRouter()
-    const { id } = useParams<{ id: string }>()
-    const [editData, setEditData] = useState<IKaryawan | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [submitting, setSubmitting] = useState(false)
-
-    useEffect(() => {
-        if (!id) return
-        KaryawanService.getById(id)
-            .then((res) => {
-                if (res.success) setEditData(res.data)
-            })
-            .catch((err) => {
-                toast.push(
-                    <Notification
-                        type="danger"
-                        title="Gagal memuat data karyawan"
-                    >
-                        {parseApiError(err)}
-                    </Notification>,
-                )
-                router.push('/karyawan')
-            })
-            .finally(() => setLoading(false))
-    }, [id, router])
-
-    const handleSubmit = async (
-        payload: ICreateKaryawan | IUpdateKaryawan,
-    ) => {
-        if (!editData) return
-        setSubmitting(true)
-        try {
-            await KaryawanService.update(
-                editData.id_karyawan,
-                payload as IUpdateKaryawan,
-            )
-            toast.push(
-                <Notification
-                    type="success"
-                    title={MESSAGES.SUCCESS.UPDATED(ENTITY.KARYAWAN)}
-                />,
-            )
-            router.push('/karyawan')
-        } catch (err) {
-            toast.push(
-                <Notification
-                    type="danger"
-                    title={MESSAGES.ERROR.UPDATE(ENTITY.KARYAWAN)}
-                >
-                    {parseApiError(err)}
-                </Notification>,
-            )
-        } finally {
-            setSubmitting(false)
-        }
-    }
-
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center py-24">
-                <Spinner size={36} />
-            </div>
-        )
-    }
-
-    if (!editData) return null
-
-    return (
-        <KaryawanFormPage
-            editData={editData}
-            submitting={submitting}
             onSubmit={handleSubmit}
             onCancel={() => router.push('/karyawan')}
         />

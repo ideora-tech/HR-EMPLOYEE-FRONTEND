@@ -28,6 +28,13 @@ const MenuService = {
         })
     },
 
+    async getMe(): Promise<ApiResponse<IMenu[]>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<IMenu[]>>({
+            url: API_ENDPOINTS.MENU.ME,
+            method: 'GET',
+        })
+    },
+
     async getById(id_menu: string): Promise<ApiResponse<IMenu>> {
         return ApiService.fetchDataWithAxios<ApiResponse<IMenu>>({
             url: API_ENDPOINTS.MENU.BY_ID(id_menu),

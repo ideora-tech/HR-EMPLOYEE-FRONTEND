@@ -36,7 +36,7 @@ export interface IKaryawanQuery {
 export type StatusKepegawaian = 'TETAP' | 'KONTRAK' | 'PROBASI' | 'MAGANG'
 export type StatusPajak =
     | 'TK/0' | 'TK/1' | 'TK/2' | 'TK/3'
-    | 'K/0'  | 'K/1'  | 'K/2'  | 'K/3'
+    | 'K/0' | 'K/1' | 'K/2' | 'K/3'
     | 'K/I/0' | 'K/I/1' | 'K/I/2' | 'K/I/3'
 
 export interface IKaryawan {
@@ -45,7 +45,7 @@ export interface IKaryawan {
     id_jabatan: string | null
     id_departemen: string | null
     nik: string | null
-    nama: string
+    nama_karyawan: string
     email: string | null
     telepon: string | null
     tanggal_lahir: string | null
@@ -68,13 +68,13 @@ export interface IKaryawan {
     aktif: number
     dibuat_pada: string
     diubah_pada: string | null
-    jabatan: { id_jabatan: string; nama: string; level: number | null } | null
-    departemen: { id_departemen: string; nama: string } | null
+    jabatan: { id_jabatan: string; nama_jabatan: string; level: number | null } | null
+    departemen: { id_departemen: string; nama_departemen: string } | null
 }
 
 export interface ICreateKaryawan {
     nik?: string
-    nama: string
+    nama_karyawan: string
     email?: string
     telepon?: string
     tanggal_lahir?: string
@@ -102,8 +102,8 @@ export type IUpdateKaryawan = Partial<ICreateKaryawan> & { aktif?: 0 | 1 }
 
 export interface ILokasiKaryawan {
     id_lokasi: string
-    kode: string
-    nama: string
+    kode_lokasi: string
+    nama_lokasi: string
     alamat: string | null
     kota: string | null
     provinsi: string | null

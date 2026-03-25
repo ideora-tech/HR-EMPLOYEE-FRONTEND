@@ -1,7 +1,7 @@
 export interface IPengguna {
     id_pengguna: string
     id_perusahaan: string
-    nama: string
+    nama_pengguna: string
     email: string
     peran: string
     aktif: number
@@ -10,14 +10,14 @@ export interface IPengguna {
 }
 
 export interface IPenggunaCreate {
-    nama: string
+    nama_pengguna: string
     kata_sandi: string
     peran: string
     aktif?: number
 }
 
 export interface IPenggunaUpdate {
-    nama?: string
+    nama_pengguna?: string
     kata_sandi?: string
     peran?: string
     aktif?: number

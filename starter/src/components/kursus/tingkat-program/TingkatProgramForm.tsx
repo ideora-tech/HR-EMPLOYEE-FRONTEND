@@ -51,8 +51,8 @@ const TingkatProgramForm = ({
     useEffect(() => {
         if (editData) {
             setForm({
-                kode: editData.kode,
-                nama: editData.nama,
+                kode: editData.kode_tingkat,
+                nama: editData.nama_tingkat,
                 urutan: String(editData.urutan ?? 1),
                 aktif: editData.aktif === 1,
             })
@@ -77,8 +77,8 @@ const TingkatProgramForm = ({
         if (!validate()) return
 
         const base = {
-            kode: form.kode.trim().toUpperCase(),
-            nama: form.nama.trim(),
+            kode_tingkat: form.kode.trim().toUpperCase(),
+            nama_tingkat: form.nama.trim(),
             urutan: Number(form.urutan),
         }
 

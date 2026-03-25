@@ -6,6 +6,8 @@ melaporkan deviasi sebagai temuan di modul Code Quality Review.
 
 > **Arsitektur**: View → Controller/Notifier → Repository → Remote/Local DataSource
 > Setiap feature wajib memiliki: `views/`, `controllers/` atau `providers/`, `repositories/`, `models/`, `bindings/` (GetX).
+untuk setiap file tidak boleh lebih dari 1000 line
+
 
 ---
 

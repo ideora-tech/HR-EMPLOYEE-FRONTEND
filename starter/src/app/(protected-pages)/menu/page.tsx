@@ -210,8 +210,8 @@ const MenuPage = () => {
                         <button
                             title="Tabel"
                             className={`p-2 text-lg transition-colors ${viewMode === 'table'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                ? 'bg-indigo-600 text-white'
+                                : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
                                 }`}
                             onClick={() => setViewMode('table')}
                         >
@@ -220,8 +220,8 @@ const MenuPage = () => {
                         <button
                             title="Kartu"
                             className={`p-2 text-lg transition-colors ${viewMode === 'card'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                ? 'bg-indigo-600 text-white'
+                                : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
                                 }`}
                             onClick={() => setViewMode('card')}
                         >
@@ -287,7 +287,7 @@ const MenuPage = () => {
                 <p className="text-sm">
                     Menu{' '}
                     <span className="font-semibold">
-                        &ldquo;{deleteTarget?.nama}&rdquo;
+                        &ldquo;{deleteTarget?.nama_menu}&rdquo;
                     </span>{' '}
                     akan dihapus secara permanen. Tindakan ini tidak dapat
                     dibatalkan.

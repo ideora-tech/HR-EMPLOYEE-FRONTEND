@@ -53,14 +53,14 @@ const MenuFormPage = ({
             .filter((m) => m.id_menu !== editData?.id_menu)
             .map((m) => ({
                 value: m.id_menu,
-                label: m.parent_id ? `    ↳ ${m.nama}` : m.nama,
+                label: m.parent_id ? `    ↳ ${m.nama_menu}` : m.nama_menu,
             })),
     ]
 
     useEffect(() => {
         if (editData) {
             setForm({
-                nama: editData.nama,
+                nama: editData.nama_menu,
                 path: editData.path ?? '',
                 icon: editData.icon ?? '',
                 parent_id: editData.parent_id ?? '',
@@ -87,7 +87,7 @@ const MenuFormPage = ({
         const parentId = form.parent_id.trim() || null
         if (isEdit) {
             onSubmit({
-                nama: form.nama.trim(),
+                nama_menu: form.nama.trim(),
                 path: form.path.trim() || null,
                 icon: form.icon.trim() || null,
                 parent_id: parentId,
@@ -96,7 +96,7 @@ const MenuFormPage = ({
             } as IMenuUpdate)
         } else {
             onSubmit({
-                nama: form.nama.trim(),
+                nama_menu: form.nama.trim(),
                 path: form.path.trim() || undefined,
                 icon: form.icon.trim() || undefined,
                 parent_id: parentId,

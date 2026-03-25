@@ -125,7 +125,8 @@ Login dan dapatkan token.
       "name": "Owner Dummy",
       "email": "owner@dummy.com",
       "role": "OWNER",
-      "company_id": "660e8400-e29b-41d4-a716-446655440001"
+      "company_id": "660e8400-e29b-41d4-a716-446655440001",
+      "harus_ganti_password": 0
     },
     "tokens": {
       "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -136,6 +137,8 @@ Login dan dapatkan token.
 ```
 
 > `access_token` expired sesuai konfigurasi `JWT_EXPIRES_IN`. `refresh_token` untuk memperbarui tanpa login ulang.
+
+> ⚠️ **Jika `harus_ganti_password === 1`**: Frontend WAJIB redirect ke halaman ganti password sebelum user bisa akses halaman manapun. Nilai ini di-set `1` otomatis saat akun karyawan dibuat. Setelah password diganti via `PATCH /pengguna/:id`, flag otomatis reset ke `0`.
 
 ---
 
@@ -202,11 +205,13 @@ Daftar pengguna dengan pagination & pencarian.
     {
       "id_pengguna": "550e8400-e29b-41d4-a716-446655440000",
       "id_perusahaan": "660e8400-e29b-41d4-a716-446655440001",
+      "id_karyawan": "770e8400-e29b-41d4-a716-446655440002",
       "username": "budi.santoso",
       "nama": "Budi Santoso",
       "email": "budi@perusahaan.com",
       "peran": "HR_ADMIN",
       "aktif": 1,
+      "harus_ganti_password": 0,
       "dibuat_pada": "2026-01-01T00:00:00.000Z",
       "diubah_pada": null
     }
@@ -236,7 +241,8 @@ Tambah pengguna baru di perusahaan caller.
   "email": "andi@perusahaan.com",
   "kata_sandi": "Password123!",
   "peran": "HR_ADMIN",
-  "username": "andi.wijaya"
+  "username": "andi.wijaya",
+  "id_karyawan": "770e8400-e29b-41d4-a716-446655440002"
 }
 ```
 
@@ -247,6 +253,7 @@ Tambah pengguna baru di perusahaan caller.
 | `kata_sandi` | string | ✅ | Password plain, akan di-hash |
 | `peran` | string | ✅ | Kode peran, contoh: `HR_ADMIN` |
 | `username` | string | ❌ | Username unik untuk login |
+| `id_karyawan` | string (UUID) | ❌ | Link ke data karyawan. `null` = pengguna tanpa data karyawan |
 
 **Response `201`:** data pengguna baru.
 
@@ -264,9 +271,20 @@ Update pengguna. Semua field opsional pada PATCH.
   "kata_sandi": "NewPass123!",
   "peran": "FINANCE",
   "username": "andi.w",
-  "aktif": 1
+  "aktif": 1,
+  "id_karyawan": "770e8400-e29b-41d4-a716-446655440002"
 }
 ```
+
+| Field | Tipe | Keterangan |
+|-------|------|------------|
+| `nama` | string | |
+| `email` | string | |
+| `kata_sandi` | string | Jika diisi, `harus_ganti_password` otomatis di-reset ke `0` |
+| `peran` | string | |
+| `username` | string | |
+| `aktif` | 0\|1 | |
+| `id_karyawan` | string\|null | Link/unlink ke karyawan. Kirim `null` untuk unlink |
 
 **Response `200`:** data pengguna setelah diupdate.
 
@@ -476,7 +494,7 @@ Daftar peran dengan pagination & search.
 
 | Param | Tipe | Default | Keterangan |
 |-------|------|---------|------------|
-| `search` | string | — | Cari berdasarkan `kode_peran` atau `nama` |
+| `search` | string | — | Cari berdasarkan `kode_peran` atau `nama_peran` |
 | `page` | number | 1 | Halaman |
 | `limit` | number | 10 | Jumlah per halaman |
 | `aktif` | 0\|1 | — | Filter status aktif |
@@ -491,7 +509,7 @@ Daftar peran dengan pagination & search.
       "id_peran": "550e8400-e29b-41d4-a716-446655440000",
       "company_id": null,
       "kode_peran": "HR_ADMIN",
-      "nama": "HR Manager / Admin",
+      "nama_peran": "HR Manager / Admin",
       "aktif": 1,
       "is_platform": 0,
       "is_global": true,
@@ -529,14 +547,14 @@ Tambah peran baru.
 ```json
 {
   "kode_peran": "SUPERVISOR",
-  "nama": "Supervisor Lapangan"
+  "nama_peran": "Supervisor Lapangan"
 }
 ```
 
 | Field | Tipe | Wajib | Keterangan |
 |-------|------|-------|------------|
 | `kode_peran` | string | ✅ | Huruf besar + underscore, max 50 karakter |
-| `nama` | string | ✅ | Nama tampilan, max 100 karakter |
+| `nama_peran` | string | ✅ | Nama tampilan, max 100 karakter |
 | `aktif` | number | ❌ | Default `1` |
 
 **Response `201`:** data peran yang baru dibuat.
@@ -550,7 +568,7 @@ Update peran. Company user tidak bisa edit peran global (`403`).
 **Request Body:**
 ```json
 {
-  "nama": "Supervisor Senior",
+  "nama_peran": "Supervisor Senior",
   "aktif": 1
 }
 ```
@@ -633,21 +651,21 @@ Cocok untuk render matrix checklist di frontend — semua menu dikembalikan, `ak
     {
       "id_menu": "uuid-...",
       "path": "/dashboard",
-      "nama": "Dashboard",
+      "nama_menu": "Dashboard",
       "kode_modul": "DASHBOARD",
       "aksi": ["VIEW"]
     },
     {
       "id_menu": "uuid-...",
       "path": "/payroll",
-      "nama": "Payroll",
+      "nama_menu": "Payroll",
       "kode_modul": "PAYROLL",
       "aksi": ["VIEW", "CREATE", "UPDATE"]
     },
     {
       "id_menu": "uuid-...",
       "path": "/reports/leave",
-      "nama": "Laporan Cuti",
+      "nama_menu": "Laporan Cuti",
       "kode_modul": "REPORTS",
       "aksi": []
     }
@@ -683,7 +701,7 @@ Set aksi untuk satu peran pada satu menu (**upsert/replace per menu**).
   "data": {
     "id_menu": "uuid-payroll",
     "path": "/payroll",
-    "nama": "Payroll",
+    "nama_menu": "Payroll",
     "kode_modul": "PAYROLL",
     "aksi": ["VIEW", "CREATE", "UPDATE"]
   }
@@ -769,7 +787,7 @@ Daftar paket langganan.
     {
       "id_paket": "uuid-...",
       "kode_paket": "FREE",
-      "nama": "Free",
+      "nama_paket": "Free",
       "maks_karyawan": 10,
       "harga": 0,
       "aktif": 1,
@@ -797,7 +815,7 @@ Tambah paket baru.
 ```json
 {
   "kode_paket": "ENTERPRISE_PLUS",
-  "nama": "Enterprise Plus",
+  "nama_paket": "Enterprise Plus",
   "maks_karyawan": 999999,
   "harga": 2499000,
   "aktif": 1
@@ -807,7 +825,7 @@ Tambah paket baru.
 | Field | Tipe | Wajib | Keterangan |
 |-------|------|-------|------------|
 | `kode_paket` | string | ✅ | Huruf besar, angka, underscore |
-| `nama` | string | ✅ | Nama tampil paket |
+| `nama_paket` | string | ✅ | Nama tampil paket |
 | `maks_karyawan` | number | ✅ | Min 1 |
 | `harga` | number | ✅ | Harga per bulan (Rupiah). 0 = gratis |
 | `aktif` | number | ❌ | Default `1` |
@@ -851,7 +869,7 @@ Filter berdasarkan paket perusahaan + peran user. Dikembalikan dalam bentuk **tr
   "data": [
     {
       "id_menu": "uuid-...",
-      "nama": "Dashboard",
+      "nama_menu": "Dashboard",
       "icon": "layout-dashboard",
       "path": "/dashboard",
       "kode_modul": "DASHBOARD",
@@ -862,7 +880,7 @@ Filter berdasarkan paket perusahaan + peran user. Dikembalikan dalam bentuk **tr
     },
     {
       "id_menu": "uuid-...",
-      "nama": "Karyawan",
+      "nama_menu": "Karyawan",
       "icon": "users",
       "path": "/employees",
       "kode_modul": "EMPLOYEES",
@@ -872,7 +890,7 @@ Filter berdasarkan paket perusahaan + peran user. Dikembalikan dalam bentuk **tr
       "children": [
         {
           "id_menu": "uuid-...",
-          "nama": "Daftar Karyawan",
+          "nama_menu": "Daftar Karyawan",
           "path": "/employees/list",
           "kode_modul": "EMPLOYEES",
           "parent_id": "uuid-parent",
@@ -911,7 +929,7 @@ Tambah menu baru.
 **Request Body:**
 ```json
 {
-  "nama": "Rekrutmen",
+  "nama_menu": "Rekrutmen",
   "icon": "briefcase",
   "path": "/recruitment",
   "kode_modul": "RECRUITMENT",
@@ -922,7 +940,7 @@ Tambah menu baru.
 
 | Field | Tipe | Wajib | Keterangan |
 |-------|------|-------|------------|
-| `nama` | string | ✅ | Max 100 karakter |
+| `nama_menu` | string | ✅ | Max 100 karakter |
 | `icon` | string | ❌ | Nama icon (Tabler/Lucide) |
 | `path` | string | ❌ | Path URL |
 | `kode_modul` | string | ❌ | Kode modul terkait. `null` = menu global |
@@ -971,7 +989,7 @@ Daftar semua modul, diurutkan berdasarkan `urutan`.
     {
       "id_modul": "uuid-...",
       "kode_modul": "DASHBOARD",
-      "nama": "Dashboard",
+      "nama_modul": "Dashboard",
       "deskripsi": "Ringkasan dan statistik perusahaan",
       "icon": "layout-dashboard",
       "urutan": 1,
@@ -1000,7 +1018,7 @@ Tambah modul baru.
 ```json
 {
   "kode_modul": "RECRUITMENT",
-  "nama": "Rekrutmen",
+  "nama_modul": "Rekrutmen",
   "deskripsi": "Manajemen proses rekrutmen karyawan baru",
   "icon": "briefcase",
   "urutan": 10
@@ -1010,7 +1028,7 @@ Tambah modul baru.
 | Field | Tipe | Wajib | Keterangan |
 |-------|------|-------|------------|
 | `kode_modul` | string | ✅ | Huruf besar, angka, underscore. Max 50 karakter |
-| `nama` | string | ✅ | Max 100 karakter |
+| `nama_modul` | string | ✅ | Max 100 karakter |
 | `deskripsi` | string | ❌ | Max 255 karakter |
 | `icon` | string | ❌ | Nama icon. Max 100 karakter |
 | `urutan` | number | ❌ | Urutan tampil. Min 0 |
@@ -1252,11 +1270,16 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ```
 1. POST /auth/login → simpan access_token & refresh_token
-2. Setiap request  → kirim access_token di header Authorization
-3. Jika 401        → call POST /auth/refresh dengan refresh_token
-4. Jika refresh gagal → redirect ke halaman login
-5. POST /auth/logout → hapus token dari storage
+2. Cek data.user.harus_ganti_password
+   - Jika === 1 → redirect ke halaman ganti password (PATCH /pengguna/:id dengan kata_sandi baru)
+   - Jika === 0 → lanjut normal
+3. Setiap request  → kirim access_token di header Authorization
+4. Jika 401        → call POST /auth/refresh dengan refresh_token
+5. Jika refresh gagal → redirect ke halaman login
+6. POST /auth/logout → hapus token dari storage
 ```
+
+> Halaman ganti password wajib di-protect: user yang tidak punya flag ini tidak boleh mengakses halaman tersebut secara langsung. Setelah ganti password berhasil, redirect ke dashboard.
 
 ### Field `aktif` di Semua Response
 
@@ -1336,8 +1359,8 @@ Daftar karyawan dengan pagination & search.
       "aktif": 1,
       "dibuat_pada": "2026-03-23T10:00:00.000Z",
       "diubah_pada": null,
-      "jabatan": { "id_jabatan": "uuid", "nama": "Staff HRD", "level": 4 },
-      "departemen": { "id_departemen": "uuid", "nama": "Human Resources" },
+      "jabatan": { "id_jabatan": "uuid", "nama_jabatan": "Staff HRD", "level": 4 },
+      "departemen": { "id_departemen": "uuid", "nama_departemen": "Human Resources" },
       "lokasi_kantor": null
     }
   ],
@@ -1360,6 +1383,8 @@ Detail satu karyawan. Response sama seperti satu item di atas.
 ### POST `/karyawan`
 
 Tambah karyawan baru. Hanya untuk company user.
+
+> **Auto-create akun pengguna:** Setiap karyawan baru otomatis dibuatkan akun `pengguna` dengan role `EMPLOYEE` dan password default `Karyawan@123`. Flag `harus_ganti_password = 1` di-set otomatis — karyawan **wajib ganti password** saat login pertama.
 
 **Request Body:**
 ```json
@@ -1429,8 +1454,42 @@ Tambah karyawan baru. Hanya untuk company user.
 | `no_bpjs_kesehatan` | ❌ | Nomor BPJS Kesehatan (13 digit) |
 | `no_bpjs_ketenagakerjaan` | ❌ | Nomor BPJS Ketenagakerjaan |
 
-**Response `201`:** data karyawan lengkap.
-**Response `409`:** `NIK '...' sudah digunakan`
+**Response `201`:**
+```json
+{
+  "message": "Karyawan berhasil ditambahkan. Akun pengguna dibuat otomatis, karyawan wajib ganti password saat login pertama.",
+  "data": {
+    "karyawan": {
+      "id_karyawan": "uuid",
+      "id_perusahaan": "uuid",
+      "nik": "EMP-002",
+      "nama": "Siti Rahayu",
+      "email": "siti@perusahaan.com",
+      "status_kepegawaian": "KONTRAK",
+      "aktif": 1,
+      "jabatan": null,
+      "departemen": null,
+      "lokasi_kantor": null
+    },
+    "pengguna": {
+      "id_pengguna": "uuid",
+      "id_perusahaan": "uuid",
+      "id_karyawan": "uuid",
+      "username": "siti.rahayu",
+      "nama": "Siti Rahayu",
+      "email": "siti@perusahaan.com",
+      "peran": "EMPLOYEE",
+      "aktif": 1,
+      "harus_ganti_password": 1
+    },
+    "default_password": "Karyawan@123"
+  }
+}
+```
+
+> ⚠️ **Simpan & bagikan `default_password`** ke karyawan. Password ini juga ditampilkan kesini untuk kemudahan HR. Di DB sudah tersimpan dalam bentuk hash (bcrypt).
+
+**Response `409`:** `NIK '...' sudah digunakan` / `Email '...' sudah digunakan oleh pengguna lain`
 **Response `403`:** jika SUPERADMIN mencoba create
 
 ---
@@ -1471,9 +1530,9 @@ Daftar lokasi kantor yang di-assign ke karyawan (untuk geofencing absensi).
   "data": [
     {
       "id_lokasi": "uuid",
-      "kode": "KP-JKT",
-      "nama": "Kantor Pusat Jakarta",
-      "alamat": "Jl. Sudirman No. 1, Jakarta Pusat",
+      "kode_lokasi": "KP-JKT",
+      "nama_lokasi": "Kantor Pusat Jakarta",
+      "alamat_lokasi": "Jl. Sudirman No. 1, Jakarta Pusat",
       "kota": "Jakarta",
       "provinsi": "DKI Jakarta",
       "kode_pos": "10110",
@@ -2873,8 +2932,8 @@ Struktur hierarki departemen — nested parent → children, tanpa pagination.
     {
       "id_departemen": "uuid-hrd",
       "id_departemen_induk": null,
-      "kode": "HRD",
-      "nama": "Human Resources Department",
+      "kode_departemen": "HRD",
+      "nama_departemen": "Human Resources Department",
       "deskripsi": null,
       "aktif": 1,
       "departemen_induk": null,
@@ -2882,9 +2941,9 @@ Struktur hierarki departemen — nested parent → children, tanpa pagination.
         {
           "id_departemen": "uuid-rkt",
           "id_departemen_induk": "uuid-hrd",
-          "kode": "RKT",
-          "nama": "Rekrutmen",
-          "departemen_induk": { "id_departemen": "uuid-hrd", "nama": "Human Resources Department" },
+          "kode_departemen": "RKT",
+          "nama_departemen": "Rekrutmen",
+          "departemen_induk": { "id_departemen": "uuid-hrd", "nama_departemen": "Human Resources Department" },
           "children": []
         }
       ]
@@ -2908,7 +2967,7 @@ Daftar departemen dengan pagination dan search.
 |-----------|------|---------|------------|
 | `page` | number | `1` | Halaman |
 | `limit` | number | `10` | Jumlah data per halaman |
-| `search` | string | - | Cari berdasarkan nama atau kode |
+| `search` | string | - | Cari berdasarkan nama_departemen atau kode_departemen |
 
 **Response `200`:**
 ```json
@@ -2918,8 +2977,8 @@ Daftar departemen dengan pagination dan search.
     {
       "id_departemen": "uuid",
       "id_departemen_induk": null,
-      "kode": "HRD",
-      "nama": "Human Resources Department",
+      "kode_departemen": "HRD",
+      "nama_departemen": "Human Resources Department",
       "deskripsi": "Departemen yang mengelola SDM perusahaan",
       "aktif": 1,
       "dibuat_pada": "2026-03-24T08:00:00.000Z",
@@ -2943,8 +3002,8 @@ Detail satu departemen.
   "message": "Berhasil mengambil detail departemen",
   "data": {
     "id_departemen": "uuid",
-    "kode": "HRD",
-    "nama": "Human Resources Department",
+    "kode_departemen": "HRD",
+    "nama_departemen": "Human Resources Department",
     "deskripsi": "Departemen yang mengelola SDM perusahaan",
     "aktif": 1,
     "dibuat_pada": "2026-03-24T08:00:00.000Z",
@@ -2962,8 +3021,8 @@ Tambah departemen baru.
 **Request Body:**
 ```json
 {
-  "kode": "RKT",
-  "nama": "Rekrutmen",
+  "kode_departemen": "RKT",
+  "nama_departemen": "Rekrutmen",
   "deskripsi": "Sub-departemen rekrutmen SDM",
   "id_departemen_induk": "uuid-hrd"
 }
@@ -2971,8 +3030,8 @@ Tambah departemen baru.
 
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
-| `kode` | Ya | Maks 20 karakter, harus unik → `409` jika duplikat |
-| `nama` | Ya | Maks 100 karakter |
+| `kode_departemen` | Ya | Maks 20 karakter, harus unik → `409` jika duplikat |
+| `nama_departemen` | Ya | Maks 100 karakter |
 | `deskripsi` | Tidak | Teks bebas |
 | `id_departemen_induk` | Tidak | UUID departemen induk. Kosongkan untuk departemen level teratas → `404` jika UUID tidak ada, `400` jika circular |
 
@@ -3028,7 +3087,7 @@ Daftar jabatan dengan pagination, search, dan filter departemen.
 |-----------|------|---------|------------|
 | `page` | number | `1` | Halaman |
 | `limit` | number | `10` | Data per halaman |
-| `search` | string | - | Cari berdasarkan nama atau kode |
+| `search` | string | - | Cari berdasarkan nama_jabatan atau kode_jabatan |
 | `id_departemen` | string (UUID) | - | Filter jabatan dalam departemen tertentu |
 
 **Response `200`:**
@@ -3039,8 +3098,8 @@ Daftar jabatan dengan pagination, search, dan filter departemen.
     {
       "id_jabatan": "uuid",
       "id_departemen": "uuid-dept",
-      "kode": "MGR_HRD",
-      "nama": "Manager HRD",
+      "kode_jabatan": "MGR_HRD",
+      "nama_jabatan": "Manager HRD",
       "level": 2,
       "deskripsi": "Bertanggung jawab atas pengelolaan SDM",
       "aktif": 1,
@@ -3048,7 +3107,7 @@ Daftar jabatan dengan pagination, search, dan filter departemen.
       "diubah_pada": null,
       "departemen": {
         "id_departemen": "uuid-dept",
-        "nama": "Human Resources Department"
+        "nama_departemen": "Human Resources Department"
       }
     }
   ],
@@ -3056,7 +3115,7 @@ Daftar jabatan dengan pagination, search, dan filter departemen.
 }
 ```
 
-> **Catatan:** Field `departemen` berisi object nested `{ id_departemen, nama }`. Jika jabatan tidak terikat departemen, nilainya `null`.
+> **Catatan:** Field `departemen` berisi object nested `{ id_departemen, nama_departemen }`. Jika jabatan tidak terikat departemen, nilainya `null`.
 
 ---
 
@@ -3071,8 +3130,8 @@ Semua jabatan dalam satu departemen, **tanpa pagination** (untuk dropdown / sele
   "data": [
     {
       "id_jabatan": "uuid",
-      "kode": "MGR_HRD",
-      "nama": "Manager HRD",
+      "kode_jabatan": "MGR_HRD",
+      "nama_jabatan": "Manager HRD",
       "level": 2,
       ...
     }
@@ -3096,8 +3155,8 @@ Tambah jabatan baru.
 ```json
 {
   "id_departemen": "uuid-dept",
-  "kode": "MGR_HRD",
-  "nama": "Manager HRD",
+  "kode_jabatan": "MGR_HRD",
+  "nama_jabatan": "Manager HRD",
   "level": 2,
   "deskripsi": "Bertanggung jawab atas pengelolaan SDM"
 }
@@ -3106,8 +3165,8 @@ Tambah jabatan baru.
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
 | `id_departemen` | Tidak | UUID departemen. Kosongkan untuk jabatan lintas departemen |
-| `kode` | Ya | Maks 20 karakter, harus unik → `409` jika duplikat |
-| `nama` | Ya | Maks 100 karakter |
+| `kode_jabatan` | Ya | Maks 20 karakter, harus unik → `409` jika duplikat |
+| `nama_jabatan` | Ya | Maks 100 karakter |
 | `level` | Tidak | `1`=Top Management, `2`=Middle, `3`=Supervisor, `4`=Staff |
 | `deskripsi` | Tidak | Teks bebas |
 
@@ -3153,7 +3212,7 @@ Daftar lokasi kantor dengan pagination dan search.
 |-----------|------|---------|------------|
 | `page` | number | `1` | Halaman |
 | `limit` | number | `10` | Data per halaman |
-| `search` | string | - | Cari berdasarkan nama, kode, atau kota |
+| `search` | string | - | Cari berdasarkan nama_lokasi, kode_lokasi, atau kota |
 
 **Response `200`:**
 ```json
@@ -3162,9 +3221,9 @@ Daftar lokasi kantor dengan pagination dan search.
   "data": [
     {
       "id_lokasi": "uuid",
-      "kode": "KP-JKT",
-      "nama": "Kantor Pusat Jakarta",
-      "alamat": "Jl. Sudirman No. 1, Jakarta Pusat",
+      "kode_lokasi": "KP-JKT",
+      "nama_lokasi": "Kantor Pusat Jakarta",
+      "alamat_lokasi": "Jl. Sudirman No. 1, Jakarta Pusat",
       "kota": "Jakarta",
       "provinsi": "DKI Jakarta",
       "kode_pos": "10110",
@@ -3193,9 +3252,9 @@ Tambah lokasi kantor baru.
 **Request Body:**
 ```json
 {
-  "kode": "KP-JKT",
-  "nama": "Kantor Pusat Jakarta",
-  "alamat": "Jl. Sudirman No. 1, Jakarta Pusat",
+  "kode_lokasi": "KP-JKT",
+  "nama_lokasi": "Kantor Pusat Jakarta",
+  "alamat_lokasi": "Jl. Sudirman No. 1, Jakarta Pusat",
   "kota": "Jakarta",
   "provinsi": "DKI Jakarta",
   "kode_pos": "10110",
@@ -3205,9 +3264,9 @@ Tambah lokasi kantor baru.
 
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
-| `kode` | Ya | Maks 20 karakter, harus unik → `409` jika duplikat |
-| `nama` | Ya | Maks 100 karakter |
-| `alamat` | Tidak | Teks bebas |
+| `kode_lokasi` | Ya | Maks 20 karakter, harus unik → `409` jika duplikat |
+| `nama_lokasi` | Ya | Maks 100 karakter |
+| `alamat_lokasi` | Tidak | Teks bebas |
 | `kota` | Tidak | Maks 100 karakter |
 | `provinsi` | Tidak | Maks 100 karakter |
 | `kode_pos` | Tidak | Maks 10 karakter |
@@ -3267,13 +3326,13 @@ Cocok untuk render org chart / bagan organisasi.
       {
         "id_departemen": "uuid-hrd",
         "id_departemen_induk": null,
-        "kode": "HRD",
-        "nama": "Human Resources Department",
+        "kode_departemen": "HRD",
+        "nama_departemen": "Human Resources Department",
         "jabatan": [
           {
             "id_jabatan": "uuid-jab",
-            "kode": "MGR_HRD",
-            "nama": "Manager HRD",
+            "kode_jabatan": "MGR_HRD",
+            "nama_jabatan": "Manager HRD",
             "level": 2,
             "karyawan": [
               {
@@ -3291,8 +3350,8 @@ Cocok untuk render org chart / bagan organisasi.
           {
             "id_departemen": "uuid-rkt",
             "id_departemen_induk": "uuid-hrd",
-            "kode": "RKT",
-            "nama": "Rekrutmen",
+            "kode_departemen": "RKT",
+            "nama_departemen": "Rekrutmen",
             "jabatan": [...],
             "sub_departemen": []
           }
@@ -3368,24 +3427,24 @@ Mengambil daftar zona waktu. Default hanya yang aktif (`aktif = 1`). Tambahkan `
   "data": [
     {
       "id_zona": "uuid-...",
-      "kode": "Asia/Jakarta",
-      "nama": "WIB — Waktu Indonesia Barat",
+      "kode_zona": "Asia/Jakarta",
+      "nama_zona": "WIB — Waktu Indonesia Barat",
       "offset_utc": "+07:00",
       "urutan": 1,
       "aktif": 1
     },
     {
       "id_zona": "uuid-...",
-      "kode": "Asia/Makassar",
-      "nama": "WITA — Waktu Indonesia Tengah",
+      "kode_zona": "Asia/Makassar",
+      "nama_zona": "WITA — Waktu Indonesia Tengah",
       "offset_utc": "+08:00",
       "urutan": 2,
       "aktif": 1
     },
     {
       "id_zona": "uuid-...",
-      "kode": "Asia/Jayapura",
-      "nama": "WIT — Waktu Indonesia Timur",
+      "kode_zona": "Asia/Jayapura",
+      "nama_zona": "WIT — Waktu Indonesia Timur",
       "offset_utc": "+09:00",
       "urutan": 3,
       "aktif": 1
@@ -3399,8 +3458,8 @@ Mengambil daftar zona waktu. Default hanya yang aktif (`aktif = 1`). Tambahkan `
 | Field | Tipe | Keterangan |
 |-------|------|-----------|
 | `id_zona` | string (UUID) | ID unik zona waktu |
-| `kode` | string | Kode IANA (misal `Asia/Jakarta`) |
-| `nama` | string | Nama tampilan zona waktu |
+| `kode_zona` | string | Kode IANA (misal `Asia/Jakarta`) |
+| `nama_zona` | string | Nama tampilan zona waktu |
 | `offset_utc` | string | Offset dari UTC (misal `+07:00`) |
 | `urutan` | number | Urutan tampil di dropdown |
 | `aktif` | number | `1` = aktif, `0` = tidak aktif |
@@ -3430,24 +3489,24 @@ Mengambil daftar mata uang. Default hanya yang aktif (`aktif = 1`). Tambahkan `?
   "data": [
     {
       "id_mata_uang": "uuid-...",
-      "kode": "IDR",
-      "nama": "Rupiah Indonesia",
+      "kode_mata_uang": "IDR",
+      "nama_mata_uang": "Rupiah Indonesia",
       "simbol": "Rp",
       "urutan": 1,
       "aktif": 1
     },
     {
       "id_mata_uang": "uuid-...",
-      "kode": "USD",
-      "nama": "Dolar Amerika Serikat",
+      "kode_mata_uang": "USD",
+      "nama_mata_uang": "Dolar Amerika Serikat",
       "simbol": "$",
       "urutan": 10,
       "aktif": 1
     },
     {
       "id_mata_uang": "uuid-...",
-      "kode": "EUR",
-      "nama": "Euro",
+      "kode_mata_uang": "EUR",
+      "nama_mata_uang": "Euro",
       "simbol": "€",
       "urutan": 20,
       "aktif": 1
@@ -3461,8 +3520,8 @@ Mengambil daftar mata uang. Default hanya yang aktif (`aktif = 1`). Tambahkan `?
 | Field | Tipe | Keterangan |
 |-------|------|-----------|
 | `id_mata_uang` | string (UUID) | ID unik mata uang |
-| `kode` | string | Kode ISO 4217 (misal `IDR`, `USD`) |
-| `nama` | string | Nama lengkap mata uang |
+| `kode_mata_uang` | string | Kode ISO 4217 (misal `IDR`, `USD`) |
+| `nama_mata_uang` | string | Nama lengkap mata uang |
 | `simbol` | string | Simbol mata uang (misal `Rp`, `$`, `€`) |
 | `urutan` | number | Urutan tampil di dropdown |
 | `aktif` | number | `1` = aktif, `0` = tidak aktif |

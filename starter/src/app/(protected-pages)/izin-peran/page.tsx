@@ -343,8 +343,8 @@ const IzinPeranPage = () => {
     const grouped = useMemo(() => {
         const filtered = searchMenu
             ? menus.filter((m) =>
-                  m.nama.toLowerCase().includes(searchMenu.toLowerCase()),
-              )
+                m.nama_menu.toLowerCase().includes(searchMenu.toLowerCase()),
+            )
             : menus
 
         const map: Record<string, IzinPeranMenuItem[]> = {}
@@ -357,7 +357,7 @@ const IzinPeranPage = () => {
 
     const peranOptions: PeranOption[] = peranList.map((p) => ({
         value: p.kode_peran,
-        label: `${p.nama} (${p.kode_peran})`,
+        label: `${p.nama_peran} (${p.kode_peran})`,
     }))
 
     const selectedOption =
@@ -512,15 +512,14 @@ const IzinPeranPage = () => {
                                                 return (
                                                     <tr
                                                         key={menu.id_menu}
-                                                        className={`border-b border-gray-100 dark:border-gray-700 transition-opacity ${
-                                                            isUpdating
-                                                                ? 'opacity-50'
-                                                                : 'hover:bg-gray-50 dark:hover:bg-gray-800/40'
-                                                        }`}
+                                                        className={`border-b border-gray-100 dark:border-gray-700 transition-opacity ${isUpdating
+                                                            ? 'opacity-50'
+                                                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/40'
+                                                            }`}
                                                     >
                                                         <td className="px-4 py-3">
                                                             <p className="font-medium text-gray-700 dark:text-gray-200">
-                                                                {menu.nama}
+                                                                {menu.nama_menu}
                                                             </p>
                                                             {menu.path && (
                                                                 <p className="text-xs text-gray-400 font-mono">

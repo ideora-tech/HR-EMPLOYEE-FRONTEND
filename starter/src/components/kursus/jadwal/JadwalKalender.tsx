@@ -410,7 +410,7 @@ const JadwalKalender = ({ refreshToken, onView, onEdit, onDelete }: JadwalKalend
                                                                     {jamMulai} – {jamSelesai}
                                                                 </p>
                                                                 <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 mt-0.5 leading-snug truncate">
-                                                                    {jadwal.nama}
+                                                                    {jadwal.nama_jadwal}
                                                                 </p>
                                                                 {jadwal.lokasi && (
                                                                     <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">

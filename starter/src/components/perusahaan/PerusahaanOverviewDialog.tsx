@@ -97,10 +97,10 @@ const PerusahaanOverviewDialog = ({
                         {overview.url_logo ? (
                             <img
                                 src={overview.url_logo}
-                                alt={overview.nama}
+                                alt={overview.nama_perusahaan}
                                 className="w-12 h-12 rounded-lg object-contain border border-gray-100 dark:border-gray-700 bg-white shrink-0"
                                 onError={(e) => {
-                                    ;(e.target as HTMLImageElement).style.display =
+                                    ; (e.target as HTMLImageElement).style.display =
                                         'none'
                                 }}
                             />
@@ -110,7 +110,7 @@ const PerusahaanOverviewDialog = ({
                             </div>
                         )}
                         <div>
-                            <h5 className="font-bold">{overview.nama}</h5>
+                            <h5 className="font-bold">{overview.nama_perusahaan}</h5>
                             <Tag
                                 className={
                                     overview.aktif === 1
@@ -144,12 +144,12 @@ const PerusahaanOverviewDialog = ({
                                         Sejak{' '}
                                         {overview.langganan?.dibuat_pada
                                             ? new Date(
-                                                  overview.langganan.dibuat_pada,
-                                              ).toLocaleDateString('id-ID', {
-                                                  day: 'numeric',
-                                                  month: 'short',
-                                                  year: 'numeric',
-                                              })
+                                                overview.langganan.dibuat_pada,
+                                            ).toLocaleDateString('id-ID', {
+                                                day: 'numeric',
+                                                month: 'short',
+                                                year: 'numeric',
+                                            })
                                             : '—'}
                                     </p>
                                 </>
@@ -190,7 +190,7 @@ const PerusahaanOverviewDialog = ({
                                         className="flex flex-col items-start rounded-lg border border-gray-100 dark:border-gray-700 px-3 py-2 bg-gray-50 dark:bg-gray-800/50"
                                     >
                                         <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                                            {m.nama}
+                                            {m.nama_perusahaan}
                                         </span>
                                         <span className="text-xs text-gray-400 font-mono">
                                             {m.kode_modul}

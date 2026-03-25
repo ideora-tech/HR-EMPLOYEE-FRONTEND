@@ -136,7 +136,7 @@ const AbsenDrawer = ({
             setRows(
                 res.data.map((entry) => ({
                     id_daftar: entry.id_daftar,
-                    siswa_nama: entry.siswa.nama,
+                    siswa_nama: entry.siswa.nama_siswa,
                     siswa_telepon: entry.siswa.telepon,
                     // null = belum pernah diabsen → tidak ada default
                     status: entry.presensi
@@ -236,7 +236,7 @@ const AbsenDrawer = ({
             title={
                 <div className="flex items-center gap-2">
                     <span className="font-semibold text-gray-800 dark:text-gray-100">
-                        {jadwal?.nama ?? 'Absensi Kelas'}
+                        {jadwal?.nama_jadwal ?? 'Absensi Kelas'}
                     </span>
                 </div>
             }

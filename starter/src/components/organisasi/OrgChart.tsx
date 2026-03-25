@@ -71,11 +71,11 @@ const KaryawanCard = ({ karyawan }: { karyawan: IOrgChartKaryawan }) => {
                 src={karyawan.foto_url ?? undefined}
                 className="flex-shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 text-xs font-bold"
             >
-                {acronym(karyawan.nama)}
+                {acronym(karyawan.nama_karyawan)}
             </Avatar>
             <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
-                    {karyawan.nama}
+                    {karyawan.nama_karyawan}
                 </p>
                 <p className="text-xs text-gray-400 font-mono">{karyawan.nik}</p>
             </div>
@@ -102,10 +102,10 @@ const JabatanRow = ({ jabatan }: { jabatan: IOrgChartJabatan }) => {
                 </span>
                 <HiOutlineBriefcase className="text-gray-400 flex-shrink-0" />
                 <span className="font-mono text-xs bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">
-                    {jabatan.kode}
+                    {jabatan.kode_jabatan}
                 </span>
                 <span className="font-medium text-gray-800 dark:text-gray-100 flex-1 text-sm">
-                    {jabatan.nama}
+                    {jabatan.nama_jabatan}
                 </span>
                 {levelStyle && (
                     <Tag className={`text-xs flex-shrink-0 ${levelStyle.tag}`}>
@@ -168,9 +168,9 @@ const DepartemenNode = ({
                     </span>
                     <HiOutlineOfficeBuilding className="flex-shrink-0" />
                     <span className="bg-white/60 dark:bg-white/10 px-2 py-0.5 rounded font-mono text-sm font-bold flex-shrink-0">
-                        {dept.kode}
+                        {dept.kode_departemen}
                     </span>
-                    <span className="font-semibold flex-1 truncate">{dept.nama}</span>
+                    <span className="font-semibold flex-1 truncate">{dept.nama_departemen}</span>
                     <div className="hidden sm:flex items-center gap-4 text-sm opacity-90 flex-shrink-0">
                         {dept.jabatan.length > 0 && (
                             <span className="flex items-center gap-1">
@@ -183,7 +183,7 @@ const DepartemenNode = ({
                             {totalKar} karyawan
                         </span>
                         {dept.sub_departemen.length > 0 && (
-                            <span>{dept.sub_departemen.length} sub</span>
+                            <span>{dept.sub_departemen.length} sub-departemen</span>
                         )}
                     </div>
                 </button>

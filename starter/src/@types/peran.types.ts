@@ -3,7 +3,7 @@
 export interface IPeran {
     id_peran: string
     kode_peran: string
-    nama: string
+    nama_peran: string
     aktif: number             // MySQL int: 0 | 1
     dibuat_pada: string
     diubah_pada: string | null
@@ -11,7 +11,7 @@ export interface IPeran {
 
 export interface IPeranCreate {
     kode_peran: string
-    nama: string
+    nama_peran: string
     aktif?: number
 }
 

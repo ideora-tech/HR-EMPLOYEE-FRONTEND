@@ -6,7 +6,7 @@ melaporkan deviasi sebagai temuan di modul Code Quality Review.
 
 > **Arsitektur**: Controller → Service → Repository → Knex (DB)
 > Setiap module wajib memiliki: `dto/`, `interfaces/`, controller, service, repository.
-
+untuk setiap file tidak boleh lebih dari 1000 line
 ---
 
 ## Struktur Lengkap (Feature-based Modular)

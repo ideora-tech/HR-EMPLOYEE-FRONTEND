@@ -52,14 +52,14 @@ const PerusahaanTable = ({
             },
             {
                 header: 'Perusahaan',
-                accessorKey: 'nama',
+                accessorKey: 'nama_perusahaan',
                 size: 260,
                 cell: ({ row }: CellContext<IPerusahaan, unknown>) => (
                     <div className="flex items-center gap-3">
                         {row.original.url_logo ? (
                             <img
                                 src={row.original.url_logo}
-                                alt={row.original.nama}
+                                alt={row.original.nama_perusahaan}
                                 className="w-8 h-8 rounded object-contain border border-gray-100 dark:border-gray-700 bg-white shrink-0"
                                 onError={(e) => {
                                     ; (e.target as HTMLImageElement).style.display =
@@ -69,12 +69,12 @@ const PerusahaanTable = ({
                         ) : (
                             <div className="w-8 h-8 rounded bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center shrink-0">
                                 <span className="text-indigo-600 dark:text-indigo-300 text-xs font-bold">
-                                    {row.original.nama.charAt(0).toUpperCase()}
+                                    {row.original.nama_perusahaan.charAt(0).toUpperCase()}
                                 </span>
                             </div>
                         )}
                         <div>
-                            <p className="font-semibold">{row.original.nama}</p>
+                            <p className="font-semibold">{row.original.nama_perusahaan}</p>
                             {row.original.email && (
                                 <p className="text-xs text-gray-400">
                                     {row.original.email}

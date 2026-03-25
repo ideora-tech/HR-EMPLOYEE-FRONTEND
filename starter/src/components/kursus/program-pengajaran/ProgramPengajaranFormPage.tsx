@@ -66,19 +66,19 @@ const ProgramPengajaranFormPage = ({
                         TINGKAT_NONE,
                         ...res.data
                             .sort((a, b) => a.urutan - b.urutan)
-                            .map((t) => ({ value: t.kode, label: t.nama })),
+                            .map((t) => ({ value: t.kode_tingkat, label: t.nama_tingkat })),
                     ]
                     setTingkatOptions(opts)
                 }
             })
-            .catch(() => {/* tampilkan saja opsi kosong */})
+            .catch(() => {/* tampilkan saja opsi kosong */ })
     }, [])
 
     useEffect(() => {
         if (editData) {
             setForm({
                 kode_program: editData.kode_program,
-                nama: editData.nama,
+                nama: editData.nama_program,
                 deskripsi: editData.deskripsi ?? '',
                 tingkat: editData.tingkat ?? '',
                 durasi_menit: String(editData.durasi_menit ?? 60),
@@ -103,7 +103,7 @@ const ProgramPengajaranFormPage = ({
 
         const base = {
             kode_program: form.kode_program.trim().toUpperCase(),
-            nama: form.nama.trim(),
+            nama_program: form.nama.trim(),
             deskripsi: form.deskripsi.trim() || undefined,
             tingkat: form.tingkat || undefined,
             durasi_menit: form.durasi_menit ? Number(form.durasi_menit) : undefined,

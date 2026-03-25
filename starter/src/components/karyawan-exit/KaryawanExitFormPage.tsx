@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Button, Card, DatePicker, FormItem, Input, Select, Switcher } from '@/components/ui' 
+import { Button, Card, DatePicker, FormItem, Input, Select, Switcher } from '@/components/ui'
 import { HiArrowLeft } from 'react-icons/hi'
 import type {
     IKaryawanExit,
@@ -92,7 +92,7 @@ const KaryawanExitFormPage = ({
         { value: '', label: 'Pilih Karyawan' },
         ...karyawanList.map((k) => ({
             value: k.id_karyawan,
-            label: k.nik ? `${k.nik} — ${k.nama}` : k.nama,
+            label: k.nik ? `${k.nik} — ${k.nama_karyawan}` : k.nama_karyawan,
         })),
     ]
 
@@ -338,7 +338,7 @@ const KaryawanExitFormPage = ({
 
                     {/* ── Rehire ── */}
                     <div className="mt-6 mb-3">
-                        <h5 className="font-semibold">Eligibilitas Rehire</h5>
+                        <h5 className="font-semibold">Dapat Direkrut Kembali</h5>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                         <div className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
@@ -362,7 +362,7 @@ const KaryawanExitFormPage = ({
                             <Input
                                 textArea
                                 rows={3}
-                                placeholder="Catatan terkait eligibilitas rehire..."
+                                placeholder="Catatan terkait dapat direkrut kembali..."
                                 value={form.catatan_rehire}
                                 onChange={(e) => set('catatan_rehire', e.target.value)}
                             />

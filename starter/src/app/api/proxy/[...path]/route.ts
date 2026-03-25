@@ -20,9 +20,13 @@ async function handler(request: NextRequest, { params }: Params) {
         Accept: 'application/json',
     }
 
-    // For regular JSON requests, set Content-Type explicitly.
+    // For regular requests with body, set Content-Type explicitly.
     // For multipart, let fetch set it automatically (with boundary).
-    if (!isMultipart) {
+    if (
+        request.method !== 'GET' &&
+        request.method !== 'HEAD' &&
+        !isMultipart
+    ) {
         headers['Content-Type'] = 'application/json'
     }
 

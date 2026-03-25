@@ -4,7 +4,7 @@
 
 export interface IMenu {
     id_menu: string
-    nama: string
+    nama_menu: string
     icon: string | null
     path: string | null
     kode_modul: string | null   // opsional — link ke modul; null = selalu tampil
@@ -15,7 +15,7 @@ export interface IMenu {
 
 // Sesuai CreateMenuDto (aktif tidak ada di create, backend hardcode aktif=1)
 export interface IMenuCreate {
-    nama: string
+    nama_menu: string
     icon?: string | null
     path?: string | null
     kode_modul?: string | null
@@ -25,7 +25,7 @@ export interface IMenuCreate {
 
 // Sesuai UpdateMenuDto (aktif bisa diubah saat update)
 export interface IMenuUpdate {
-    nama?: string
+    nama_menu?: string
     icon?: string | null
     path?: string | null
     kode_modul?: string | null

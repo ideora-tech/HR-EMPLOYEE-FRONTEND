@@ -97,7 +97,7 @@ const DaftarForm = ({
         { value: '', label: '— Pilih Siswa —' },
         ...siswaList.map((s) => ({
             value: s.id_siswa,
-            label: `${s.nama}${s.telepon ? ` (${s.telepon})` : ''}`,
+            label: `${s.nama_siswa}${s.telepon ? ` (${s.telepon})` : ''}`,
         })),
     ]
 
@@ -107,7 +107,7 @@ const DaftarForm = ({
             .filter((j) => j.aktif === 1)
             .map((j) => ({
                 value: j.id_jadwal,
-                label: `${j.nama} — ${HARI_MAP[hariFromISO(j.tanggal_mulai)]} ${timeFromISO(j.tanggal_mulai)}–${timeFromISO(j.tanggal_selesai)}`,
+                label: `${j.nama_jadwal} — ${HARI_MAP[hariFromISO(j.tanggal_mulai)]} ${timeFromISO(j.tanggal_mulai)}–${timeFromISO(j.tanggal_selesai)}`,
                 id_program: j.id_program,
             })),
     ]
@@ -116,7 +116,7 @@ const DaftarForm = ({
         { value: '', label: '— Tanpa tarif —' },
         ...tarifList.map((t) => ({
             value: t.id_tarif,
-            label: `${t.nama} (${t.jenis === 'PAKET' ? `${t.jumlah_pertemuan}x` : 'per sesi'})`,
+            label: `${t.nama_tarif} (${t.jenis_tarif === 'PAKET' ? `${t.jumlah_pertemuan}x` : 'per sesi'})`,
         })),
     ]
 
@@ -261,10 +261,10 @@ const DaftarForm = ({
                 {isEdit && (
                     <div className="mb-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-sm">
                         <p className="font-semibold text-gray-800 dark:text-gray-100">
-                            {editData?.siswa.nama}
+                            {editData?.siswa.nama_siswa}
                         </p>
                         <p className="text-gray-500 mt-0.5">
-                            {editData?.jadwal.nama} &middot;{' '}
+                            {editData?.jadwal.nama_jadwal} &middot;{' '}
                             {HARI_MAP[editData?.jadwal.hari ?? 1]}{' '}
                             {editData?.jadwal.jam_mulai}–{editData?.jadwal.jam_selesai}
                         </p>

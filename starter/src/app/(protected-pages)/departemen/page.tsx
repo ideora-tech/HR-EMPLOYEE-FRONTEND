@@ -34,14 +34,6 @@ const DepartemenPage = () => {
     const [formOpen, setFormOpen] = useState(false)
     const [editData, setEditData] = useState<IDepartemen | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<IDepartemen | null>(null)
-    const [allDepartemen, setAllDepartemen] = useState<IDepartemen[]>([])
-
-    // Load flat list for departemen induk dropdown
-    useEffect(() => {
-        DepartemenService.getAll({ aktif: 1, limit: 200 })
-            .then((res) => { if (res.success) setAllDepartemen(res.data) })
-            .catch(() => {/* silently ignore */})
-    }, [])
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -236,7 +228,6 @@ const DepartemenPage = () => {
                 open={formOpen}
                 editData={editData}
                 submitting={submitting}
-                departemenList={allDepartemen}
                 onClose={handleFormClose}
                 onSubmit={handleSubmit}
             />
@@ -257,7 +248,7 @@ const DepartemenPage = () => {
             >
                 <p className="text-sm">
                     Yakin ingin menghapus departemen{' '}
-                    <strong>{deleteTarget?.nama}</strong>? Tindakan ini tidak dapat
+                    <strong>{deleteTarget?.nama_departemen}</strong>? Tindakan ini tidak dapat
                     dibatalkan.
                 </p>
             </ConfirmDialog>

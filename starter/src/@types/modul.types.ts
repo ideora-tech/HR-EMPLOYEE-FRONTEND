@@ -3,7 +3,7 @@
 export interface IModul {
     id_modul: string
     kode_modul: string
-    nama: string
+    nama_modul: string
     deskripsi: string | null
     urutan: number
     aktif: number             // MySQL int: 0 | 1
@@ -13,7 +13,7 @@ export interface IModul {
 
 export interface IModulCreate {
     kode_modul: string
-    nama: string
+    nama_modul: string
     deskripsi?: string | null
     urutan: number
     aktif: number

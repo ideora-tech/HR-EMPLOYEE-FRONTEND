@@ -33,7 +33,7 @@ const MenuTable = ({
     onDelete,
 }: MenuTableProps) => {
     const parentMap = useMemo(
-        () => new Map(allMenus.map((m) => [m.id_menu, m.nama])),
+        () => new Map(allMenus.map((m) => [m.id_menu, m.nama_menu])),
         [allMenus],
     )
 
@@ -48,11 +48,11 @@ const MenuTable = ({
             },
             {
                 header: 'Nama',
-                accessorKey: 'nama',
+                accessorKey: 'nama_menu',
                 size: 280,
                 cell: ({ row }: CellContext<IMenu, unknown>) => (
                     <span className="font-medium text-gray-800 dark:text-gray-100">
-                        {row.original.nama}
+                        {row.original.nama_menu}
                     </span>
                 ),
             },

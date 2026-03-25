@@ -299,7 +299,7 @@ const TagihanPage = () => {
             >
                 <p className="text-sm">
                     Tagihan untuk{' '}
-                    <span className="font-semibold">&ldquo;{deleteTarget?.siswa.nama}&rdquo;</span>{' '}
+                    <span className="font-semibold">&ldquo;{deleteTarget?.siswa.nama_siswa}&rdquo;</span>{' '}
                     akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
                 </p>
             </ConfirmDialog>

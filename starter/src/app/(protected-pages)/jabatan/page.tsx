@@ -51,7 +51,7 @@ const JabatanPage = () => {
                     setDepartemenList(res.data)
                     setDepartemenOptions([
                         { value: '', label: 'Semua Departemen' },
-                        ...res.data.map((d) => ({ value: d.id_departemen, label: d.nama })),
+                        ...res.data.map((d) => ({ value: d.id_departemen, label: d.nama_departemen })),
                     ])
                 }
             })
@@ -286,7 +286,7 @@ const JabatanPage = () => {
             >
                 <p className="text-sm">
                     Yakin ingin menghapus jabatan{' '}
-                    <strong>{deleteTarget?.nama}</strong>? Tindakan ini tidak dapat
+                    <strong>{deleteTarget?.nama_jabatan}</strong>? Tindakan ini tidak dapat
                     dibatalkan.
                 </p>
             </ConfirmDialog>

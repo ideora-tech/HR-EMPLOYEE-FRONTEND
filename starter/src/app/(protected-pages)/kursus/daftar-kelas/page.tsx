@@ -189,11 +189,11 @@ const DaftarSiswaPage = () => {
                 <p className="text-sm">
                     Pendaftaran{' '}
                     <span className="font-semibold">
-                        &ldquo;{deleteTarget?.siswa.nama}&rdquo;
+                        &ldquo;{deleteTarget?.siswa.nama_siswa}&rdquo;
                     </span>{' '}
                     di kelas{' '}
                     <span className="font-semibold">
-                        &ldquo;{deleteTarget?.jadwal.nama}&rdquo;
+                        &ldquo;{deleteTarget?.jadwal.nama_jadwal}&rdquo;
                     </span>{' '}
                     akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
                 </p>

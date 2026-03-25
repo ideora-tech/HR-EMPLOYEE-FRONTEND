@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button, Dialog, FormItem, Input, Select, Switcher } from '@/components/ui'
+import DepartemenService from '@/services/departemen.service'
 import type { IDepartemen, ICreateDepartemen, IUpdateDepartemen } from '@/@types/organisasi.types'
 
 type SelectOption = { value: string; label: string }
@@ -10,7 +11,6 @@ interface DepartemenFormProps {
     open: boolean
     editData?: IDepartemen | null
     submitting?: boolean
-    departemenList: IDepartemen[]
     onClose: () => void
     onSubmit: (payload: ICreateDepartemen | IUpdateDepartemen) => void
 }
@@ -35,11 +35,11 @@ const DepartemenForm = ({
     open,
     editData,
     submitting = false,
-    departemenList,
     onClose,
     onSubmit,
 }: DepartemenFormProps) => {
     const [form, setForm] = useState<FormState>(INITIAL_STATE)
+    const [parentList, setParentList] = useState<IDepartemen[]>([])
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
 
     const isEdit = !!editData
@@ -47,16 +47,27 @@ const DepartemenForm = ({
     // Exclude self from parent options to prevent circular reference
     const indukOptions: SelectOption[] = [
         { value: '', label: 'Tidak ada (departemen utama)' },
-        ...departemenList
+        ...parentList
             .filter((d) => d.id_departemen !== editData?.id_departemen)
-            .map((d) => ({ value: d.id_departemen, label: `${d.kode} — ${d.nama}` })),
+            .map((d) => ({ value: d.id_departemen, label: `${d.kode_departemen} — ${d.nama_departemen}` })),
     ]
+
+    useEffect(() => {
+        if (!open) return
+        DepartemenService.getAll({ limit: 500 })
+            .then((res) => {
+                if (res.success) setParentList(res.data)
+            })
+            .catch(() => {
+                setParentList([])
+            })
+    }, [open])
 
     useEffect(() => {
         if (editData) {
             setForm({
-                kode: editData.kode,
-                nama: editData.nama,
+                kode: editData.kode_departemen,
+                nama: editData.nama_departemen,
                 deskripsi: editData.deskripsi ?? '',
                 id_departemen_induk: editData.id_departemen_induk ?? '',
                 aktif: editData.aktif === 1,
@@ -79,8 +90,8 @@ const DepartemenForm = ({
         if (!validate()) return
 
         const base: ICreateDepartemen = {
-            kode: form.kode.trim().toUpperCase(),
-            nama: form.nama.trim(),
+            kode_departemen: form.kode.trim().toUpperCase(),
+            nama_departemen: form.nama.trim(),
             deskripsi: form.deskripsi.trim() || undefined,
             id_departemen_induk: form.id_departemen_induk || undefined,
         }

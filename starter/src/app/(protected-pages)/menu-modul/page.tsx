@@ -65,10 +65,10 @@ const MenuModulPage = () => {
 
     const filteredMenuList = search.trim()
         ? menuList.filter((m) =>
-              m.nama.toLowerCase().includes(search.toLowerCase()) ||
-              (m.path ?? '').toLowerCase().includes(search.toLowerCase()) ||
-              (m.kode_modul ?? '').toLowerCase().includes(search.toLowerCase()),
-          )
+            m.nama_menu.toLowerCase().includes(search.toLowerCase()) ||
+            (m.path ?? '').toLowerCase().includes(search.toLowerCase()) ||
+            (m.kode_modul ?? '').toLowerCase().includes(search.toLowerCase()),
+        )
         : menuList
 
     const fetchAll = useCallback(async () => {
@@ -254,7 +254,7 @@ const MenuModulPage = () => {
                                             className="px-6 py-3 text-center text-gray-500 font-medium min-w-[130px]"
                                         >
                                             <div className="font-semibold text-gray-700 dark:text-gray-200">
-                                                {m.nama}
+                                                {m.nama_modul}
                                             </div>
                                             <div className="text-xs font-normal text-gray-400 mt-0.5 mb-2">
                                                 {m.kode_modul}
@@ -300,7 +300,7 @@ const MenuModulPage = () => {
                                             {/* Nama menu — sticky */}
                                             <td className="px-4 py-3 sticky left-0 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50 transition-colors z-10">
                                                 <div className="font-bold text-base text-gray-700 dark:text-gray-200 mb-1">
-                                                    {menu.nama}
+                                                    {menu.nama_menu}
                                                 </div>
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     {menu.path && (
@@ -322,10 +322,10 @@ const MenuModulPage = () => {
                                                 </div>
                                                 {(menuModulMap[menu.id_menu]
                                                     ?.size ?? 0) === 0 && (
-                                                    <span className="text-xs text-gray-400 italic">
-                                                        selalu tampil
-                                                    </span>
-                                                )}
+                                                        <span className="text-xs text-gray-400 italic">
+                                                            selalu tampil
+                                                        </span>
+                                                    )}
                                             </td>
 
                                             {/* Checkbox per modul */}
@@ -347,9 +347,9 @@ const MenuModulPage = () => {
                                                             checked={isChecked}
                                                             disabled={
                                                                 updatingKey ===
-                                                                    cellKey ||
+                                                                cellKey ||
                                                                 selectingAll ===
-                                                                    modul.kode_modul
+                                                                modul.kode_modul
                                                             }
                                                             onChange={() =>
                                                                 handleToggle(

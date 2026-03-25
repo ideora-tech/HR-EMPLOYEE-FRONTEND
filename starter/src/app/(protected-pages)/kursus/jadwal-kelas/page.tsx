@@ -144,7 +144,7 @@ const JadwalKelasPage = () => {
             >
                 <p className="text-sm">
                     Jadwal{' '}
-                    <span className="font-semibold">&ldquo;{deleteTarget?.nama}&rdquo;</span>{' '}
+                    <span className="font-semibold">&ldquo;{deleteTarget?.nama_jadwal}&rdquo;</span>{' '}
                     akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
                 </p>
             </ConfirmDialog>

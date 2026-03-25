@@ -5,7 +5,9 @@ Claude wajib mengikuti pola ini saat membuat fitur baru — jangan membuat folde
 di luar pola yang sudah ada kecuali ada alasan yang jelas.
 
 > **Stack**: Next.js 14+ App Router · TypeScript · Template Ecme
-> **Arsitektur**: Page (App Router) → Server Action / API Route → Service → Backend API (NestJS)
+> **Arsitektur**: Page (App Router) → Server Action / API Route → Service → Backend API 
+untuk setiap file tidak boleh lebih dari 1000 line
+(NestJS)
 
 ---
 

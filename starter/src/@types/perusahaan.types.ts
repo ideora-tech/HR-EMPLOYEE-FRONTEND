@@ -8,14 +8,14 @@ export interface ILangganan {
 
 export interface IModulAkses {
     kode_modul: string
-    nama: string
+    nama_perusahaan: string
     batasan: Record<string, number> | null
 }
 
 export interface IZonaWaktu {
     id_zona: string
     kode: string
-    nama: string
+    nama_perusahaan: string
     offset_utc: string
     urutan: number
     aktif: number
@@ -24,7 +24,7 @@ export interface IZonaWaktu {
 export interface IMataUang {
     id_mata_uang: string
     kode: string
-    nama: string
+    nama_perusahaan: string
     simbol: string
     urutan: number
     aktif: number
@@ -32,7 +32,7 @@ export interface IMataUang {
 
 export interface IPerusahaan {
     id_perusahaan: string
-    nama: string
+    nama_perusahaan: string
     email: string | null
     telepon: string | null
     alamat: string | null
@@ -55,7 +55,7 @@ export interface IPerusahaanOverview extends IPerusahaan {
 }
 
 export interface IPerusahaanCreate {
-    nama: string
+    nama_perusahaan: string
     email?: string
     telepon?: string
     alamat?: string
@@ -67,7 +67,7 @@ export interface IPerusahaanCreate {
 }
 
 export interface IPerusahaanUpdate {
-    nama?: string
+    nama_perusahaan?: string
     email?: string
     telepon?: string
     alamat?: string

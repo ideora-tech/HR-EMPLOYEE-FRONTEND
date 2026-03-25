@@ -1,5 +1,6 @@
 import ApiService from '@/services/ApiService'
 import { API_ENDPOINTS } from '@/constants/api.constant'
+import appConfig from '@/configs/app.config'
 import type {
     IKaryawan,
     ICreateKaryawan,
@@ -96,7 +97,9 @@ const KaryawanService = {
 
     /** Download template Excel kosong untuk import bulk */
     async downloadTemplate(): Promise<void> {
-        const res = await fetch(API_ENDPOINTS.KARYAWAN.TEMPLATE_EXCEL)
+        const res = await fetch(
+            `${appConfig.apiPrefix}${API_ENDPOINTS.KARYAWAN.TEMPLATE_EXCEL}`,
+        )
         if (!res.ok) throw new Error('Gagal mengunduh template')
         const blob = await res.blob()
         const url = URL.createObjectURL(blob)
@@ -114,13 +117,34 @@ const KaryawanService = {
         const formData = new FormData()
         formData.append('file', file)
 
-        const res = await fetch(API_ENDPOINTS.KARYAWAN.UPLOAD_EXCEL, {
-            method: 'POST',
-            body: formData,
-        })
+        const res = await fetch(
+            `${appConfig.apiPrefix}${API_ENDPOINTS.KARYAWAN.UPLOAD_EXCEL}`,
+            {
+                method: 'POST',
+                body: formData,
+            },
+        )
         if (!res.ok) {
             const err = await res.json().catch(() => ({}))
             throw new Error(err?.message ?? 'Gagal mengimpor file')
+        }
+        return res.json()
+    },
+
+    async uploadFoto(id: string, file: File): Promise<ApiResponse<IKaryawan>> {
+        const formData = new FormData()
+        formData.append('foto', file)
+
+        const res = await fetch(
+            `${appConfig.apiPrefix}${API_ENDPOINTS.KARYAWAN.FOTO(id)}`,
+            {
+                method: 'POST',
+                body: formData,
+            },
+        )
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(err?.message ?? 'Gagal mengunggah foto karyawan')
         }
         return res.json()
     },

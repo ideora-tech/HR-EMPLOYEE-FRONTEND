@@ -138,7 +138,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged }: TagihanDetai
                                 <HiOutlineUser className="mt-0.5 shrink-0 text-gray-400" />
                                 <div>
                                     <p className="font-semibold text-gray-800 dark:text-gray-100">
-                                        {tagihan.siswa.nama}
+                                        {tagihan.siswa.nama_siswa}
                                     </p>
                                     {tagihan.siswa.telepon && (
                                         <p className="text-xs text-gray-400">{tagihan.siswa.telepon}</p>
@@ -149,7 +149,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged }: TagihanDetai
                             {/* Jenis + periode */}
                             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                                 <HiOutlineTag className="shrink-0" />
-                                <span>{tagihan.jenis}</span>
+                                <span>{tagihan.jenis_tagihan}</span>
                                 {tagihan.periode && (
                                     <>
                                         <span className="text-gray-300">·</span>

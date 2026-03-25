@@ -52,7 +52,7 @@ const PresensiDetailPage = () => {
                     res.data.detail.map((d) => ({
                         id_detail: d.id_detail,
                         id_daftar: d.daftar?.id_daftar ?? '',
-                        siswa_nama: d.siswa.nama,
+                        siswa_nama: d.siswa.nama_siswa,
                         siswa_telepon: d.siswa.telepon,
                         keterangan: d.keterangan,
                         catatan: d.catatan ?? '',
@@ -139,14 +139,14 @@ const PresensiDetailPage = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                             <h4 className="font-bold text-gray-800 dark:text-gray-100">
-                                {j?.nama}
+                                {j?.nama_jadwal}
                             </h4>
                             <p className="text-sm text-gray-500 mt-0.5">
                                 {j?.hari ? `${HARI_MAP[j.hari]} · ` : ''}
                                 {j?.tanggal_mulai
                                     ? `${j.tanggal_mulai.replace('T', ' ').slice(11, 16)} – ${j?.tanggal_selesai?.replace('T', ' ').slice(11, 16)}`
                                     : `${j?.jam_mulai ?? ''}–${j?.jam_selesai ?? ''}`}
-                                {j?.program ? ` · ${j.program.nama}` : ''}
+                                {j?.program ? ` · ${j.program.nama_program}` : ''}
                             </p>
                             <p className="text-sm text-gray-500">
                                 Tanggal:{' '}

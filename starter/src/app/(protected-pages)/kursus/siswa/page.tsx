@@ -249,7 +249,7 @@ const SiswaPage = () => {
                 <p className="text-sm">
                     Data siswa{' '}
                     <span className="font-semibold">
-                        &ldquo;{deleteTarget?.nama}&rdquo;
+                        &ldquo;{deleteTarget?.nama_siswa}&rdquo;
                     </span>{' '}
                     akan dihapus secara permanen. Tindakan ini tidak dapat
                     dibatalkan.

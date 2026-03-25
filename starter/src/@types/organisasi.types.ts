@@ -11,18 +11,18 @@ export interface IOrganisasiQuery {
 export interface IDepartemen {
     id_departemen: string
     id_departemen_induk: string | null
-    kode: string
-    nama: string
+    kode_departemen: string
+    nama_departemen: string
     deskripsi: string | null
     aktif: number
     dibuat_pada: string
     diubah_pada: string | null
-    departemen_induk: { id_departemen: string; nama: string } | null
+    departemen_induk: { id_departemen: string; nama_departemen: string } | null
 }
 
 export interface ICreateDepartemen {
-    kode: string
-    nama: string
+    kode_departemen: string
+    nama_departemen: string
     deskripsi?: string
     id_departemen_induk?: string
 }
@@ -33,20 +33,20 @@ export type IUpdateDepartemen = Partial<ICreateDepartemen> & { aktif?: 0 | 1 }
 export interface IJabatan {
     id_jabatan: string
     id_departemen: string | null
-    kode: string
-    nama: string
+    kode_jabatan: string
+    nama_jabatan: string
     level: number | null
     deskripsi: string | null
     aktif: number
     dibuat_pada: string
     diubah_pada: string | null
-    departemen: { id_departemen: string; nama: string } | null
+    departemen: { id_departemen: string; nama_departemen: string } | null
 }
 
 export interface ICreateJabatan {
     id_departemen?: string
-    kode: string
-    nama: string
+    kode_jabatan: string
+    nama_jabatan: string
     level?: number
     deskripsi?: string
 }
@@ -56,8 +56,8 @@ export type IUpdateJabatan = Partial<ICreateJabatan> & { aktif?: 0 | 1 }
 // ─── Lokasi Kantor ────────────────────────────────────────────────────────────
 export interface ILokasiKantor {
     id_lokasi: string
-    kode: string
-    nama: string
+    kode_lokasi: string
+    nama_lokasi: string
     alamat: string | null
     kota: string | null
     provinsi: string | null
@@ -70,8 +70,8 @@ export interface ILokasiKantor {
 }
 
 export interface ICreateLokasiKantor {
-    kode: string
-    nama: string
+    kode_lokasi: string
+    nama_lokasi: string
     alamat?: string
     kota?: string
     provinsi?: string
@@ -86,15 +86,15 @@ export interface IOrgChartKaryawan {
     id_karyawan: string
     id_jabatan: string | null
     nik: string
-    nama: string
+    nama_karyawan: string
     foto_url: string | null
     status_kepegawaian: string
 }
 
 export interface IOrgChartJabatan {
     id_jabatan: string
-    kode: string
-    nama: string
+    kode_jabatan: string
+    nama_jabatan: string
     level: number | null
     karyawan: IOrgChartKaryawan[]
 }
@@ -102,8 +102,8 @@ export interface IOrgChartJabatan {
 export interface IOrgChartDepartemen {
     id_departemen: string
     id_departemen_induk: string | null
-    kode: string
-    nama: string
+    kode_departemen: string
+    nama_departemen: string
     jabatan: IOrgChartJabatan[]
     sub_departemen: IOrgChartDepartemen[]
 }

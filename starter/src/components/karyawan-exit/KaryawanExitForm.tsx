@@ -103,7 +103,7 @@ const KaryawanExitForm = ({
         { value: '', label: 'Pilih Karyawan' },
         ...karyawanList.map((k) => ({
             value: k.id_karyawan,
-            label: k.nik ? `${k.nik} — ${k.nama}` : k.nama,
+            label: k.nik ? `${k.nik} — ${k.nama_karyawan}` : k.nama_karyawan,
         })),
     ]
 
@@ -356,7 +356,7 @@ const KaryawanExitForm = ({
                     <Input
                         textArea
                         rows={2}
-                        placeholder="Catatan terkait eligibilitas rehire..."
+                        placeholder="Catatan terkait Dapat Direkrut Kembali..."
                         value={form.catatan_rehire}
                         onChange={(e) =>
                             set('catatan_rehire', e.target.value)

@@ -11,6 +11,7 @@ import {
     Switcher,
 } from '@/components/ui'
 import { HiArrowLeft, HiOutlineCamera, HiOutlineTrash } from 'react-icons/hi'
+import appConfig from '@/configs/app.config'
 import { formatNum } from '@/utils/formatNumber'
 import type {
     IKaryawan,
@@ -64,7 +65,7 @@ const EMPTY_LOKASI_IDS: string[] = []
 
 interface FotoUploaderProps {
     value: string
-    onChange: (base64: string) => void
+    onChange: (file: File | null, previewUrl?: string) => void
 }
 
 const FotoUploader = ({ value, onChange }: FotoUploaderProps) => {
@@ -74,7 +75,7 @@ const FotoUploader = ({ value, onChange }: FotoUploaderProps) => {
         if (!file.type.startsWith('image/')) return
         const reader = new FileReader()
         reader.onload = (e) => {
-            onChange((e.target?.result as string) ?? '')
+            onChange(file, (e.target?.result as string) ?? '')
         }
         reader.readAsDataURL(file)
     }
@@ -140,7 +141,7 @@ const FotoUploader = ({ value, onChange }: FotoUploaderProps) => {
                             customColorClass={() =>
                                 'text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10'
                             }
-                            onClick={() => onChange('')}
+                            onClick={() => onChange(null, '')}
                         >
                             Hapus
                         </Button>
@@ -170,6 +171,28 @@ const dateToStr = (d: Date): string => {
 
 const strToDate = (s: string | null): Date | null =>
     s ? new Date(s) : null
+
+const normalizeFotoUrl = (url?: string | null): string => {
+    if (!url) return ''
+    if (url.startsWith('data:') || url.startsWith('blob:')) {
+        return url
+    }
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        try {
+            const parsed = new URL(url)
+            if (parsed.pathname.startsWith('/uploads/')) {
+                return `${appConfig.apiPrefix}/proxy${parsed.pathname}${parsed.search}`
+            }
+        } catch {
+            return url
+        }
+        return url
+    }
+
+    const path = url.startsWith('/') ? url : `/${url}`
+    return `${appConfig.apiPrefix}/proxy${path}`
+}
 
 /* ─── types ───────────────────────────────────────────────── */
 
@@ -201,7 +224,6 @@ interface FormState {
     alamat: string
     // Edit only
     foto_url: string
-    tanggal_keluar: Date | null
     aktif: boolean
 }
 
@@ -228,7 +250,6 @@ const INITIAL: FormState = {
     no_bpjs_ketenagakerjaan: '',
     alamat: '',
     foto_url: '',
-    tanggal_keluar: null,
     aktif: true,
 }
 
@@ -239,7 +260,11 @@ interface KaryawanFormPageProps {
     jabatanList?: IJabatan[]
     lokasiList?: ILokasiKantor[]
     existingLokasiIds?: string[]
-    onSubmit: (payload: ICreateKaryawan | IUpdateKaryawan, lokasiIds: string[]) => void
+    onSubmit: (
+        payload: ICreateKaryawan | IUpdateKaryawan,
+        lokasiIds: string[],
+        fotoFile?: File | null,
+    ) => void
     onCancel: () => void
 }
 
@@ -256,6 +281,7 @@ const KaryawanFormPage = ({
     onCancel,
 }: KaryawanFormPageProps) => {
     const [form, setForm] = useState<FormState>(INITIAL)
+    const [fotoFile, setFotoFile] = useState<File | null>(null)
     const [selectedLokasiIds, setSelectedLokasiIds] = useState<string[]>([])
     const [errors, setErrors] = useState<
         Partial<Record<keyof FormState, string>>
@@ -266,7 +292,7 @@ const KaryawanFormPage = ({
     // Dropdown options derived from props
     const departemenOptions: GenOption[] = [
         { value: '', label: 'Pilih Departemen' },
-        ...departemenList.map((d) => ({ value: d.id_departemen, label: d.nama })),
+        ...departemenList.map((d) => ({ value: d.id_departemen, label: d.nama_departemen })),
     ]
 
     const filteredJabatan = form.id_departemen
@@ -279,14 +305,14 @@ const KaryawanFormPage = ({
 
     const jabatanOptions: GenOption[] = [
         { value: '', label: 'Pilih Jabatan' },
-        ...filteredJabatan.map((j) => ({ value: j.id_jabatan, label: j.nama })),
+        ...filteredJabatan.map((j) => ({ value: j.id_jabatan, label: j.nama_jabatan })),
     ]
 
     useEffect(() => {
         if (editData) {
             setForm({
                 nik: editData.nik ?? '',
-                nama: editData.nama,
+                nama: editData.nama_karyawan ?? '',
                 jenis_kelamin: editData.jenis_kelamin
                     ? (String(editData.jenis_kelamin) as '1' | '2')
                     : '',
@@ -317,13 +343,13 @@ const KaryawanFormPage = ({
                 no_bpjs_ketenagakerjaan:
                     editData.no_bpjs_ketenagakerjaan ?? '',
                 alamat: editData.alamat ?? '',
-                foto_url: editData.foto_url ?? '',
-                tanggal_keluar: strToDate(editData.tanggal_keluar),
+                foto_url: normalizeFotoUrl(editData.foto_url),
                 aktif: editData.aktif === 1,
             })
         } else {
             setForm(INITIAL)
         }
+        setFotoFile(null)
         setErrors({})
     }, [editData])
 
@@ -334,6 +360,7 @@ const KaryawanFormPage = ({
     const validate = (): boolean => {
         const e: Partial<Record<keyof FormState, string>> = {}
         if (!form.nama.trim()) e.nama = 'Nama karyawan wajib diisi'
+        if (!form.tanggal_lahir) e.tanggal_lahir = 'Tanggal lahir wajib diisi'
         if (!form.id_departemen) e.id_departemen = 'Departemen wajib dipilih'
         if (!form.id_jabatan) e.id_jabatan = 'Jabatan wajib dipilih'
         if (!form.tanggal_masuk) e.tanggal_masuk = 'Tanggal bergabung wajib diisi'
@@ -348,7 +375,7 @@ const KaryawanFormPage = ({
 
         const base: ICreateKaryawan = {
             nik: form.nik.trim() || undefined,
-            nama: form.nama.trim(),
+            nama_karyawan: form.nama.trim(),
             jenis_kelamin: form.jenis_kelamin
                 ? (Number(form.jenis_kelamin) as 1 | 2)
                 : undefined,
@@ -389,16 +416,13 @@ const KaryawanFormPage = ({
             onSubmit(
                 {
                     ...base,
-                    foto_url: form.foto_url.trim() || undefined,
-                    tanggal_keluar: form.tanggal_keluar
-                        ? dateToStr(form.tanggal_keluar)
-                        : undefined,
                     aktif: form.aktif ? 1 : 0,
                 } as IUpdateKaryawan,
                 selectedLokasiIds,
+                fotoFile,
             )
         } else {
-            onSubmit(base, selectedLokasiIds)
+            onSubmit(base, selectedLokasiIds, fotoFile)
         }
     }
 
@@ -510,7 +534,12 @@ const KaryawanFormPage = ({
                                 />
                             </FormItem>
 
-                            <FormItem label="Tanggal Lahir">
+                            <FormItem
+                                label="Tanggal Lahir"
+                                asterisk
+                                invalid={!!errors.tanggal_lahir}
+                                errorMessage={errors.tanggal_lahir}
+                            >
                                 <DatePicker
                                     value={form.tanggal_lahir}
                                     inputFormat="DD MMMM YYYY"
@@ -528,7 +557,10 @@ const KaryawanFormPage = ({
                             >
                                 <FotoUploader
                                     value={form.foto_url}
-                                    onChange={(v) => set('foto_url', v)}
+                                    onChange={(file, previewUrl = '') => {
+                                        setFotoFile(file)
+                                        set('foto_url', previewUrl)
+                                    }}
                                 />
                             </FormItem>
                         </div>
@@ -873,10 +905,10 @@ const KaryawanFormPage = ({
                                             <div className="flex flex-col gap-0.5 min-w-0">
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
-                                                        {lokasi.nama}
+                                                        {lokasi.nama_lokasi}
                                                     </span>
                                                     <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">
-                                                        {lokasi.kode}
+                                                        {lokasi.kode_lokasi}
                                                     </span>
                                                 </div>
                                                 {lokasi.alamat && (
@@ -908,19 +940,6 @@ const KaryawanFormPage = ({
                                     <p className="text-gray-500 text-sm mt-0.5">
                                         Aktifkan atau nonaktifkan karyawan ini
                                     </p>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-4">
-                                    <FormItem label="Tanggal Keluar">
-                                        <DatePicker
-                                            value={form.tanggal_keluar}
-                                            inputFormat="DD MMMM YYYY"
-                                            placeholder="Pilih tanggal keluar"
-                                            clearable
-                                            onChange={(d) =>
-                                                set('tanggal_keluar', d)
-                                            }
-                                        />
-                                    </FormItem>
                                 </div>
                                 <div className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
                                     <Switcher

@@ -37,19 +37,19 @@ const DepartemenTable = ({
             },
             {
                 header: 'Kode',
-                accessorKey: 'kode',
+                accessorKey: 'kode_departemen',
                 size: 140,
                 cell: ({ row }: CellContext<IDepartemen, unknown>) => (
                     <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-1 rounded">
-                        {row.original.kode}
+                        {row.original.kode_departemen}
                     </span>
                 ),
             },
             {
                 header: 'Nama Departemen',
-                accessorKey: 'nama',
+                accessorKey: 'nama_departemen',
                 cell: ({ row }: CellContext<IDepartemen, unknown>) => (
-                    <span className="font-semibold">{row.original.nama}</span>
+                    <span className="font-semibold">{row.original.nama_departemen}</span>
                 ),
             },
             {
@@ -58,7 +58,7 @@ const DepartemenTable = ({
                 size: 200,
                 cell: ({ row }: CellContext<IDepartemen, unknown>) => (
                     <span className="text-gray-500">
-                        {row.original.departemen_induk?.nama ?? '—'}
+                        {row.original.departemen_induk?.nama_departemen ?? '—'}
                     </span>
                 ),
             },

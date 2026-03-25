@@ -84,7 +84,7 @@ const TagihanForm = ({
         { value: '', label: '— Pilih Siswa —' },
         ...siswaList.map((s) => ({
             value: s.id_siswa,
-            label: s.nama + (s.telepon ? ` (${s.telepon})` : ''),
+            label: s.nama_siswa + (s.telepon ? ` (${s.telepon})` : ''),
         })),
     ]
 
@@ -92,7 +92,7 @@ const TagihanForm = ({
         if (editData) {
             setForm({
                 id_siswa: editData.siswa.id_siswa,
-                jenis: editData.jenis,
+                jenis: editData.jenis_tagihan,
                 periode: editData.periode ?? '',
                 jumlah_sesi: editData.jumlah_sesi ? String(editData.jumlah_sesi) : '',
                 total_harga: formatNum(editData.total_harga),
@@ -121,7 +121,7 @@ const TagihanForm = ({
 
         if (isEdit) {
             const payload: IUpdateTagihan = {
-                jenis: form.jenis,
+                jenis_tagihan: form.jenis,
                 periode: form.periode || undefined,
                 jumlah_sesi: form.jumlah_sesi ? Number(form.jumlah_sesi) : undefined,
                 total_harga: parseRupiah(form.total_harga),
@@ -132,7 +132,7 @@ const TagihanForm = ({
         } else {
             const payload: ICreateTagihan = {
                 id_siswa: form.id_siswa,
-                jenis: form.jenis,
+                jenis_tagihan: form.jenis,
                 periode: form.periode || undefined,
                 jumlah_sesi: form.jumlah_sesi ? Number(form.jumlah_sesi) : undefined,
                 total_harga: parseRupiah(form.total_harga),
@@ -181,7 +181,7 @@ const TagihanForm = ({
                             onChange={(opt) =>
                                 setForm((prev) => ({
                                     ...prev,
-                                    jenis: (opt as JenisOption).value,
+                                    jenis_tagihan: (opt as JenisOption).value,
                                     jumlah_sesi: '',
                                 }))
                             }

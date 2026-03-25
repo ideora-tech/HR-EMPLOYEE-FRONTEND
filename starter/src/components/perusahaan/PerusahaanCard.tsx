@@ -18,16 +18,16 @@ const PerusahaanCard = ({ perusahaan, onEdit, onDelete }: PerusahaanCardProps) =
                 {perusahaan.url_logo ? (
                     <img
                         src={perusahaan.url_logo}
-                        alt={perusahaan.nama}
+                        alt={perusahaan.nama_perusahaan}
                         className="w-10 h-10 rounded object-contain border border-gray-100 dark:border-gray-700 bg-white"
                         onError={(e) => {
-                            ;(e.target as HTMLImageElement).style.display = 'none'
+                            ; (e.target as HTMLImageElement).style.display = 'none'
                         }}
                     />
                 ) : (
                     <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center">
                         <span className="text-indigo-600 dark:text-indigo-300 font-bold text-sm">
-                            {perusahaan.nama.charAt(0).toUpperCase()}
+                            {perusahaan.nama_perusahaan.charAt(0).toUpperCase()}
                         </span>
                     </div>
                 )}
@@ -42,7 +42,7 @@ const PerusahaanCard = ({ perusahaan, onEdit, onDelete }: PerusahaanCardProps) =
                 </Tag>
             </div>
 
-            <h6 className="font-bold mb-3">{perusahaan.nama}</h6>
+            <h6 className="font-bold mb-3">{perusahaan.nama_perusahaan}</h6>
 
             <div className="flex flex-col gap-1 mb-4 text-sm text-gray-500 dark:text-gray-400">
                 {perusahaan.email && (

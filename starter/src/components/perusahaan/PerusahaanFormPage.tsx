@@ -24,7 +24,7 @@ type ZoneOption = { value: string; label: string }
 type CurrencyOption = { value: string; label: string }
 
 interface FormState {
-    nama: string
+    nama_perusahaan: string
     email: string
     telepon: string
     alamat: string
@@ -39,7 +39,7 @@ interface FormState {
 type FormErrors = Partial<Record<keyof FormState, string>>
 
 const INITIAL_STATE: FormState = {
-    nama: '',
+    nama_perusahaan: '',
     email: '',
     telepon: '',
     alamat: '',
@@ -68,7 +68,7 @@ const PerusahaanFormPage = ({
         { value: '', label: 'Pilih Zona Waktu' },
         ...zonaWaktuList.map((z) => ({
             value: z.kode,
-            label: `${z.kode} - ${z.nama}`,
+            label: `${z.kode} - ${z.nama_perusahaan}`,
         })),
     ]
 
@@ -76,14 +76,14 @@ const PerusahaanFormPage = ({
         { value: '', label: 'Pilih Mata Uang' },
         ...mataUangList.map((m) => ({
             value: m.kode,
-            label: `${m.kode} - ${m.nama}`,
+            label: `${m.kode} - ${m.nama_perusahaan}`,
         })),
     ]
 
     useEffect(() => {
         if (editData) {
             setForm({
-                nama: editData.nama,
+                nama_perusahaan: editData.nama_perusahaan,
                 email: editData.email ?? '',
                 telepon: editData.telepon ?? '',
                 alamat: editData.alamat ?? '',
@@ -102,7 +102,7 @@ const PerusahaanFormPage = ({
 
     const validate = (): boolean => {
         const newErrors: FormErrors = {}
-        if (!form.nama.trim()) newErrors.nama = 'Nama perusahaan wajib diisi'
+        if (!form.nama_perusahaan.trim()) newErrors.nama_perusahaan = 'nama_perusahaan perusahaan wajib diisi'
         if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
             newErrors.email = 'Format email tidak valid'
         if (form.website && !/^https?:\/\/.+/.test(form.website))
@@ -117,7 +117,7 @@ const PerusahaanFormPage = ({
         if (!validate()) return
 
         const payload: IPerusahaanCreate | IPerusahaanUpdate = {
-            nama: form.nama.trim(),
+            nama_perusahaan: form.nama_perusahaan.trim(),
             ...(form.email.trim() && { email: form.email.trim() }),
             ...(form.telepon.trim() && { telepon: form.telepon.trim() }),
             ...(form.alamat.trim() && { alamat: form.alamat.trim() }),
@@ -170,17 +170,17 @@ const PerusahaanFormPage = ({
                 <div className="flex flex-col gap-1">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                         <FormItem
-                            label="Nama Perusahaan"
+                            label="nama_perusahaan Perusahaan"
                             asterisk
-                            invalid={!!errors.nama}
-                            errorMessage={errors.nama}
+                            invalid={!!errors.nama_perusahaan}
+                            errorMessage={errors.nama_perusahaan}
                         >
                             <Input
                                 placeholder="contoh: PT Maju Bersama"
-                                value={form.nama}
-                                invalid={!!errors.nama}
+                                value={form.nama_perusahaan}
+                                invalid={!!errors.nama_perusahaan}
                                 onChange={(e) =>
-                                    setForm((p) => ({ ...p, nama: e.target.value }))
+                                    setForm((p) => ({ ...p, nama_perusahaan: e.target.value }))
                                 }
                             />
                         </FormItem>

@@ -240,7 +240,7 @@ const AksesModulPage = () => {
                                             className="px-6 py-3 text-center text-gray-500 font-medium min-w-[130px]"
                                         >
                                             <div className="font-semibold text-gray-700 dark:text-gray-200">
-                                                {p.nama}
+                                                {p.nama_paket}
                                             </div>
                                             <div className="text-xs font-normal text-gray-400 mt-0.5 mb-2">
                                                 {p.kode_paket}
@@ -284,7 +284,7 @@ const AksesModulPage = () => {
                                             {paketList.map((p) => {
                                                 const akses =
                                                     aksesMap[modul.kode_modul]?.[
-                                                        p.kode_paket
+                                                    p.kode_paket
                                                     ]
                                                 const key = `${modul.kode_modul}:${p.kode_paket}`
 

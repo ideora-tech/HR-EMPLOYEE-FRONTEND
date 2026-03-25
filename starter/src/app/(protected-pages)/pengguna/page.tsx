@@ -58,7 +58,7 @@ const PenggunaPage = () => {
     useEffect(() => {
         PeranService.getAll({ aktif: 1, limit: 100 })
             .then((res) => { if (res.success) setPeranList(res.data) })
-            .catch(() => {})
+            .catch(() => { })
     }, [])
 
     const fetchPengguna = useCallback(async () => {
@@ -261,22 +261,20 @@ const PenggunaPage = () => {
                     <div className="flex items-center rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 shrink-0">
                         <button
                             title="Tabel"
-                            className={`p-2 text-lg transition-colors ${
-                                viewMode === 'table'
+                            className={`p-2 text-lg transition-colors ${viewMode === 'table'
                                     ? 'bg-indigo-600 text-white'
                                     : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                            }`}
+                                }`}
                             onClick={() => setViewMode('table')}
                         >
                             <HiOutlineViewList />
                         </button>
                         <button
                             title="Kartu"
-                            className={`p-2 text-lg transition-colors ${
-                                viewMode === 'card'
+                            className={`p-2 text-lg transition-colors ${viewMode === 'card'
                                     ? 'bg-indigo-600 text-white'
                                     : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                            }`}
+                                }`}
                             onClick={() => setViewMode('card')}
                         >
                             <HiOutlineViewGrid />
@@ -353,7 +351,7 @@ const PenggunaPage = () => {
                 <p className="text-sm">
                     Pengguna{' '}
                     <span className="font-semibold">
-                        &ldquo;{deleteTarget?.nama}&rdquo;
+                        &ldquo;{deleteTarget?.nama_pengguna}&rdquo;
                     </span>{' '}
                     akan dihapus secara permanen. Tindakan ini tidak dapat
                     dibatalkan.

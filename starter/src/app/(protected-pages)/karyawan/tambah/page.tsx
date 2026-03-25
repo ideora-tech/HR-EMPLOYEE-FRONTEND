@@ -38,10 +38,14 @@ const TambahKaryawanPage = () => {
     const handleSubmit = async (
         payload: ICreateKaryawan | IUpdateKaryawan,
         lokasiIds: string[],
+        fotoFile?: File | null,
     ) => {
         setSubmitting(true)
         try {
             const res = await KaryawanService.create(payload as ICreateKaryawan)
+            if (fotoFile) {
+                await KaryawanService.uploadFoto(res.data.id_karyawan, fotoFile)
+            }
             if (lokasiIds.length > 0) {
                 await KaryawanService.setLokasi(res.data.id_karyawan, lokasiIds)
             }
