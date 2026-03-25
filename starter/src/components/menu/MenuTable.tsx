@@ -9,6 +9,7 @@ import type { IMenu } from '@/@types/menu.types'
 
 interface MenuTableProps {
     data: IMenu[]
+    allMenus?: IMenu[]
     loading?: boolean
     pagingData: {
         total: number
@@ -23,6 +24,7 @@ interface MenuTableProps {
 
 const MenuTable = ({
     data,
+    allMenus = [],
     loading = false,
     pagingData,
     onPaginationChange,
@@ -30,6 +32,11 @@ const MenuTable = ({
     onEdit,
     onDelete,
 }: MenuTableProps) => {
+    const parentMap = useMemo(
+        () => new Map(allMenus.map((m) => [m.id_menu, m.nama])),
+        [allMenus],
+    )
+
     const columns: ColumnDef<IMenu>[] = useMemo(
         () => [
             {
@@ -50,17 +57,21 @@ const MenuTable = ({
                 ),
             },
             {
-                header: 'Kode Modul',
-                accessorKey: 'kode_modul',
-                size: 160,
-                cell: ({ row }: CellContext<IMenu, unknown>) =>
-                    row.original.kode_modul ? (
-                        <Tag className="bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-100">
-                            {row.original.kode_modul}
-                        </Tag>
+                header: 'Menu Parent',
+                accessorKey: 'parent_id',
+                size: 180,
+                cell: ({ row }: CellContext<IMenu, unknown>) => {
+                    const parentName = row.original.parent_id
+                        ? parentMap.get(row.original.parent_id)
+                        : null
+                    return parentName ? (
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                            {parentName}
+                        </span>
                     ) : (
-                        <span className="text-xs text-gray-400 italic">selalu tampil</span>
-                    ),
+                        <span className="text-xs text-gray-400 italic">—</span>
+                    )
+                },
             },
             {
                 header: 'Path',
@@ -134,7 +145,7 @@ const MenuTable = ({
                 ),
             },
         ],
-        [onEdit, onDelete, pagingData.pageIndex, pagingData.pageSize],
+        [onEdit, onDelete, pagingData.pageIndex, pagingData.pageSize, parentMap],
     )
 
     return (

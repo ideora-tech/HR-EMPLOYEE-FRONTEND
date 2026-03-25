@@ -45,6 +45,16 @@ export const API_ENDPOINTS = {
         OVERVIEW: (id: string) => `${PROXY}/perusahaan/${id}/overview`,
     },
 
+    // Master Data
+    MASTER_DATA: {
+        ZONA_WAKTU: {
+            BASE: `${PROXY}/zona-waktu`,
+        },
+        MATA_UANG: {
+            BASE: `${PROXY}/mata-uang`,
+        },
+    },
+
     // Izin Peran (Permission Matrix)
     IZIN_PERAN: {
         BY_PERAN: (kode: string) => `${PROXY}/izin-peran/peran/${kode}`,
@@ -72,12 +82,23 @@ export const API_ENDPOINTS = {
     KARYAWAN: {
         BASE: `${PROXY}/karyawan`,
         BY_ID: (id: string) => `${PROXY}/karyawan/${id}`,
+        LOKASI: (id: string) => `${PROXY}/karyawan/${id}/lokasi`,
         TEMPLATE_EXCEL: `${PROXY}/karyawan/template/excel`,
         UPLOAD_EXCEL: `${PROXY}/karyawan/upload/excel`,
     },
 
+    // Karyawan Exit (Offboarding)
+    KARYAWAN_EXIT: {
+        BASE: `${PROXY}/karyawan-exit`,
+        BY_ID: (id: string) => `${PROXY}/karyawan-exit/${id}`,
+        BY_KARYAWAN: (id: string) => `${PROXY}/karyawan-exit/karyawan/${id}`,
+    },
+
     // Kursus Dansa
     KURSUS: {
+        DASHBOARD: {
+            SUMMARY: `${PROXY}/kursus/dashboard/summary`,
+        },
         TINGKAT: {
             BASE: `${PROXY}/kursus/tingkat-program`,
             BY_ID: (id: string) => `${PROXY}/kursus/tingkat-program/${id}`,
@@ -133,5 +154,24 @@ export const API_ENDPOINTS = {
             BY_ID: (id: string) => `${PROXY}/kursus/pembayaran/${id}`,
             BY_TAGIHAN: (idTagihan: string) => `${PROXY}/kursus/pembayaran/tagihan/${idTagihan}`,
         },
+    },
+
+    // Struktur Organisasi
+    ORGANISASI: {
+        DEPARTEMEN: {
+            BASE: `${PROXY}/organisasi/departemen`,
+            BY_ID: (id: string) => `${PROXY}/organisasi/departemen/${id}`,
+            TREE: `${PROXY}/organisasi/departemen/tree`,
+        },
+        JABATAN: {
+            BASE: `${PROXY}/organisasi/jabatan`,
+            BY_ID: (id: string) => `${PROXY}/organisasi/jabatan/${id}`,
+            BY_DEPARTEMEN: (id: string) => `${PROXY}/organisasi/jabatan/departemen/${id}`,
+        },
+        LOKASI_KANTOR: {
+            BASE: `${PROXY}/organisasi/lokasi-kantor`,
+            BY_ID: (id: string) => `${PROXY}/organisasi/lokasi-kantor/${id}`,
+        },
+        STRUKTUR: `${PROXY}/organisasi/struktur`,
     },
 } as const

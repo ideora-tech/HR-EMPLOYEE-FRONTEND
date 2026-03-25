@@ -347,6 +347,71 @@ export interface ICreatePembayaran {
   referensi?: string
   catatan?: string
 }
+
+// ===== MONITORING SISWA =====
+export interface ISiswaMonitoringKelas {
+  id_daftar: string
+  id_jadwal: string
+  nama_jadwal: string
+  tanggal_selesai: string
+  status_daftar: number     // 1=Aktif, 3=Berhenti
+  hari_tersisa: number | null   // null untuk siswa berhenti
+}
+
+export interface ISiswaMonitoringItem {
+  id_siswa: string
+  nama: string
+  email: string | null
+  telepon: string | null
+  kelas: ISiswaMonitoringKelas[]
+}
+
+export interface ISiswaMonitoring {
+  berhenti: ISiswaMonitoringItem[]
+  akan_expired: ISiswaMonitoringItem[]
+}
+
+// ===== DASHBOARD =====
+export interface IPendapatanBulan {
+  bulan: string    // YYYY-MM
+  total: number
+}
+
+export interface ISiswaPerProgram {
+  nama_program: string
+  jumlah: number
+}
+
+export interface IJadwalHariIni {
+  id_jadwal: string
+  nama: string
+  instruktur: string | null
+  jam_mulai: string    // HH:MM
+  jam_selesai: string  // HH:MM
+  kuota: number
+  terisi: number
+}
+
+export interface IPembayaranTerbaru {
+  id_pembayaran: string
+  nama_siswa: string
+  jumlah: number
+  metode: string
+  tanggal_bayar: string
+}
+
+export interface IDashboardSummary {
+  siswa_aktif: number
+  kelas_hari_ini: number
+  pendapatan_bulan_ini: number
+  tagihan_belum_lunas: number
+  siswa_akan_expired: number
+  siswa_berhenti: number
+  pendapatan_6_bulan: IPendapatanBulan[]
+  siswa_per_program: ISiswaPerProgram[]
+  jadwal_hari_ini: IJadwalHariIni[]
+  pembayaran_terbaru: IPembayaranTerbaru[]
+}
 ```
 
 ---
@@ -359,11 +424,14 @@ export interface ICreatePembayaran {
 kursus: {
   // Siswa
   siswa: {
-    list:   '/kursus/siswa',
-    detail: (id: string) => `/kursus/siswa/${id}`,
-    create: '/kursus/siswa',
-    update: (id: string) => `/kursus/siswa/${id}`,
-    delete: (id: string) => `/kursus/siswa/${id}`,
+    list:       '/kursus/siswa',
+    monitoring: '/kursus/siswa/monitoring',
+    template:   '/kursus/siswa/template/excel',
+    upload:     '/kursus/siswa/upload/excel',
+    detail:     (id: string) => `/kursus/siswa/${id}`,
+    create:     '/kursus/siswa',
+    update:     (id: string) => `/kursus/siswa/${id}`,
+    delete:     (id: string) => `/kursus/siswa/${id}`,
   },
   // Program Pengajaran
   program: {
@@ -385,6 +453,7 @@ kursus: {
   // Jadwal Kelas
   jadwal: {
     list:   '/kursus/jadwal-kelas',
+    export: '/kursus/jadwal-kelas/export/excel',
     kuota:  (id: string) => `/kursus/jadwal-kelas/${id}/kuota`,
     detail: (id: string) => `/kursus/jadwal-kelas/${id}`,
     create: '/kursus/jadwal-kelas',
@@ -431,6 +500,10 @@ kursus: {
     create:     '/kursus/pembayaran',
     delete:     (id: string) => `/kursus/pembayaran/${id}`,
   },
+  // Dashboard
+  dashboard: {
+    summary: '/kursus/dashboard/summary',
+  },
 },
 ```
 
@@ -470,6 +543,8 @@ kursus: {
   tagihanDetail:  (id: string) => `/kursus/tagihan/${id}`,
 
   pembayaran:     '/kursus/pembayaran',
+
+  dashboard:      '/kursus/dashboard',
 },
 ```
 
@@ -482,7 +557,7 @@ kursus: {
 ```typescript
 import apiClient from '@/services/api-client'
 import { API_ENDPOINTS } from '@/constants/api.constant'
-import type { ISiswa, ICreateSiswa, IUpdateSiswa } from '@/@types/kursus.types'
+import type { ISiswa, ICreateSiswa, IUpdateSiswa, ISiswaMonitoring } from '@/@types/kursus.types'
 import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
 
 export interface SiswaListParams {
@@ -497,6 +572,23 @@ export const siswaService = {
     apiClient.get<ApiResponse<PaginatedResult<ISiswa>>>(
       API_ENDPOINTS.kursus.siswa.list, { params }
     ),
+
+  getMonitoring: (expiringDays = 30) =>
+    apiClient.get<ApiResponse<ISiswaMonitoring>>(
+      API_ENDPOINTS.kursus.siswa.monitoring, { params: { expiring_days: expiringDays } }
+    ),
+
+  downloadTemplate: () =>
+    apiClient.get(API_ENDPOINTS.kursus.siswa.template, { responseType: 'blob' }),
+
+  uploadExcel: (file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return apiClient.post<ApiResponse<{ berhasil: number; gagal: number; errors: string[] }>>(
+      API_ENDPOINTS.kursus.siswa.upload, form,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    )
+  },
 
   getById: (id: string) =>
     apiClient.get<ApiResponse<ISiswa>>(
@@ -656,9 +748,36 @@ export const jadwalKelasService = {
       API_ENDPOINTS.kursus.jadwal.update(id), data
     ),
 
+  exportExcel: (bulan?: string) =>
+    // bulan format: "YYYY-MM", default bulan ini
+    apiClient.get(API_ENDPOINTS.kursus.jadwal.export, {
+      params: bulan ? { bulan } : {},
+      responseType: 'blob',
+    }),
+  // Contoh penggunaan:
+  // const res = await jadwalKelasService.exportExcel('2026-03')
+  // const url = URL.createObjectURL(new Blob([res.data]))
+  // const a = document.createElement('a'); a.href = url; a.download = 'jadwal-2026-03.xlsx'; a.click()
+
   remove: (id: string) =>
     apiClient.delete<ApiResponse<null>>(
       API_ENDPOINTS.kursus.jadwal.delete(id)
+    ),
+}
+```
+
+### `dashboard.service.ts`
+
+```typescript
+import apiClient from '@/services/api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { IDashboardSummary } from '@/@types/kursus.types'
+import type { ApiResponse } from '@/@types/api.types'
+
+export const dashboardKursusService = {
+  getSummary: () =>
+    apiClient.get<ApiResponse<IDashboardSummary>>(
+      API_ENDPOINTS.kursus.dashboard.summary
     ),
 }
 ```
@@ -1343,8 +1462,12 @@ src/app/(protected-pages)/kursus/
 │   └── [id]/
 │       └── page.tsx              ← Detail tagihan + riwayat pembayaran + form bayar
 
-└── pembayaran/
-    └── page.tsx                  ← List semua pembayaran (history global)
+├── pembayaran/
+│   └── page.tsx                  ← List semua pembayaran (history global)
+
+└── dashboard/
+    └── page.tsx                  ← KPI cards + chart pendapatan + chart per-program
+                                     + jadwal hari ini + pembayaran terbaru + alert monitoring
 ```
 
 ---
@@ -1365,9 +1488,13 @@ src/app/(protected-pages)/kursus/
 | 10 | `tanggal_bayar` pembayaran adalah **string** `"YYYY-MM-DD"` — bukan Date object |
 | 11 | Absen batch pakai `id_daftar` (dari `GET /presensi/jadwal/:id_jadwal`), bukan `id_siswa` |
 | 12 | `presensiService.getBySiswa()` return `{ data, sesi_terpakai }` — `sesi_terpakai` hitung sesi HADIR saja (untuk cek kuota paket) |
+| 13 | Export jadwal Excel (`jadwalKelasService.exportExcel(bulan)`) return `responseType: 'blob'` — buat `URL.createObjectURL` untuk trigger download |
+| 14 | `GET /kursus/siswa/monitoring?expiring_days=N` — `berhenti` = siswa stop kelas, `akan_expired` = siswa aktif mendekati akhir jadwal |
+| 15 | `GET /kursus/dashboard/summary` mencakup semua data dashboard dalam 1 request — gunakan saat mount halaman dashboard |
+| 16 | `pendapatan_bulan_ini` di dashboard = SUM dari tabel `pembayaran`, bukan dari `tagihan.total_harga` |
 
 ---
 
-**Document Version:** 1.1
+**Document Version:** 1.2
 **Last Updated:** 2026-03-24
 **Owner:** @ideora-tech

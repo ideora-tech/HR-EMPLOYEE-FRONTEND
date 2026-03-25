@@ -480,6 +480,501 @@ export function parseApiError(error: unknown): string {
 
 ---
 
+---
+
+## Modul HR — Struktur Organisasi (Departemen, Jabatan, Lokasi Kantor)
+
+### Types — `src/@types/organisasi.types.ts`
+
+```typescript
+// ============================================================
+// DEPARTEMEN
+// ============================================================
+export interface IDepartemen {
+  id_departemen: string
+  id_departemen_induk: string | null
+  kode: string
+  nama: string
+  deskripsi: string | null
+  aktif: number              // 1 = aktif, 0 = nonaktif
+  dibuat_pada: string
+  diubah_pada: string | null
+  departemen_induk: { id_departemen: string; nama: string } | null
+}
+
+export interface IDepartemenTree extends IDepartemen {
+  children: IDepartemenTree[]
+}
+
+export interface ICreateDepartemen {
+  kode: string
+  nama: string
+  deskripsi?: string
+  id_departemen_induk?: string    // UUID departemen induk, opsional
+}
+
+export type IUpdateDepartemen = Partial<ICreateDepartemen> & {
+  id_departemen_induk?: string | null   // null = jadikan level teratas
+  aktif?: 0 | 1
+}
+
+// ============================================================
+// JABATAN
+// ============================================================
+export interface IJabatan {
+  id_jabatan: string
+  id_departemen: string | null
+  kode: string
+  nama: string
+  level: number | null       // 1=Top Management, 2=Middle, 3=Supervisor, 4=Staff
+  deskripsi: string | null
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+  departemen: { id_departemen: string; nama: string } | null
+}
+
+export interface ICreateJabatan {
+  id_departemen?: string
+  kode: string
+  nama: string
+  level?: 1 | 2 | 3 | 4
+  deskripsi?: string
+}
+
+export type IUpdateJabatan = Partial<ICreateJabatan> & { aktif?: 0 | 1 }
+
+// ============================================================
+// LOKASI KANTOR
+// ============================================================
+export interface ILokasiKantor {
+  id_lokasi: string
+  kode: string
+  nama: string
+  alamat: string | null
+  kota: string | null
+  provinsi: string | null
+  kode_pos: string | null
+  telepon: string | null
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+}
+
+export interface ICreateLokasiKantor {
+  kode: string
+  nama: string
+  alamat?: string
+  kota?: string
+  provinsi?: string
+  kode_pos?: string
+  telepon?: string
+}
+
+export type IUpdateLokasiKantor = Partial<ICreateLokasiKantor> & { aktif?: 0 | 1 }
+```
+
+---
+
+### API Endpoints — `src/constants/api.constant.ts`
+
+Tambahkan ke `API_ENDPOINTS`:
+
+```typescript
+organisasi: {
+  departemen: {
+    list:   '/organisasi/departemen',
+    tree:   '/organisasi/departemen/tree',
+    detail: (id: string) => `/organisasi/departemen/${id}`,
+    create: '/organisasi/departemen',
+    update: (id: string) => `/organisasi/departemen/${id}`,
+    delete: (id: string) => `/organisasi/departemen/${id}`,
+  },
+  jabatan: {
+    list:          '/organisasi/jabatan',
+    byDepartemen:  (idDept: string) => `/organisasi/jabatan/departemen/${idDept}`,
+    detail:        (id: string) => `/organisasi/jabatan/${id}`,
+    create:        '/organisasi/jabatan',
+    update:        (id: string) => `/organisasi/jabatan/${id}`,
+    delete:        (id: string) => `/organisasi/jabatan/${id}`,
+  },
+  lokasiKantor: {
+    list:   '/organisasi/lokasi-kantor',
+    detail: (id: string) => `/organisasi/lokasi-kantor/${id}`,
+    create: '/organisasi/lokasi-kantor',
+    update: (id: string) => `/organisasi/lokasi-kantor/${id}`,
+    delete: (id: string) => `/organisasi/lokasi-kantor/${id}`,
+  },
+},
+```
+
+---
+
+### Routes — `src/constants/route.constant.ts`
+
+Tambahkan ke `ROUTES`:
+
+```typescript
+// Struktur Organisasi
+departemen:          '/organisasi/departemen',
+departemenCreate:    '/organisasi/departemen/create',
+departemenDetail:    (id: string) => `/organisasi/departemen/${id}`,
+
+jabatan:             '/organisasi/jabatan',
+jabatanCreate:       '/organisasi/jabatan/create',
+jabatanDetail:       (id: string) => `/organisasi/jabatan/${id}`,
+
+lokasiKantor:        '/organisasi/lokasi-kantor',
+lokasiKantorCreate:  '/organisasi/lokasi-kantor/create',
+lokasiKantorDetail:  (id: string) => `/organisasi/lokasi-kantor/${id}`,
+```
+
+---
+
+### Services
+
+**`src/services/departemen.service.ts`**
+```typescript
+import apiClient from './api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { IDepartemen, ICreateDepartemen, IUpdateDepartemen } from '@/@types/organisasi.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export const departemenService = {
+  getAll: (params?: { page?: number; limit?: number; search?: string }) =>
+    apiClient.get<ApiResponse<PaginatedResult<IDepartemen>>>(API_ENDPOINTS.organisasi.departemen.list, { params }),
+
+  // Untuk komponen tree/sidebar — response nested parent → children
+  getTree: () =>
+    apiClient.get<ApiResponse<IDepartemenTree[]>>(API_ENDPOINTS.organisasi.departemen.tree),
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<IDepartemen>>(API_ENDPOINTS.organisasi.departemen.detail(id)),
+
+  create: (data: ICreateDepartemen) =>
+    apiClient.post<ApiResponse<IDepartemen>>(API_ENDPOINTS.organisasi.departemen.create, data),
+
+  update: (id: string, data: IUpdateDepartemen) =>
+    apiClient.patch<ApiResponse<IDepartemen>>(API_ENDPOINTS.organisasi.departemen.update(id), data),
+
+  delete: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(API_ENDPOINTS.organisasi.departemen.delete(id)),
+}
+```
+
+**`src/services/jabatan.service.ts`**
+```typescript
+import apiClient from './api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { IJabatan, ICreateJabatan, IUpdateJabatan } from '@/@types/organisasi.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export const jabatanService = {
+  getAll: (params?: { page?: number; limit?: number; search?: string; id_departemen?: string }) =>
+    apiClient.get<ApiResponse<PaginatedResult<IJabatan>>>(API_ENDPOINTS.organisasi.jabatan.list, { params }),
+
+  // Untuk dropdown — tanpa pagination
+  getByDepartemen: (idDepartemen: string) =>
+    apiClient.get<ApiResponse<IJabatan[]>>(API_ENDPOINTS.organisasi.jabatan.byDepartemen(idDepartemen)),
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<IJabatan>>(API_ENDPOINTS.organisasi.jabatan.detail(id)),
+
+  create: (data: ICreateJabatan) =>
+    apiClient.post<ApiResponse<IJabatan>>(API_ENDPOINTS.organisasi.jabatan.create, data),
+
+  update: (id: string, data: IUpdateJabatan) =>
+    apiClient.patch<ApiResponse<IJabatan>>(API_ENDPOINTS.organisasi.jabatan.update(id), data),
+
+  delete: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(API_ENDPOINTS.organisasi.jabatan.delete(id)),
+}
+```
+
+**`src/services/lokasi-kantor.service.ts`**
+```typescript
+import apiClient from './api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { ILokasiKantor, ICreateLokasiKantor, IUpdateLokasiKantor } from '@/@types/organisasi.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export const lokasiKantorService = {
+  getAll: (params?: { page?: number; limit?: number; search?: string }) =>
+    apiClient.get<ApiResponse<PaginatedResult<ILokasiKantor>>>(API_ENDPOINTS.organisasi.lokasiKantor.list, { params }),
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<ILokasiKantor>>(API_ENDPOINTS.organisasi.lokasiKantor.detail(id)),
+
+  create: (data: ICreateLokasiKantor) =>
+    apiClient.post<ApiResponse<ILokasiKantor>>(API_ENDPOINTS.organisasi.lokasiKantor.create, data),
+
+  update: (id: string, data: IUpdateLokasiKantor) =>
+    apiClient.patch<ApiResponse<ILokasiKantor>>(API_ENDPOINTS.organisasi.lokasiKantor.update(id), data),
+
+  delete: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(API_ENDPOINTS.organisasi.lokasiKantor.delete(id)),
+}
+```
+
+---
+
+### Struktur Halaman
+
+```
+src/app/(protected-pages)/
+└── organisasi/
+    ├── departemen/
+    │   ├── page.tsx          ← List departemen (tabel + search + pagination)
+    │   ├── create/
+    │   │   └── page.tsx      ← Form tambah departemen
+    │   └── [id]/
+    │       └── page.tsx      ← Detail / edit departemen
+    │
+    ├── jabatan/
+    │   ├── page.tsx          ← List jabatan (search, filter by departemen)
+    │   ├── create/
+    │   │   └── page.tsx      ← Form tambah jabatan (termasuk select departemen)
+    │   └── [id]/
+    │       └── page.tsx      ← Detail / edit jabatan
+    │
+    └── lokasi-kantor/
+        ├── page.tsx          ← List lokasi kantor
+        ├── create/
+        │   └── page.tsx      ← Form tambah lokasi kantor
+        └── [id]/
+            └── page.tsx      ← Detail / edit lokasi kantor
+```
+
+### Komponen
+
+```
+src/components/
+├── departemen/
+│   ├── DepartemenTable.tsx    ← Tabel list + aksi edit/hapus
+│   ├── DepartemenForm.tsx     ← Form create/edit
+│   └── DepartemenFilterBar.tsx
+│
+├── jabatan/
+│   ├── JabatanTable.tsx       ← Tampilkan kolom departemen dari nested object
+│   ├── JabatanForm.tsx        ← Select departemen via getByDepartemen
+│   └── JabatanFilterBar.tsx   ← Filter dropdown departemen
+│
+└── lokasi-kantor/
+    ├── LokasiKantorTable.tsx
+    ├── LokasiKantorForm.tsx
+    └── LokasiKantorFilterBar.tsx
+```
+
+> **Catatan Jabatan**: Field `departemen` di response adalah object `{ id_departemen, nama }` atau `null`.
+> Gunakan `jabatan.departemen?.nama ?? '-'` saat render di tabel.
+> Untuk form select departemen, panggil `jabatanService.getByDepartemen` tidak perlu — gunakan `departemenService.getAll({ limit: 100 })` untuk mengisi dropdown.
+
+---
+
+## Modul HR — Karyawan
+
+### Types — `src/@types/karyawan.types.ts`
+
+```typescript
+import type { IDepartemen } from './organisasi.types'
+
+// ============================================================
+// KARYAWAN
+// ============================================================
+export interface IKaryawan {
+  id_karyawan: string
+  id_perusahaan: string
+  id_jabatan: string | null
+  id_departemen: string | null
+  id_lokasi_kantor: string | null
+
+  // Data pribadi
+  nik: string | null
+  nama: string
+  email: string | null
+  telepon: string | null
+  tanggal_lahir: string | null      // "YYYY-MM-DD"
+  jenis_kelamin: number | null      // 1=L, 2=P
+  alamat: string | null
+  foto_url: string | null
+
+  // Informasi pekerjaan
+  tanggal_masuk: string | null
+  tanggal_keluar: string | null
+  tanggal_mulai_kontrak: string | null
+  tanggal_akhir_kontrak: string | null
+  gaji_pokok: number | null
+  status_kepegawaian: string | null  // TETAP | KONTRAK | PROBASI | MAGANG
+
+  // Informasi bank
+  nama_bank: string | null
+  no_rekening: string | null
+  nama_pemilik_rekening: string | null
+
+  // Informasi pajak & BPJS
+  npwp: string | null
+  status_pajak: string | null        // TK/0, K/1, K/I/0, dll
+  no_bpjs_kesehatan: string | null
+  no_bpjs_ketenagakerjaan: string | null
+
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+
+  // Nested objects (null jika belum di-assign)
+  jabatan: { id_jabatan: string; nama: string; level: number | null } | null
+  departemen: { id_departemen: string; nama: string } | null
+  lokasi_kantor: { id_lokasi: string; nama: string } | null
+}
+
+export interface ICreateKaryawan {
+  nik?: string
+  nama: string
+  email?: string
+  telepon?: string
+  tanggal_lahir?: string
+  jenis_kelamin?: 1 | 2
+  alamat?: string
+  foto_url?: string
+  // Pekerjaan
+  id_jabatan?: string
+  id_departemen?: string
+  tanggal_masuk?: string
+  tanggal_keluar?: string
+  status_kepegawaian?: 'TETAP' | 'KONTRAK' | 'PROBASI' | 'MAGANG'
+  tanggal_mulai_kontrak?: string
+  tanggal_akhir_kontrak?: string
+  gaji_pokok?: number
+  // Bank
+  nama_bank?: string
+  no_rekening?: string
+  nama_pemilik_rekening?: string
+  // Pajak & BPJS
+  npwp?: string
+  status_pajak?: string
+  no_bpjs_kesehatan?: string
+  no_bpjs_ketenagakerjaan?: string
+}
+
+export type IUpdateKaryawan = Partial<ICreateKaryawan> & {
+  id_jabatan?: string | null        // null = hapus assignment
+  id_departemen?: string | null
+  aktif?: 0 | 1
+}
+
+export interface ILokasiKaryawan {
+  id_lokasi: string
+  kode: string
+  nama: string
+  alamat: string | null
+  kota: string | null
+  provinsi: string | null
+  radius: number | null             // Radius geofencing dalam meter
+  aktif: number
+}
+```
+
+---
+
+### API Endpoints — `src/constants/api.constant.ts`
+
+Tambahkan ke `API_ENDPOINTS`:
+
+```typescript
+karyawan: {
+  list:            '/karyawan',
+  detail:          (id: string) => `/karyawan/${id}`,
+  create:          '/karyawan',
+  update:          (id: string) => `/karyawan/${id}`,
+  delete:          (id: string) => `/karyawan/${id}`,
+  templateExcel:   '/karyawan/template/excel',
+  uploadExcel:     '/karyawan/upload/excel',
+  getLokasi:       (id: string) => `/karyawan/${id}/lokasi`,
+  setLokasi:       (id: string) => `/karyawan/${id}/lokasi`,
+},
+```
+
+---
+
+### Routes — `src/constants/route.constant.ts`
+
+```typescript
+karyawan:         '/karyawan',
+karyawanCreate:   '/karyawan/create',
+karyawanDetail:   (id: string) => `/karyawan/${id}`,
+karyawanEdit:     (id: string) => `/karyawan/${id}/edit`,
+```
+
+---
+
+### Service — `src/services/karyawan.service.ts`
+
+```typescript
+import apiClient from './api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { IKaryawan, ICreateKaryawan, IUpdateKaryawan, ILokasiKaryawan } from '@/@types/karyawan.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export const karyawanService = {
+  getAll: (params?: {
+    page?: number; limit?: number; search?: string
+    aktif?: 0 | 1; status_kepegawaian?: string
+  }) =>
+    apiClient.get<ApiResponse<PaginatedResult<IKaryawan>>>(API_ENDPOINTS.karyawan.list, { params }),
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<IKaryawan>>(API_ENDPOINTS.karyawan.detail(id)),
+
+  create: (data: ICreateKaryawan) =>
+    apiClient.post<ApiResponse<IKaryawan>>(API_ENDPOINTS.karyawan.create, data),
+
+  update: (id: string, data: IUpdateKaryawan) =>
+    apiClient.patch<ApiResponse<IKaryawan>>(API_ENDPOINTS.karyawan.update(id), data),
+
+  delete: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(API_ENDPOINTS.karyawan.delete(id)),
+
+  // Import Excel
+  downloadTemplate: () =>
+    apiClient.get(API_ENDPOINTS.karyawan.templateExcel, { responseType: 'blob' }),
+
+  uploadExcel: (file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return apiClient.post<ApiResponse<{ berhasil: number; gagal: number; errors: string[] }>>(
+      API_ENDPOINTS.karyawan.uploadExcel, form,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+  },
+
+  // Lokasi kantor (geofencing absensi)
+  getLokasi: (id: string) =>
+    apiClient.get<ApiResponse<ILokasiKaryawan[]>>(API_ENDPOINTS.karyawan.getLokasi(id)),
+
+  // lokasi_ids: array UUID lokasi. Kirim [] untuk hapus semua.
+  setLokasi: (id: string, lokasi_ids: string[]) =>
+    apiClient.put<ApiResponse<ILokasiKaryawan[]>>(API_ENDPOINTS.karyawan.setLokasi(id), { lokasi_ids }),
+}
+```
+
+---
+
+### Catatan Penting Karyawan
+
+> **Status Pajak (PTKP)** — nilai yang valid:
+> `TK/0`, `TK/1`, `TK/2`, `TK/3` (tidak kawin, tanggungan 0-3)
+> `K/0`, `K/1`, `K/2`, `K/3` (kawin, tanggungan 0-3)
+> `K/I/0`, `K/I/1`, `K/I/2`, `K/I/3` (kawin, istri bekerja, tanggungan 0-3)
+>
+> **Lokasi Kantor** — untuk keperluan geofencing absensi. Satu karyawan bisa di-assign ke banyak lokasi.
+> Gunakan `PUT /karyawan/:id/lokasi` untuk set sekaligus (replace-all).
+>
+> **Jabatan & Departemen** — di-assign via `id_jabatan` dan `id_departemen` saat create/update.
+> Response selalu include nested object `jabatan` dan `departemen` (atau `null`).
+> Untuk dropdown Jabatan per Departemen gunakan: `GET /organisasi/jabatan/departemen/:id_departemen`
+
+---
+
 ## Aturan Wajib — Ecme Template
 
 ### ❌ JANGAN lakukan ini
@@ -550,70 +1045,6 @@ export function UserTable() {
   // ...render tabel
 }
 ```
-
----
-
-## Modul yang Sudah Dibangun — Referensi Aktual
-
-### Modul Kursus Dansa
-
-```
-src/
-├── @types/
-│   └── kursus.types.ts                         ← Semua types modul kursus
-│
-├── constants/
-│   └── api.constant.ts                         ← KURSUS.SISWA, KURSUS.JADWAL, dll
-│
-├── services/
-│   └── kursus/
-│       ├── siswa.service.ts                    ← + importExcel(), downloadTemplate()
-│       ├── tingkat-program.service.ts
-│       ├── program-pengajaran.service.ts
-│       ├── tarif.service.ts                    ← + getByProgram(idProgram)
-│       ├── jadwal-kelas.service.ts             ← getAll() support week_start/week_end
-│       └── daftar-kelas.service.ts             ← + getBySiswa(), getByJadwal()
-│
-├── components/
-│   └── kursus/
-│       ├── jadwal/
-│       │   ├── JadwalKalender.tsx              ← Kalender self-fetching, group by instruktur
-│       │   ├── JadwalForm.tsx                  ← Create/edit, beda payload POST vs PATCH
-│       │   └── JadwalDetailDrawer.tsx          ← Drawer assign siswa ke jadwal
-│       └── siswa/
-│           ├── SiswaTable.tsx
-│           └── SiswaImportModal.tsx            ← Upload Excel + tampil hasil import
-│
-└── app/(protected-pages)/kursus/
-    ├── siswa/
-    │   ├── page.tsx                            ← List + Import Excel + Download Template
-    │   ├── tambah/page.tsx
-    │   └── [id]/edit/page.tsx
-    ├── tingkat-program/
-    │   └── page.tsx
-    ├── program-pengajaran/
-    │   ├── page.tsx
-    │   ├── tambah/page.tsx
-    │   └── [id]/edit/page.tsx
-    ├── tarif/
-    │   └── page.tsx
-    ├── jadwal-kelas/
-    │   └── page.tsx                            ← Kalender only (no tabel), drawer siswa
-    └── daftar-kelas/
-        ├── page.tsx
-        ├── tambah/page.tsx
-        └── [id]/edit/page.tsx
-```
-
-**Pola khusus di modul kursus yang berbeda dari template standar:**
-
-| Pola | Keterangan |
-|------|-----------|
-| Self-fetching calendar | `JadwalKalender` fetch sendiri — parent hanya kirim `refreshToken` |
-| Drawer instead of page | Detail + manajemen siswa pakai `Drawer` (slide kanan), bukan halaman terpisah |
-| Import Excel modal | `SiswaImportModal` dengan `Upload` component (drag & drop) + result view |
-| Split create/update payload | `ICreateJadwalKelas` ≠ `IUpdateJadwalKelas` — format datetime berbeda antara POST dan PATCH |
-| Multipart upload | `fetchDataWithAxios<Response, FormData>({ data: formData })` untuk upload file |
 
 ---
 

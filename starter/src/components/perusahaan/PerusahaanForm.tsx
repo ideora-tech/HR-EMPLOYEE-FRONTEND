@@ -23,6 +23,10 @@ interface FormState {
     email: string
     telepon: string
     alamat: string
+    zona_waktu: string
+    mata_uang: string
+    npwp: string
+    website: string
     url_logo: string
     aktif: boolean
 }
@@ -34,6 +38,10 @@ const INITIAL_STATE: FormState = {
     email: '',
     telepon: '',
     alamat: '',
+    zona_waktu: '',
+    mata_uang: '',
+    npwp: '',
+    website: '',
     url_logo: '',
     aktif: true,
 }
@@ -57,6 +65,10 @@ const PerusahaanForm = ({
                 email: editData.email ?? '',
                 telepon: editData.telepon ?? '',
                 alamat: editData.alamat ?? '',
+                zona_waktu: editData.zona_waktu ?? '',
+                mata_uang: editData.mata_uang ?? '',
+                npwp: editData.npwp ?? '',
+                website: editData.website ?? '',
                 url_logo: editData.url_logo ?? '',
                 aktif: editData.aktif === 1,
             })
@@ -71,6 +83,8 @@ const PerusahaanForm = ({
         if (!form.nama.trim()) newErrors.nama = 'Nama perusahaan wajib diisi'
         if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
             newErrors.email = 'Format email tidak valid'
+        if (form.website && !/^https?:\/\/.+/.test(form.website))
+            newErrors.website = 'Website harus diawali https://'
         if (form.url_logo && !/^https?:\/\/.+/.test(form.url_logo))
             newErrors.url_logo = 'URL logo harus diawali https://'
         setErrors(newErrors)
@@ -85,6 +99,10 @@ const PerusahaanForm = ({
             ...(form.email.trim() && { email: form.email.trim() }),
             ...(form.telepon.trim() && { telepon: form.telepon.trim() }),
             ...(form.alamat.trim() && { alamat: form.alamat.trim() }),
+            ...(form.zona_waktu.trim() && { zona_waktu: form.zona_waktu.trim() }),
+            ...(form.mata_uang.trim() && { mata_uang: form.mata_uang.trim() }),
+            ...(form.npwp.trim() && { npwp: form.npwp.trim() }),
+            ...(form.website.trim() && { website: form.website.trim() }),
             ...(form.url_logo.trim() && { url_logo: form.url_logo.trim() }),
             ...(isEdit && { aktif: form.aktif ? 1 : 0 }),
         }
@@ -153,6 +171,51 @@ const PerusahaanForm = ({
                         className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm px-3 py-2 text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                         onChange={(e) =>
                             setForm((p) => ({ ...p, alamat: e.target.value }))
+                        }
+                    />
+                </FormItem>
+
+                <FormItem label="Zona Waktu">
+                    <Input
+                        placeholder="contoh: Asia/Jakarta"
+                        value={form.zona_waktu}
+                        onChange={(e) =>
+                            setForm((p) => ({ ...p, zona_waktu: e.target.value }))
+                        }
+                    />
+                </FormItem>
+
+                <FormItem label="Mata Uang">
+                    <Input
+                        placeholder="contoh: IDR"
+                        value={form.mata_uang}
+                        onChange={(e) =>
+                            setForm((p) => ({ ...p, mata_uang: e.target.value }))
+                        }
+                    />
+                </FormItem>
+
+                <FormItem label="NPWP">
+                    <Input
+                        placeholder="contoh: 12.345.678.9-012.345"
+                        value={form.npwp}
+                        onChange={(e) =>
+                            setForm((p) => ({ ...p, npwp: e.target.value }))
+                        }
+                    />
+                </FormItem>
+
+                <FormItem
+                    label="Website"
+                    invalid={!!errors.website}
+                    errorMessage={errors.website}
+                >
+                    <Input
+                        placeholder="https://perusahaan.com"
+                        value={form.website}
+                        invalid={!!errors.website}
+                        onChange={(e) =>
+                            setForm((p) => ({ ...p, website: e.target.value }))
                         }
                     />
                 </FormItem>

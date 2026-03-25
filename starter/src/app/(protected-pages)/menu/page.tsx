@@ -38,6 +38,7 @@ const AKTIF_OPTIONS: AktifOption[] = [
 const MenuPage = () => {
     const router = useRouter()
     const [menuList, setMenuList] = useState<IMenu[]>([])
+    const [allMenus, setAllMenus] = useState<IMenu[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [viewMode, setViewMode] = useState<ViewMode>('table')
@@ -50,6 +51,12 @@ const MenuPage = () => {
     const [total, setTotal] = useState(0)
 
     const [deleteTarget, setDeleteTarget] = useState<IMenu | null>(null)
+
+    useEffect(() => {
+        MenuService.getAll({ limit: 500 })
+            .then((res) => { if (res.success) setAllMenus(res.data) })
+            .catch(() => {/* ignore */ })
+    }, [])
 
     const fetchMenu = useCallback(async () => {
         setLoading(true)
@@ -202,22 +209,20 @@ const MenuPage = () => {
                     <div className="flex items-center rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 shrink-0">
                         <button
                             title="Tabel"
-                            className={`p-2 text-lg transition-colors ${
-                                viewMode === 'table'
+                            className={`p-2 text-lg transition-colors ${viewMode === 'table'
                                     ? 'bg-indigo-600 text-white'
                                     : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                            }`}
+                                }`}
                             onClick={() => setViewMode('table')}
                         >
                             <HiOutlineViewList />
                         </button>
                         <button
                             title="Kartu"
-                            className={`p-2 text-lg transition-colors ${
-                                viewMode === 'card'
+                            className={`p-2 text-lg transition-colors ${viewMode === 'card'
                                     ? 'bg-indigo-600 text-white'
                                     : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                            }`}
+                                }`}
                             onClick={() => setViewMode('card')}
                         >
                             <HiOutlineViewGrid />
@@ -229,6 +234,7 @@ const MenuPage = () => {
                 {viewMode === 'table' ? (
                     <MenuTable
                         data={menuList}
+                        allMenus={allMenus}
                         loading={loading}
                         pagingData={{
                             total,

@@ -6,6 +6,7 @@ import type {
     IUpdateKaryawan,
     IKaryawanQuery,
     IImportKaryawanResult,
+    ILokasiKaryawan,
     ApiResponse,
     ApiPaginatedResponse,
 } from '@/@types/karyawan.types'
@@ -69,6 +70,27 @@ const KaryawanService = {
         return ApiService.fetchDataWithAxios<ApiResponse<null>>({
             url: API_ENDPOINTS.KARYAWAN.BY_ID(id),
             method: 'DELETE',
+        })
+    },
+
+    async getLokasi(id: string): Promise<ApiResponse<ILokasiKaryawan[]>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<ILokasiKaryawan[]>>({
+            url: API_ENDPOINTS.KARYAWAN.LOKASI(id),
+            method: 'GET',
+        })
+    },
+
+    async setLokasi(
+        id: string,
+        lokasi_ids: string[],
+    ): Promise<ApiResponse<ILokasiKaryawan[]>> {
+        return ApiService.fetchDataWithAxios<
+            ApiResponse<ILokasiKaryawan[]>,
+            { lokasi_ids: string[] }
+        >({
+            url: API_ENDPOINTS.KARYAWAN.LOKASI(id),
+            method: 'PUT',
+            data: { lokasi_ids },
         })
     },
 

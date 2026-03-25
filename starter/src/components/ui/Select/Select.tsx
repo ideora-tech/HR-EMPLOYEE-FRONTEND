@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { useId } from 'react'
 import cn from '../utils/classNames'
 import ReactSelect from 'react-select'
 import CreatableSelect from 'react-select/creatable'
@@ -88,8 +89,12 @@ function Select<
         classNames,
         field,
         invalid,
+        instanceId: instanceIdProp,
         ...rest
     } = props
+
+    const generatedId = useId()
+    const instanceId = instanceIdProp ?? `select-${generatedId}`
 
     const { controlSize } = useConfig()
     const formControlSize = useForm()?.size
@@ -208,6 +213,7 @@ function Select<
             }}
             {...field}
             {...rest}
+            instanceId={instanceId}
         />
     )
 }

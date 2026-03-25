@@ -21,6 +21,7 @@ export const ROUTES = {
     KARYAWAN: '/karyawan',
 
     // Kursus
+    KURSUS_DASHBOARD: '/kursus/dashboard',
     KURSUS_SISWA: '/kursus/siswa',
     KURSUS_PROGRAM: '/kursus/program-pengajaran',
     KURSUS_TARIF: '/kursus/tarif',
@@ -29,4 +30,8 @@ export const ROUTES = {
     KURSUS_PRESENSI: '/kursus/presensi',
     KURSUS_TAGIHAN: '/kursus/tagihan',
     KURSUS_PEMBAYARAN: '/kursus/pembayaran',
+
+    DEPARTEMEN: '/departemen',
+    JABATAN: '/jabatan',
+    LOKASI_KANTOR: '/lokasi-kantor',
 } as const

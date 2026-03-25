@@ -167,6 +167,42 @@ melaporkan deviasi sebagai temuan di modul Code Quality Review.
 │   │   │       ├── update-karyawan.dto.ts
 │   │   │       └── karyawan-response.dto.ts
 │   │   │
+│   │   ├── departemen/                          ── MODULE: Departemen (master data HR)
+│   │   │   ├── departemen.module.ts
+│   │   │   ├── departemen.controller.ts         ← CRUD /organisasi/departemen, 409 on kode duplikat
+│   │   │   ├── departemen.service.ts
+│   │   │   ├── departemen.repository.ts
+│   │   │   ├── interfaces/
+│   │   │   │   ├── departemen.interface.ts      ← IDepartemenPublic
+│   │   │   │   └── departemen-repository.interface.ts
+│   │   │   └── dto/
+│   │   │       ├── create-departemen.dto.ts     ← kode (unique), nama, deskripsi?
+│   │   │       └── update-departemen.dto.ts
+│   │   │
+│   │   ├── jabatan/                             ── MODULE: Jabatan (master data HR)
+│   │   │   ├── jabatan.module.ts
+│   │   │   ├── jabatan.controller.ts            ← CRUD + GET /departemen/:id_departemen
+│   │   │   ├── jabatan.service.ts
+│   │   │   ├── jabatan.repository.ts            ← JSON_OBJECT for nested departemen response
+│   │   │   ├── interfaces/
+│   │   │   │   ├── jabatan.interface.ts         ← IJabatanPublic (incl. nested departemen obj)
+│   │   │   │   └── jabatan-repository.interface.ts
+│   │   │   └── dto/
+│   │   │       ├── create-jabatan.dto.ts        ← id_departemen?, kode, nama, level?, deskripsi?
+│   │   │       └── update-jabatan.dto.ts
+│   │   │
+│   │   ├── lokasi-kantor/                       ── MODULE: Lokasi Kantor (master data HR)
+│   │   │   ├── lokasi-kantor.module.ts
+│   │   │   ├── lokasi-kantor.controller.ts      ← CRUD /organisasi/lokasi-kantor
+│   │   │   ├── lokasi-kantor.service.ts
+│   │   │   ├── lokasi-kantor.repository.ts
+│   │   │   ├── interfaces/
+│   │   │   │   ├── lokasi-kantor.interface.ts   ← ILokasiKantorPublic
+│   │   │   │   └── lokasi-kantor-repository.interface.ts
+│   │   │   └── dto/
+│   │   │       ├── create-lokasi-kantor.dto.ts  ← kode, nama, alamat?, kota?, provinsi?, kode_pos?, telepon?
+│   │   │       └── update-lokasi-kantor.dto.ts
+│   │   │
 │   │   ├── module-access/                       ── MODULE: Module Access (internal)
 │   │   │   └── ...                              ← Service untuk cek akses modul user
 │   │   │

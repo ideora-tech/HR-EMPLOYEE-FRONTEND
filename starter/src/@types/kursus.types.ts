@@ -91,6 +91,48 @@ export interface ISiswaMonitoring {
     akan_expired: ISiswaMonitoringEntry[]
 }
 
+// ─── Dashboard Kursus ─────────────────────────────────────────────────────────
+export interface IKursusDashboardPendapatan {
+    bulan: string
+    total: number
+}
+
+export interface IKursusDashboardSiswaProgram {
+    nama_program: string
+    jumlah: number
+}
+
+export interface IKursusDashboardJadwal {
+    id_jadwal: string
+    nama: string
+    instruktur: string
+    jam_mulai: string
+    jam_selesai: string
+    kuota: number
+    terisi: number
+}
+
+export interface IKursusDashboardPembayaran {
+    id_pembayaran: string
+    nama_siswa: string
+    jumlah: number
+    metode: string
+    tanggal_bayar: string
+}
+
+export interface IKursusDashboard {
+    siswa_aktif: number
+    kelas_hari_ini: number
+    pendapatan_bulan_ini: number
+    tagihan_belum_lunas: number
+    siswa_akan_expired: number
+    siswa_berhenti: number
+    pendapatan_6_bulan: IKursusDashboardPendapatan[]
+    siswa_per_program: IKursusDashboardSiswaProgram[]
+    jadwal_hari_ini: IKursusDashboardJadwal[]
+    pembayaran_terbaru: IKursusDashboardPembayaran[]
+}
+
 // ─── Tingkat Program ──────────────────────────────────────────────────────────
 
 export interface ITingkatProgram {

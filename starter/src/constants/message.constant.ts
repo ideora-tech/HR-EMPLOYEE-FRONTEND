@@ -26,6 +26,7 @@ export const ENTITY = {
     MENU: 'Menu',
     PERAN: 'Peran',
     KARYAWAN: 'Karyawan',
+    KARYAWAN_EXIT: 'Data Exit Karyawan',
     PERUSAHAAN: 'Perusahaan',
     PENGGUNA: 'Pengguna',
     MENU_MODUL: 'Menu Modul',
@@ -38,4 +39,7 @@ export const ENTITY = {
     PRESENSI: 'Presensi',
     TAGIHAN: 'Tagihan',
     PEMBAYARAN: 'Pembayaran',
+    DEPARTEMEN: 'Departemen',
+    JABATAN: 'Jabatan',
+    LOKASI_KANTOR: 'Lokasi Kantor',
 } as const

@@ -12,12 +12,34 @@ export interface IModulAkses {
     batasan: Record<string, number> | null
 }
 
+export interface IZonaWaktu {
+    id_zona: string
+    kode: string
+    nama: string
+    offset_utc: string
+    urutan: number
+    aktif: number
+}
+
+export interface IMataUang {
+    id_mata_uang: string
+    kode: string
+    nama: string
+    simbol: string
+    urutan: number
+    aktif: number
+}
+
 export interface IPerusahaan {
     id_perusahaan: string
     nama: string
     email: string | null
     telepon: string | null
     alamat: string | null
+    zona_waktu: string | null
+    mata_uang: string | null
+    npwp: string | null
+    website: string | null
     url_logo: string | null
     aktif: number
     dibuat_pada: string
@@ -37,6 +59,10 @@ export interface IPerusahaanCreate {
     email?: string
     telepon?: string
     alamat?: string
+    zona_waktu?: string
+    mata_uang?: string
+    npwp?: string
+    website?: string
     url_logo?: string
 }
 
@@ -45,6 +71,10 @@ export interface IPerusahaanUpdate {
     email?: string
     telepon?: string
     alamat?: string
+    zona_waktu?: string
+    mata_uang?: string
+    npwp?: string
+    website?: string
     url_logo?: string
     aktif?: number
 }

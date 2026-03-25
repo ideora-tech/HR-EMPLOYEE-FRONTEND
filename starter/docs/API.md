@@ -306,6 +306,12 @@ Daftar perusahaan. SUPERADMIN melihat semua, user biasa hanya perusahaannya.
       "email": "info@majubersama.com",
       "telepon": "021-12345678",
       "alamat": "Jl. Sudirman No. 1, Jakarta",
+      "website": "https://www.majubersama.com",
+      "npwp": "82.756.019.3-541.291",
+      "zona_waktu": "Asia/Jakarta",
+      "format_tanggal": "DD/MM/YYYY",
+      "mata_uang": "IDR",
+      "hari_kerja_per_bulan": 22,
       "url_logo": "https://cdn.example.com/logo.png",
       "aktif": 1,
       "dibuat_pada": "2026-01-01T00:00:00.000Z",
@@ -349,6 +355,12 @@ Cocok untuk halaman monitoring SUPERADMIN.
     "email": "info@majubersama.com",
     "telepon": "021-12345678",
     "alamat": "Jl. Sudirman No. 1, Jakarta",
+    "website": "https://www.majubersama.com",
+    "npwp": "82.756.019.3-541.291",
+    "zona_waktu": "Asia/Jakarta",
+    "format_tanggal": "DD/MM/YYYY",
+    "mata_uang": "IDR",
+    "hari_kerja_per_bulan": 22,
     "url_logo": null,
     "aktif": 1,
     "dibuat_pada": "2026-01-01T00:00:00.000Z",
@@ -383,6 +395,12 @@ Tambah perusahaan baru. **SUPERADMIN only.**
   "email": "info@majubersama.com",
   "telepon": "021-12345678",
   "alamat": "Jl. Sudirman No. 1, Jakarta",
+  "website": "https://www.majubersama.com",
+  "npwp": "82.756.019.3-541.291",
+  "zona_waktu": "Asia/Jakarta",
+  "format_tanggal": "DD/MM/YYYY",
+  "mata_uang": "IDR",
+  "hari_kerja_per_bulan": 22,
   "url_logo": "https://cdn.example.com/logo.png"
 }
 ```
@@ -393,6 +411,12 @@ Tambah perusahaan baru. **SUPERADMIN only.**
 | `email` | string | ❌ | Email perusahaan |
 | `telepon` | string | ❌ | Max 20 karakter |
 | `alamat` | string | ❌ | Max 255 karakter |
+| `website` | string | ❌ | URL website perusahaan |
+| `npwp` | string | ❌ | NPWP perusahaan, max 30 karakter |
+| `zona_waktu` | string | ❌ | Default: `Asia/Jakarta` |
+| `format_tanggal` | string | ❌ | `DD/MM/YYYY` / `MM/DD/YYYY` / `YYYY-MM-DD`. Default: `DD/MM/YYYY` |
+| `mata_uang` | string | ❌ | Kode ISO 4217 (IDR, USD, dll). Default: `IDR` |
+| `hari_kerja_per_bulan` | number | ❌ | 1–31. Default: `22`. Untuk perhitungan gaji harian |
 | `url_logo` | string | ❌ | URL logo, max 255 karakter |
 
 **Response `201`:** data perusahaan yang baru dibuat.
@@ -403,7 +427,7 @@ Tambah perusahaan baru. **SUPERADMIN only.**
 
 Update perusahaan.
 - **SUPERADMIN:** semua field termasuk `aktif`
-- **OWNER:** hanya profil (nama, email, telepon, alamat, url_logo)
+- **OWNER:** hanya profil (nama, email, telepon, alamat, website, npwp, zona_waktu, format_tanggal, mata_uang, hari_kerja_per_bulan, url_logo)
 
 **Request Body** (semua opsional):
 ```json
@@ -412,6 +436,12 @@ Update perusahaan.
   "email": "info@baru.com",
   "telepon": "021-99999999",
   "alamat": "Jl. Thamrin No. 5",
+  "website": "https://www.majusejahtera.com",
+  "npwp": "82.756.019.3-541.291",
+  "zona_waktu": "Asia/Makassar",
+  "format_tanggal": "DD/MM/YYYY",
+  "mata_uang": "IDR",
+  "hari_kerja_per_bulan": 20,
   "url_logo": "https://cdn.example.com/logo-baru.png",
   "aktif": 0
 }
@@ -1269,6 +1299,7 @@ Daftar karyawan dengan pagination & search.
 | `limit` | number | Jumlah per halaman (default: 10) |
 | `search` | string | Cari di nama, NIK, email, telepon |
 | `aktif` | 0 \| 1 | Filter status aktif |
+| `status_kepegawaian` | string | Filter: `TETAP` / `KONTRAK` / `PROBASI` / `MAGANG` |
 
 **Response `200`:**
 ```json
@@ -1278,6 +1309,9 @@ Daftar karyawan dengan pagination & search.
     {
       "id_karyawan": "uuid",
       "id_perusahaan": "uuid",
+      "id_jabatan": "uuid",
+      "id_departemen": "uuid",
+      "id_lokasi_kantor": null,
       "nik": "EMP-001",
       "nama": "Budi Santoso",
       "email": "budi@perusahaan.com",
@@ -1288,23 +1322,37 @@ Daftar karyawan dengan pagination & search.
       "foto_url": null,
       "tanggal_masuk": "2022-01-01",
       "tanggal_keluar": null,
+      "tanggal_mulai_kontrak": "2022-01-01",
+      "tanggal_akhir_kontrak": "2023-01-01",
+      "gaji_pokok": 5000000,
+      "nama_bank": "BCA",
+      "no_rekening": "1234567890",
+      "nama_pemilik_rekening": "Budi Santoso",
+      "npwp": "12.345.678.9-012.000",
+      "status_pajak": "K/1",
+      "no_bpjs_kesehatan": "0001234567890",
+      "no_bpjs_ketenagakerjaan": "12345678901",
       "status_kepegawaian": "TETAP",
       "aktif": 1,
       "dibuat_pada": "2026-03-23T10:00:00.000Z",
-      "diubah_pada": null
+      "diubah_pada": null,
+      "jabatan": { "id_jabatan": "uuid", "nama": "Staff HRD", "level": 4 },
+      "departemen": { "id_departemen": "uuid", "nama": "Human Resources" },
+      "lokasi_kantor": null
     }
   ],
   "meta": { "page": 1, "limit": 10, "total": 50, "totalPages": 5 }
 }
 ```
 
+> **Catatan:** Field `jabatan`, `departemen`, `lokasi_kantor` adalah nested object atau `null` jika belum di-assign.
+
 ---
 
 ### GET `/karyawan/:id`
 
-Detail satu karyawan berdasarkan UUID.
+Detail satu karyawan. Response sama seperti satu item di atas.
 
-**Response `200`:** sama seperti satu item di atas.
 **Response `404`:** `Karyawan dengan ID '...' tidak ditemukan`
 
 ---
@@ -1324,43 +1372,80 @@ Tambah karyawan baru. Hanya untuk company user.
   "jenis_kelamin": 2,
   "alamat": "Jl. Thamrin No. 5, Jakarta",
   "tanggal_masuk": "2023-03-01",
-  "status_kepegawaian": "KONTRAK"
+  "status_kepegawaian": "KONTRAK",
+  "id_jabatan": "uuid-jabatan",
+  "id_departemen": "uuid-departemen",
+  "tanggal_mulai_kontrak": "2023-03-01",
+  "tanggal_akhir_kontrak": "2024-03-01",
+  "gaji_pokok": 4500000,
+  "nama_bank": "Mandiri",
+  "no_rekening": "1234567890",
+  "nama_pemilik_rekening": "Siti Rahayu",
+  "npwp": "12.345.678.9-012.000",
+  "status_pajak": "TK/0",
+  "no_bpjs_kesehatan": "0001234567890",
+  "no_bpjs_ketenagakerjaan": "12345678901"
 }
 ```
 
-| Field | Tipe | Wajib | Keterangan |
-|-------|------|-------|------------|
-| `nik` | string | ❌ | Nomor induk karyawan — unik per perusahaan |
-| `nama` | string | ✅ | Nama lengkap |
-| `email` | string | ❌ | Format email valid |
-| `telepon` | string | ❌ | Maks 20 karakter |
-| `tanggal_lahir` | string | ❌ | Format `YYYY-MM-DD` |
-| `jenis_kelamin` | 1 \| 2 | ❌ | 1 = Laki-laki, 2 = Perempuan |
-| `alamat` | string | ❌ | |
-| `foto_url` | string | ❌ | URL foto karyawan |
-| `tanggal_masuk` | string | ❌ | Format `YYYY-MM-DD` |
-| `tanggal_keluar` | string | ❌ | Format `YYYY-MM-DD` |
-| `status_kepegawaian` | string | ❌ | `TETAP` / `KONTRAK` / `PROBASI` / `MAGANG` |
+**Field Reference:**
 
-**Response `201`:** data karyawan yang baru dibuat.
+*Data Pribadi:*
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `nik` | ❌ | Nomor induk karyawan — unik per perusahaan |
+| `nama` | ✅ | Nama lengkap |
+| `email` | ❌ | Format email valid |
+| `telepon` | ❌ | Maks 20 karakter |
+| `tanggal_lahir` | ❌ | Format `YYYY-MM-DD` |
+| `jenis_kelamin` | ❌ | `1`=Laki-laki, `2`=Perempuan |
+| `alamat` | ❌ | |
+| `foto_url` | ❌ | URL foto |
+
+*Informasi Pekerjaan:*
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `id_jabatan` | ❌ | UUID jabatan |
+| `id_departemen` | ❌ | UUID departemen |
+| `tanggal_masuk` | ❌ | Tanggal bergabung `YYYY-MM-DD` |
+| `tanggal_keluar` | ❌ | Tanggal keluar `YYYY-MM-DD` |
+| `status_kepegawaian` | ❌ | `TETAP` / `KONTRAK` / `PROBASI` / `MAGANG` |
+| `tanggal_mulai_kontrak` | ❌ | `YYYY-MM-DD` |
+| `tanggal_akhir_kontrak` | ❌ | `YYYY-MM-DD` |
+| `gaji_pokok` | ❌ | Nominal Rupiah (integer) |
+
+*Informasi Bank:*
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `nama_bank` | ❌ | Contoh: BCA, Mandiri, BNI |
+| `no_rekening` | ❌ | Nomor rekening |
+| `nama_pemilik_rekening` | ❌ | Nama sesuai buku tabungan |
+
+*Informasi Pajak & BPJS:*
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `npwp` | ❌ | Format `12.345.678.9-012.000` |
+| `status_pajak` | ❌ | PTKP: `TK/0`, `TK/1`, `TK/2`, `TK/3`, `K/0`, `K/1`, `K/2`, `K/3`, `K/I/0`, `K/I/1`, `K/I/2`, `K/I/3` |
+| `no_bpjs_kesehatan` | ❌ | Nomor BPJS Kesehatan (13 digit) |
+| `no_bpjs_ketenagakerjaan` | ❌ | Nomor BPJS Ketenagakerjaan |
+
+**Response `201`:** data karyawan lengkap.
 **Response `409`:** `NIK '...' sudah digunakan`
-**Response `403`:** jika SUPERADMIN mencoba create (hanya company user)
+**Response `403`:** jika SUPERADMIN mencoba create
 
 ---
 
 ### PATCH `/karyawan/:id`
 
-Update sebagian data karyawan. Semua field opsional, plus `aktif`.
-
-**Request Body:** sama seperti POST tapi semua opsional, tambah field:
+Update sebagian data karyawan. Semua field dari POST bersifat opsional, plus:
 
 | Field | Tipe | Keterangan |
 |-------|------|------------|
 | `aktif` | 0 \| 1 | Nonaktifkan / aktifkan karyawan |
+| `id_jabatan` | string \| null | Set null untuk hapus jabatan |
+| `id_departemen` | string \| null | Set null untuk hapus departemen |
 
 **Response `200`:** data karyawan setelah diupdate.
-**Response `404`:** karyawan tidak ditemukan.
-**Response `409`:** NIK baru sudah dipakai karyawan lain.
 
 ---
 
@@ -1372,6 +1457,64 @@ Soft delete karyawan (set `dihapus_pada`, `aktif = 0`).
 ```json
 { "message": "Karyawan berhasil dihapus", "data": null }
 ```
+
+---
+
+### GET `/karyawan/:id/lokasi`
+
+Daftar lokasi kantor yang di-assign ke karyawan (untuk geofencing absensi).
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil lokasi karyawan",
+  "data": [
+    {
+      "id_lokasi": "uuid",
+      "kode": "KP-JKT",
+      "nama": "Kantor Pusat Jakarta",
+      "alamat": "Jl. Sudirman No. 1, Jakarta Pusat",
+      "kota": "Jakarta",
+      "provinsi": "DKI Jakarta",
+      "kode_pos": "10110",
+      "telepon": "021-12345678",
+      "radius": 100,
+      "aktif": 1,
+      "dibuat_pada": "2026-03-24T08:00:00.000Z",
+      "diubah_pada": null
+    }
+  ]
+}
+```
+
+---
+
+### PUT `/karyawan/:id/lokasi`
+
+Set lokasi kantor karyawan (**replace-all** — semua lokasi lama diganti). Kirim array kosong `[]` untuk hapus semua assignment.
+
+**Request Body:**
+```json
+{
+  "lokasi_ids": ["uuid-lokasi-1", "uuid-lokasi-2"]
+}
+```
+
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `lokasi_ids` | ✅ | Array UUID lokasi kantor. Boleh kosong `[]` |
+
+**Response `200`:** list lokasi yang sudah di-assign (sama seperti GET /lokasi di atas).
+
+---
+
+### Enum & Konstanta Karyawan
+
+| Field | Nilai |
+|-------|-------|
+| `jenis_kelamin` | `1`=Laki-laki, `2`=Perempuan |
+| `status_kepegawaian` | `TETAP` / `KONTRAK` / `PROBASI` / `MAGANG` |
+| `status_pajak` (PTKP) | `TK/0`, `TK/1`, `TK/2`, `TK/3` (tidak kawin) · `K/0`, `K/1`, `K/2`, `K/3` (kawin) · `K/I/0`, `K/I/1`, `K/I/2`, `K/I/3` (kawin istri bekerja) |
 
 ---
 
@@ -1426,6 +1569,155 @@ Import karyawan secara bulk dari file Excel. Hanya untuk company user.
 
 **Response `400`:** jika file kosong / tidak ada data.
 **Response `403`:** jika SUPERADMIN mencoba upload.
+
+---
+
+---
+
+## Offboarding (Karyawan Exit)
+
+> Prefix: `/karyawan-exit` | Auth: Bearer Token
+> Mencatat data karyawan yang keluar dari perusahaan — resign, terminasi, pensiun, dll.
+
+### GET `/karyawan-exit`
+
+Daftar data exit karyawan dengan pagination.
+
+**Query params:**
+
+| Param | Tipe | Keterangan |
+|-------|------|------------|
+| `page` | number | Default: 1 |
+| `limit` | number | Default: 10 |
+| `search` | string | Cari nama / NIK karyawan |
+| `jenis_exit` | string | Filter berdasarkan jenis exit |
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil data exit karyawan",
+  "data": [
+    {
+      "id_exit": "uuid",
+      "jenis_exit": "RESIGN",
+      "tanggal_pengajuan": "2026-03-25",
+      "hari_kerja_terakhir": "2026-04-01",
+      "tanggal_efektif_keluar": "2026-04-01",
+      "alasan": "Mendapat tawaran kerja lebih baik",
+      "catatan_internal": null,
+      "dapat_direkrut_kembali": 1,
+      "catatan_rehire": null,
+      "dibuat_pada": "2026-03-25T08:00:00.000Z",
+      "diubah_pada": null,
+      "karyawan": {
+        "id_karyawan": "uuid",
+        "nik": "EMP-001",
+        "nama": "Budi Santoso",
+        "email": "budi@perusahaan.com",
+        "telepon": "081234567890"
+      }
+    }
+  ],
+  "meta": { "page": 1, "limit": 10, "total": 1, "totalPages": 1 }
+}
+```
+
+---
+
+### GET `/karyawan-exit/karyawan/:id_karyawan`
+
+Semua riwayat exit satu karyawan (tanpa pagination).
+
+> Deklarasi route ini **sebelum** `/:id` di controller.
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil riwayat exit karyawan",
+  "data": [ ...array sama seperti di atas... ]
+}
+```
+
+**Response `404`:** jika karyawan tidak ditemukan.
+
+---
+
+### GET `/karyawan-exit/:id`
+
+Detail satu record exit by ID.
+
+**Response `404`:** `Data exit dengan ID '...' tidak ditemukan`
+
+---
+
+### POST `/karyawan-exit`
+
+Input data exit karyawan baru.
+
+**Request Body:**
+
+| Field | Wajib | Tipe | Keterangan |
+|-------|-------|------|------------|
+| `id_karyawan` | ✅ | UUID | Karyawan yang keluar |
+| `jenis_exit` | ✅ | string | Lihat enum di bawah |
+| `tanggal_pengajuan` | ✅ | YYYY-MM-DD | Tanggal pengajuan exit |
+| `hari_kerja_terakhir` | ✅ | YYYY-MM-DD | Hari kerja terakhir |
+| `tanggal_efektif_keluar` | ✅ | YYYY-MM-DD | Tanggal resmi keluar dari perusahaan |
+| `alasan` | ❌ | string | Alasan exit |
+| `catatan_internal` | ❌ | string | Catatan internal (tidak ditampilkan ke karyawan) |
+| `dapat_direkrut_kembali` | ❌ | 0 \| 1 | Default: `1` (ya) |
+| `catatan_rehire` | ❌ | string | Catatan terkait eligibilitas rehire |
+
+**Contoh Request:**
+```json
+{
+  "id_karyawan": "uuid-karyawan",
+  "jenis_exit": "RESIGN",
+  "tanggal_pengajuan": "2026-03-25",
+  "hari_kerja_terakhir": "2026-04-01",
+  "tanggal_efektif_keluar": "2026-04-01",
+  "alasan": "Mendapat tawaran kerja lebih baik",
+  "catatan_internal": "Karyawan berprestasi, rekomendasikan untuk rehire",
+  "dapat_direkrut_kembali": 1,
+  "catatan_rehire": "Eligible untuk posisi teknis"
+}
+```
+
+**Response `201`:** data exit lengkap dengan nested karyawan.
+
+**Response `404`:** jika `id_karyawan` tidak ditemukan.
+
+---
+
+### PATCH `/karyawan-exit/:id`
+
+Update sebagian data exit. Semua field opsional (sama seperti POST, kecuali `id_karyawan` tidak bisa diubah).
+
+**Response `200`:** data exit setelah diupdate.
+
+---
+
+### DELETE `/karyawan-exit/:id`
+
+Soft delete record exit.
+
+**Response `200`:**
+```json
+{ "message": "Data exit karyawan berhasil dihapus", "data": null }
+```
+
+---
+
+### Enum Jenis Exit
+
+| Nilai | Label di Form |
+|-------|--------------|
+| `RESIGN` | Resign (Pengunduran Diri) |
+| `TERMINASI` | Terminasi (PHK) |
+| `PENSIUN` | Pensiun |
+| `KONTRAK_BERAKHIR` | Kontrak Berakhir |
+| `KESEPAKATAN_BERSAMA` | Kesepakatan Bersama |
+| `MENINGGAL_DUNIA` | Meninggal Dunia |
 
 ---
 
@@ -1892,6 +2184,33 @@ Update 1 sesi jadwal.
 ### DELETE `/kursus/jadwal-kelas/:id`
 
 **Response `400`:** jika masih ada siswa aktif (status=1) yang terdaftar di sesi ini.
+
+### GET `/kursus/jadwal-kelas/export/excel`
+
+Download jadwal kelas dalam format Excel pivot (baris = instruktur, kolom = tanggal).
+
+**Query:**
+| Param | Tipe | Keterangan |
+|-------|------|------------|
+| `bulan` | `YYYY-MM` | Bulan yang di-export. Default: bulan ini |
+| `search` | string | Filter nama / instruktur / lokasi |
+| `aktif` | 0\|1 | Filter aktif |
+
+**Contoh:**
+```
+GET /kursus/jadwal-kelas/export/excel?bulan=2026-03
+```
+
+**Response:** File `.xlsx` — `Content-Disposition: attachment; filename="jadwal-kelas-2026-03.xlsx"`
+
+**Struktur Excel:**
+```
+Baris 1 : [kosong] [Maret (merged)]
+Baris 2 : Instruktur | 1 | 2 | 3 | ... | 31
+Baris 3+: BUDI       | - | 09:00-10:00 | - | ...
+```
+
+> Semua tanggal dalam bulan selalu muncul sebagai kolom meski tidak ada jadwal (sel kosong).
 
 ---
 
@@ -2440,6 +2759,73 @@ Soft delete pembayaran. Otomatis recalculate `total_bayar` dan `status` tagihan.
 
 ---
 
+## Kursus — Dashboard
+
+### GET `/kursus/dashboard/summary`
+
+Ambil semua data yang dibutuhkan halaman dashboard dalam satu request.
+
+**Response `data`:**
+```json
+{
+  "siswa_aktif": 45,
+  "kelas_hari_ini": 3,
+  "pendapatan_bulan_ini": 12500000,
+  "tagihan_belum_lunas": 8,
+  "siswa_akan_expired": 5,
+  "siswa_berhenti": 2,
+
+  "pendapatan_6_bulan": [
+    { "bulan": "2025-10", "total": 9800000 },
+    { "bulan": "2025-11", "total": 11200000 },
+    { "bulan": "2026-03", "total": 12500000 }
+  ],
+
+  "siswa_per_program": [
+    { "nama_program": "Tari Bali", "jumlah": 18 },
+    { "nama_program": "Tari Saman", "jumlah": 12 }
+  ],
+
+  "jadwal_hari_ini": [
+    {
+      "id_jadwal": "uuid",
+      "nama": "Kelas Tari Bali Pagi",
+      "instruktur": "Budi Santoso",
+      "jam_mulai": "08:00",
+      "jam_selesai": "10:00",
+      "kuota": 10,
+      "terisi": 7
+    }
+  ],
+
+  "pembayaran_terbaru": [
+    {
+      "id_pembayaran": "uuid",
+      "nama_siswa": "Siti Rahayu",
+      "jumlah": 500000,
+      "metode": "TRANSFER",
+      "tanggal_bayar": "2026-03-24"
+    }
+  ]
+}
+```
+
+**Keterangan field:**
+| Field | Keterangan |
+|-------|------------|
+| `siswa_aktif` | Jumlah siswa dengan `aktif=1` |
+| `kelas_hari_ini` | Jumlah sesi jadwal hari ini |
+| `pendapatan_bulan_ini` | Total `jumlah` pembayaran bulan berjalan |
+| `tagihan_belum_lunas` | Tagihan dengan status `1` (MENUNGGU) atau `2` (SEBAGIAN) |
+| `siswa_akan_expired` | Siswa aktif dengan `tanggal_selesai` dalam 30 hari ke depan |
+| `siswa_berhenti` | Jumlah distinct siswa dengan daftar kelas status `3` (BERHENTI) |
+| `pendapatan_6_bulan` | Pendapatan 6 bulan terakhir, sudah diurutkan ascending |
+| `siswa_per_program` | Jumlah siswa aktif per program, diurutkan terbanyak |
+| `jadwal_hari_ini` | Semua sesi hari ini berikut info `terisi` (siswa aktif terdaftar) |
+| `pembayaran_terbaru` | 5 pembayaran terbaru |
+
+---
+
 ## Error Reference — Kursus
 
 | HTTP | Penyebab |
@@ -2461,3 +2847,622 @@ Soft delete pembayaran. Otomatis recalculate `total_bayar` dan `status` tagihan.
 | Tagihan | `status` | `1`=MENUNGGU, `2`=SEBAGIAN, `3`=LUNAS, `4`=DIBATALKAN |
 | Pembayaran | `metode` | `"TUNAI"` / `"TRANSFER"` / `"QRIS"` |
 | Presensi | `status` | `1`=HADIR, `2`=TIDAK_HADIR, `3`=SAKIT, `4`=IZIN |
+
+---
+
+---
+
+# Modul HR — Struktur Organisasi
+
+> Prefix endpoint: `/organisasi`
+> Semua endpoint memerlukan Bearer Token JWT.
+
+---
+
+## Departemen
+
+### `GET /organisasi/departemen/tree`
+
+Struktur hierarki departemen — nested parent → children, tanpa pagination.
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil hierarki departemen",
+  "data": [
+    {
+      "id_departemen": "uuid-hrd",
+      "id_departemen_induk": null,
+      "kode": "HRD",
+      "nama": "Human Resources Department",
+      "deskripsi": null,
+      "aktif": 1,
+      "departemen_induk": null,
+      "children": [
+        {
+          "id_departemen": "uuid-rkt",
+          "id_departemen_induk": "uuid-hrd",
+          "kode": "RKT",
+          "nama": "Rekrutmen",
+          "departemen_induk": { "id_departemen": "uuid-hrd", "nama": "Human Resources Department" },
+          "children": []
+        }
+      ]
+    }
+  ]
+}
+```
+
+> Endpoint ini cocok untuk render komponen tree/sidebar navigasi departemen.
+> Hanya departemen aktif yang tidak dihapus yang ditampilkan.
+
+---
+
+### `GET /organisasi/departemen`
+
+Daftar departemen dengan pagination dan search.
+
+**Query Parameters:**
+
+| Parameter | Tipe | Default | Keterangan |
+|-----------|------|---------|------------|
+| `page` | number | `1` | Halaman |
+| `limit` | number | `10` | Jumlah data per halaman |
+| `search` | string | - | Cari berdasarkan nama atau kode |
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil daftar departemen",
+  "data": [
+    {
+      "id_departemen": "uuid",
+      "id_departemen_induk": null,
+      "kode": "HRD",
+      "nama": "Human Resources Department",
+      "deskripsi": "Departemen yang mengelola SDM perusahaan",
+      "aktif": 1,
+      "dibuat_pada": "2026-03-24T08:00:00.000Z",
+      "diubah_pada": null,
+      "departemen_induk": null
+    }
+  ],
+  "meta": { "page": 1, "limit": 10, "total": 5, "totalPages": 1 }
+}
+```
+
+---
+
+### `GET /organisasi/departemen/:id`
+
+Detail satu departemen.
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil detail departemen",
+  "data": {
+    "id_departemen": "uuid",
+    "kode": "HRD",
+    "nama": "Human Resources Department",
+    "deskripsi": "Departemen yang mengelola SDM perusahaan",
+    "aktif": 1,
+    "dibuat_pada": "2026-03-24T08:00:00.000Z",
+    "diubah_pada": null
+  }
+}
+```
+
+---
+
+### `POST /organisasi/departemen`
+
+Tambah departemen baru.
+
+**Request Body:**
+```json
+{
+  "kode": "RKT",
+  "nama": "Rekrutmen",
+  "deskripsi": "Sub-departemen rekrutmen SDM",
+  "id_departemen_induk": "uuid-hrd"
+}
+```
+
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `kode` | Ya | Maks 20 karakter, harus unik → `409` jika duplikat |
+| `nama` | Ya | Maks 100 karakter |
+| `deskripsi` | Tidak | Teks bebas |
+| `id_departemen_induk` | Tidak | UUID departemen induk. Kosongkan untuk departemen level teratas → `404` jika UUID tidak ada, `400` jika circular |
+
+**Response `201`:**
+```json
+{
+  "message": "Departemen berhasil ditambahkan",
+  "data": { ...departemen }
+}
+```
+
+---
+
+### `PATCH /organisasi/departemen/:id`
+
+Update data departemen. Semua field opsional (partial update).
+
+**Request Body:** sama seperti POST, semua field opsional.
+
+**Response `200`:**
+```json
+{
+  "message": "Departemen berhasil diupdate",
+  "data": { ...departemen }
+}
+```
+
+---
+
+### `DELETE /organisasi/departemen/:id`
+
+Soft delete departemen (mengisi `dihapus_pada` dan `dihapus_oleh`).
+
+**Response `200`:**
+```json
+{
+  "message": "Departemen berhasil dihapus",
+  "data": null
+}
+```
+
+---
+
+## Jabatan
+
+### `GET /organisasi/jabatan`
+
+Daftar jabatan dengan pagination, search, dan filter departemen.
+
+**Query Parameters:**
+
+| Parameter | Tipe | Default | Keterangan |
+|-----------|------|---------|------------|
+| `page` | number | `1` | Halaman |
+| `limit` | number | `10` | Data per halaman |
+| `search` | string | - | Cari berdasarkan nama atau kode |
+| `id_departemen` | string (UUID) | - | Filter jabatan dalam departemen tertentu |
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil daftar jabatan",
+  "data": [
+    {
+      "id_jabatan": "uuid",
+      "id_departemen": "uuid-dept",
+      "kode": "MGR_HRD",
+      "nama": "Manager HRD",
+      "level": 2,
+      "deskripsi": "Bertanggung jawab atas pengelolaan SDM",
+      "aktif": 1,
+      "dibuat_pada": "2026-03-24T08:00:00.000Z",
+      "diubah_pada": null,
+      "departemen": {
+        "id_departemen": "uuid-dept",
+        "nama": "Human Resources Department"
+      }
+    }
+  ],
+  "meta": { "page": 1, "limit": 10, "total": 10, "totalPages": 1 }
+}
+```
+
+> **Catatan:** Field `departemen` berisi object nested `{ id_departemen, nama }`. Jika jabatan tidak terikat departemen, nilainya `null`.
+
+---
+
+### `GET /organisasi/jabatan/departemen/:id_departemen`
+
+Semua jabatan dalam satu departemen, **tanpa pagination** (untuk dropdown / select).
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil jabatan departemen",
+  "data": [
+    {
+      "id_jabatan": "uuid",
+      "kode": "MGR_HRD",
+      "nama": "Manager HRD",
+      "level": 2,
+      ...
+    }
+  ]
+}
+```
+
+---
+
+### `GET /organisasi/jabatan/:id`
+
+Detail satu jabatan (termasuk nested departemen).
+
+---
+
+### `POST /organisasi/jabatan`
+
+Tambah jabatan baru.
+
+**Request Body:**
+```json
+{
+  "id_departemen": "uuid-dept",
+  "kode": "MGR_HRD",
+  "nama": "Manager HRD",
+  "level": 2,
+  "deskripsi": "Bertanggung jawab atas pengelolaan SDM"
+}
+```
+
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `id_departemen` | Tidak | UUID departemen. Kosongkan untuk jabatan lintas departemen |
+| `kode` | Ya | Maks 20 karakter, harus unik → `409` jika duplikat |
+| `nama` | Ya | Maks 100 karakter |
+| `level` | Tidak | `1`=Top Management, `2`=Middle, `3`=Supervisor, `4`=Staff |
+| `deskripsi` | Tidak | Teks bebas |
+
+**Response `201`:**
+```json
+{
+  "message": "Jabatan berhasil ditambahkan",
+  "data": { ...jabatan }
+}
+```
+
+---
+
+### `PATCH /organisasi/jabatan/:id`
+
+Update data jabatan. Semua field opsional.
+
+---
+
+### `DELETE /organisasi/jabatan/:id`
+
+Soft delete jabatan.
+
+**Response `200`:**
+```json
+{
+  "message": "Jabatan berhasil dihapus",
+  "data": null
+}
+```
+
+---
+
+## Lokasi Kantor
+
+### `GET /organisasi/lokasi-kantor`
+
+Daftar lokasi kantor dengan pagination dan search.
+
+**Query Parameters:**
+
+| Parameter | Tipe | Default | Keterangan |
+|-----------|------|---------|------------|
+| `page` | number | `1` | Halaman |
+| `limit` | number | `10` | Data per halaman |
+| `search` | string | - | Cari berdasarkan nama, kode, atau kota |
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil daftar lokasi kantor",
+  "data": [
+    {
+      "id_lokasi": "uuid",
+      "kode": "KP-JKT",
+      "nama": "Kantor Pusat Jakarta",
+      "alamat": "Jl. Sudirman No. 1, Jakarta Pusat",
+      "kota": "Jakarta",
+      "provinsi": "DKI Jakarta",
+      "kode_pos": "10110",
+      "telepon": "021-12345678",
+      "aktif": 1,
+      "dibuat_pada": "2026-03-24T08:00:00.000Z",
+      "diubah_pada": null
+    }
+  ],
+  "meta": { "page": 1, "limit": 10, "total": 3, "totalPages": 1 }
+}
+```
+
+---
+
+### `GET /organisasi/lokasi-kantor/:id`
+
+Detail satu lokasi kantor.
+
+---
+
+### `POST /organisasi/lokasi-kantor`
+
+Tambah lokasi kantor baru.
+
+**Request Body:**
+```json
+{
+  "kode": "KP-JKT",
+  "nama": "Kantor Pusat Jakarta",
+  "alamat": "Jl. Sudirman No. 1, Jakarta Pusat",
+  "kota": "Jakarta",
+  "provinsi": "DKI Jakarta",
+  "kode_pos": "10110",
+  "telepon": "021-12345678"
+}
+```
+
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `kode` | Ya | Maks 20 karakter, harus unik → `409` jika duplikat |
+| `nama` | Ya | Maks 100 karakter |
+| `alamat` | Tidak | Teks bebas |
+| `kota` | Tidak | Maks 100 karakter |
+| `provinsi` | Tidak | Maks 100 karakter |
+| `kode_pos` | Tidak | Maks 10 karakter |
+| `telepon` | Tidak | Maks 20 karakter |
+
+**Response `201`:**
+```json
+{
+  "message": "Lokasi kantor berhasil ditambahkan",
+  "data": { ...lokasi_kantor }
+}
+```
+
+---
+
+### `PATCH /organisasi/lokasi-kantor/:id`
+
+Update data lokasi kantor. Semua field opsional.
+
+---
+
+### `DELETE /organisasi/lokasi-kantor/:id`
+
+Soft delete lokasi kantor.
+
+**Response `200`:**
+```json
+{
+  "message": "Lokasi kantor berhasil dihapus",
+  "data": null
+}
+```
+
+---
+
+---
+
+## Org Chart — Struktur Lengkap
+
+### `GET /organisasi/struktur`
+
+Mengembalikan seluruh struktur organisasi dalam format nested tree: **Departemen → Sub-Departemen → Jabatan → Karyawan**.
+Cocok untuk render org chart / bagan organisasi.
+
+**Query Parameters:**
+
+| Parameter | Tipe | Keterangan |
+|-----------|------|------------|
+| `id_perusahaan` | string (UUID) | Opsional — filter karyawan berdasarkan perusahaan |
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil struktur organisasi",
+  "data": {
+    "departemen": [
+      {
+        "id_departemen": "uuid-hrd",
+        "id_departemen_induk": null,
+        "kode": "HRD",
+        "nama": "Human Resources Department",
+        "jabatan": [
+          {
+            "id_jabatan": "uuid-jab",
+            "kode": "MGR_HRD",
+            "nama": "Manager HRD",
+            "level": 2,
+            "karyawan": [
+              {
+                "id_karyawan": "uuid-kar",
+                "id_jabatan": "uuid-jab",
+                "nik": "K001",
+                "nama": "Budi Santoso",
+                "foto_url": null,
+                "status_kepegawaian": "TETAP"
+              }
+            ]
+          }
+        ],
+        "sub_departemen": [
+          {
+            "id_departemen": "uuid-rkt",
+            "id_departemen_induk": "uuid-hrd",
+            "kode": "RKT",
+            "nama": "Rekrutmen",
+            "jabatan": [...],
+            "sub_departemen": []
+          }
+        ]
+      }
+    ],
+    "karyawan_tanpa_departemen": [
+      {
+        "id_karyawan": "uuid",
+        "id_jabatan": null,
+        "nik": "K099",
+        "nama": "Siti Rahayu",
+        "foto_url": null,
+        "status_kepegawaian": "MAGANG"
+      }
+    ],
+    "total_karyawan": 50,
+    "total_departemen": 8
+  }
+}
+```
+
+**Keterangan field:**
+
+| Field | Keterangan |
+|-------|------------|
+| `departemen` | Array departemen level teratas (tanpa induk), masing-masing memiliki `sub_departemen` rekursif |
+| `jabatan[].karyawan` | Karyawan yang memiliki `id_jabatan` tersebut |
+| `karyawan_tanpa_departemen` | Karyawan tanpa jabatan, atau jabatan yang tidak terikat departemen |
+| `total_karyawan` | Seluruh karyawan aktif (termasuk yang tanpa departemen) |
+| `total_departemen` | Jumlah departemen aktif |
+
+---
+
+## Error Reference — Struktur Organisasi
+
+| HTTP | Penyebab |
+|:----:|---------|
+| `409` | Kode departemen / jabatan / lokasi kantor sudah terdaftar |
+| `404` | UUID tidak ditemukan atau sudah dihapus |
+
+## Enum — Jabatan Level
+
+| Nilai | Keterangan |
+|-------|------------|
+| `1` | Top Management |
+| `2` | Middle Management |
+| `3` | Supervisor |
+| `4` | Staff |
+
+---
+
+## Master Data — Zona Waktu
+
+> **Base URL:** `/zona-waktu`
+> Digunakan untuk dropdown pilihan zona waktu pada pengaturan sistem perusahaan.
+
+### `GET /zona-waktu`
+
+Mengambil daftar zona waktu. Default hanya yang aktif (`aktif = 1`). Tambahkan `?semua=1` untuk menyertakan semua.
+
+**Query Parameters**
+
+| Parameter | Tipe | Wajib | Keterangan |
+|-----------|------|:-----:|-----------|
+| `semua` | string | ❌ | `1` → tampilkan semua termasuk yang tidak aktif |
+
+**Response `200`**
+
+```json
+{
+  "message": "Berhasil mengambil daftar zona waktu",
+  "data": [
+    {
+      "id_zona": "uuid-...",
+      "kode": "Asia/Jakarta",
+      "nama": "WIB — Waktu Indonesia Barat",
+      "offset_utc": "+07:00",
+      "urutan": 1,
+      "aktif": 1
+    },
+    {
+      "id_zona": "uuid-...",
+      "kode": "Asia/Makassar",
+      "nama": "WITA — Waktu Indonesia Tengah",
+      "offset_utc": "+08:00",
+      "urutan": 2,
+      "aktif": 1
+    },
+    {
+      "id_zona": "uuid-...",
+      "kode": "Asia/Jayapura",
+      "nama": "WIT — Waktu Indonesia Timur",
+      "offset_utc": "+09:00",
+      "urutan": 3,
+      "aktif": 1
+    }
+  ]
+}
+```
+
+**Field Response**
+
+| Field | Tipe | Keterangan |
+|-------|------|-----------|
+| `id_zona` | string (UUID) | ID unik zona waktu |
+| `kode` | string | Kode IANA (misal `Asia/Jakarta`) |
+| `nama` | string | Nama tampilan zona waktu |
+| `offset_utc` | string | Offset dari UTC (misal `+07:00`) |
+| `urutan` | number | Urutan tampil di dropdown |
+| `aktif` | number | `1` = aktif, `0` = tidak aktif |
+
+---
+
+## Master Data — Mata Uang
+
+> **Base URL:** `/mata-uang`
+> Digunakan untuk dropdown pilihan mata uang pada pengaturan sistem perusahaan.
+
+### `GET /mata-uang`
+
+Mengambil daftar mata uang. Default hanya yang aktif (`aktif = 1`). Tambahkan `?semua=1` untuk menyertakan semua.
+
+**Query Parameters**
+
+| Parameter | Tipe | Wajib | Keterangan |
+|-----------|------|:-----:|-----------|
+| `semua` | string | ❌ | `1` → tampilkan semua termasuk yang tidak aktif |
+
+**Response `200`**
+
+```json
+{
+  "message": "Berhasil mengambil daftar mata uang",
+  "data": [
+    {
+      "id_mata_uang": "uuid-...",
+      "kode": "IDR",
+      "nama": "Rupiah Indonesia",
+      "simbol": "Rp",
+      "urutan": 1,
+      "aktif": 1
+    },
+    {
+      "id_mata_uang": "uuid-...",
+      "kode": "USD",
+      "nama": "Dolar Amerika Serikat",
+      "simbol": "$",
+      "urutan": 10,
+      "aktif": 1
+    },
+    {
+      "id_mata_uang": "uuid-...",
+      "kode": "EUR",
+      "nama": "Euro",
+      "simbol": "€",
+      "urutan": 20,
+      "aktif": 1
+    }
+  ]
+}
+```
+
+**Field Response**
+
+| Field | Tipe | Keterangan |
+|-------|------|-----------|
+| `id_mata_uang` | string (UUID) | ID unik mata uang |
+| `kode` | string | Kode ISO 4217 (misal `IDR`, `USD`) |
+| `nama` | string | Nama lengkap mata uang |
+| `simbol` | string | Simbol mata uang (misal `Rp`, `$`, `€`) |
+| `urutan` | number | Urutan tampil di dropdown |
+| `aktif` | number | `1` = aktif, `0` = tidak aktif |

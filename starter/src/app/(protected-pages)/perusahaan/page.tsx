@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import {
     Button,
     Card,
@@ -20,16 +21,11 @@ import {
 } from 'react-icons/hi'
 import PerusahaanTable from '@/components/perusahaan/PerusahaanTable'
 import PerusahaanCard from '@/components/perusahaan/PerusahaanCard'
-import PerusahaanForm from '@/components/perusahaan/PerusahaanForm'
 import PerusahaanOverviewDialog from '@/components/perusahaan/PerusahaanOverviewDialog'
 import PerusahaanService from '@/services/perusahaan.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
-import type {
-    IPerusahaan,
-    IPerusahaanCreate,
-    IPerusahaanUpdate,
-} from '@/@types/perusahaan.types'
+import type { IPerusahaan } from '@/@types/perusahaan.types'
 
 type ViewMode = 'table' | 'card'
 type AktifOption = { value: '' | '1' | '0'; label: string }
@@ -41,6 +37,7 @@ const AKTIF_OPTIONS: AktifOption[] = [
 ]
 
 const PerusahaanPage = () => {
+    const router = useRouter()
     const [list, setList] = useState<IPerusahaan[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -53,8 +50,6 @@ const PerusahaanPage = () => {
     const [pageSize, setPageSize] = useState(10)
     const [total, setTotal] = useState(0)
 
-    const [formOpen, setFormOpen] = useState(false)
-    const [editTarget, setEditTarget] = useState<IPerusahaan | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<IPerusahaan | null>(null)
     const [overviewTarget, setOverviewTarget] = useState<IPerusahaan | null>(null)
 
@@ -114,54 +109,12 @@ const PerusahaanPage = () => {
     }, [])
 
     const handleOpenEdit = useCallback((p: IPerusahaan) => {
-        setEditTarget(p)
-        setFormOpen(true)
-    }, [])
+        router.push(`/perusahaan/${p.id_perusahaan}/edit`)
+    }, [router])
 
     const handleOpenDelete = useCallback((p: IPerusahaan) => {
         setDeleteTarget(p)
     }, [])
-
-    const handleSubmit = async (payload: IPerusahaanCreate | IPerusahaanUpdate) => {
-        setSubmitting(true)
-        try {
-            if (editTarget) {
-                await PerusahaanService.update(editTarget.id_perusahaan, payload as IPerusahaanUpdate)
-                toast.push(
-                    <Notification
-                        type="success"
-                        title={MESSAGES.SUCCESS.UPDATED(ENTITY.PERUSAHAAN)}
-                    />,
-                )
-            } else {
-                await PerusahaanService.create(payload as IPerusahaanCreate)
-                toast.push(
-                    <Notification
-                        type="success"
-                        title={MESSAGES.SUCCESS.CREATED(ENTITY.PERUSAHAAN)}
-                    />,
-                )
-            }
-            setFormOpen(false)
-            setEditTarget(null)
-            fetchData()
-        } catch (err) {
-            toast.push(
-                <Notification
-                    type="danger"
-                    title={
-                        editTarget
-                            ? MESSAGES.ERROR.UPDATE(ENTITY.PERUSAHAAN)
-                            : MESSAGES.ERROR.CREATE(ENTITY.PERUSAHAAN)
-                    }
-                >
-                    {parseApiError(err)}
-                </Notification>,
-            )
-        } finally {
-            setSubmitting(false)
-        }
-    }
 
     const handleDelete = async () => {
         if (!deleteTarget) return
@@ -200,10 +153,7 @@ const PerusahaanPage = () => {
                             variant="solid"
                             size="sm"
                             icon={<HiPlusCircle />}
-                            onClick={() => {
-                                setEditTarget(null)
-                                setFormOpen(true)
-                            }}
+                            onClick={() => router.push('/perusahaan/tambah')}
                         >
                             Tambah Perusahaan
                         </Button>
@@ -313,17 +263,6 @@ const PerusahaanPage = () => {
             <PerusahaanOverviewDialog
                 perusahaan={overviewTarget}
                 onClose={() => setOverviewTarget(null)}
-            />
-
-            <PerusahaanForm
-                open={formOpen}
-                editData={editTarget}
-                submitting={submitting}
-                onClose={() => {
-                    setFormOpen(false)
-                    setEditTarget(null)
-                }}
-                onSubmit={handleSubmit}
             />
 
             <ConfirmDialog
