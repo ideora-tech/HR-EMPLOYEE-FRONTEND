@@ -267,7 +267,7 @@ const TingkatProgramPage = () => {
                 <p className="text-sm">
                     Data tingkat program{' '}
                     <span className="font-semibold">
-                        &ldquo;{deleteTarget?.nama}&rdquo;
+                        &ldquo;{deleteTarget?.nama_tingkat}&rdquo;
                     </span>{' '}
                     akan dihapus secara permanen. Tindakan ini tidak dapat
                     dibatalkan.

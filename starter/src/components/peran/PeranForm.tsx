@@ -20,13 +20,13 @@ interface PeranFormProps {
 
 interface FormState {
     kode_peran: string
-    nama: string
+    nama_peran: string
     aktif: boolean
 }
 
 const INITIAL_STATE: FormState = {
     kode_peran: '',
-    nama: '',
+    nama_peran: '',
     aktif: true,
 }
 
@@ -48,7 +48,7 @@ const PeranForm = ({
         if (editData) {
             setForm({
                 kode_peran: editData.kode_peran,
-                nama: editData.nama,
+                nama_peran: editData.nama_peran,
                 aktif: editData.aktif === 1,
             })
         } else {
@@ -61,7 +61,7 @@ const PeranForm = ({
         const newErrors: Partial<Record<keyof FormState, string>> = {}
         if (!form.kode_peran.trim())
             newErrors.kode_peran = 'Kode peran wajib diisi'
-        if (!form.nama.trim()) newErrors.nama = 'Nama peran wajib diisi'
+        if (!form.nama_peran.trim()) newErrors.nama_peran = 'Nama peran wajib diisi'
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -70,7 +70,7 @@ const PeranForm = ({
         if (!validate()) return
         const payload: IPeranCreate = {
             kode_peran: form.kode_peran.trim().toUpperCase(),
-            nama: form.nama.trim(),
+            nama_peran: form.nama_peran.trim(),
             aktif: form.aktif ? 1 : 0,
         }
         onSubmit(payload)
@@ -115,15 +115,15 @@ const PeranForm = ({
                 <FormItem
                     label="Nama Peran"
                     asterisk
-                    invalid={!!errors.nama}
-                    errorMessage={errors.nama}
+                    invalid={!!errors.nama_peran}
+                    errorMessage={errors.nama_peran}
                 >
                     <Input
                         placeholder="contoh: HR Manager / Admin"
-                        value={form.nama}
-                        invalid={!!errors.nama}
+                        value={form.nama_peran}
+                        invalid={!!errors.nama_peran}
                         onChange={(e) =>
-                            setForm((p) => ({ ...p, nama: e.target.value }))
+                            setForm((p) => ({ ...p, nama_peran: e.target.value }))
                         }
                     />
                 </FormItem>

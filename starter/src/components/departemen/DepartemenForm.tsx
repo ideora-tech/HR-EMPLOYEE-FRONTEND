@@ -17,7 +17,7 @@ interface DepartemenFormProps {
 
 interface FormState {
     kode: string
-    nama: string
+    nama_departemen: string
     deskripsi: string
     id_departemen_induk: string
     aktif: boolean
@@ -25,7 +25,7 @@ interface FormState {
 
 const INITIAL_STATE: FormState = {
     kode: '',
-    nama: '',
+    nama_departemen: '',
     deskripsi: '',
     id_departemen_induk: '',
     aktif: true,
@@ -67,7 +67,7 @@ const DepartemenForm = ({
         if (editData) {
             setForm({
                 kode: editData.kode_departemen,
-                nama: editData.nama_departemen,
+                nama_departemen: editData.nama_departemen,
                 deskripsi: editData.deskripsi ?? '',
                 id_departemen_induk: editData.id_departemen_induk ?? '',
                 aktif: editData.aktif === 1,
@@ -81,7 +81,7 @@ const DepartemenForm = ({
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof FormState, string>> = {}
         if (!form.kode.trim()) newErrors.kode = 'Kode departemen wajib diisi'
-        if (!form.nama.trim()) newErrors.nama = 'Nama departemen wajib diisi'
+        if (!form.nama_departemen.trim()) newErrors.nama_departemen = 'Nama departemen wajib diisi'
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -91,7 +91,7 @@ const DepartemenForm = ({
 
         const base: ICreateDepartemen = {
             kode_departemen: form.kode.trim().toUpperCase(),
-            nama_departemen: form.nama.trim(),
+            nama_departemen: form.nama_departemen.trim(),
             deskripsi: form.deskripsi.trim() || undefined,
             id_departemen_induk: form.id_departemen_induk || undefined,
         }
@@ -140,14 +140,14 @@ const DepartemenForm = ({
                 <FormItem
                     label="Nama Departemen"
                     asterisk
-                    invalid={!!errors.nama}
-                    errorMessage={errors.nama}
+                    invalid={!!errors.nama_departemen}
+                    errorMessage={errors.nama_departemen}
                 >
                     <Input
                         placeholder="contoh: Human Resources Development"
-                        value={form.nama}
-                        invalid={!!errors.nama}
-                        onChange={(e) => setForm((p) => ({ ...p, nama: e.target.value }))}
+                        value={form.nama_departemen}
+                        invalid={!!errors.nama_departemen}
+                        onChange={(e) => setForm((p) => ({ ...p, nama_departemen: e.target.value }))}
                     />
                 </FormItem>
 

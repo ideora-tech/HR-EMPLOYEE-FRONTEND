@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Card, Skeleton, Badge } from '@/components/ui'
+import { Card, Skeleton } from '@/components/ui'
 import {
     HiOutlineUserGroup,
     HiOutlineCalendar,

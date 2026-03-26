@@ -52,7 +52,7 @@ const DaftarTable = ({
                 size: 200,
                 cell: ({ row }: CellContext<IDaftarKelas, unknown>) => (
                     <div>
-                        <div className="font-semibold">{row.original.siswa.nama}</div>
+                        <div className="font-semibold">{row.original.siswa.nama_siswa}</div>
                         <div className="text-xs text-gray-400">{row.original.siswa.telepon ?? row.original.siswa.email ?? '-'}</div>
                     </div>
                 ),
@@ -65,11 +65,11 @@ const DaftarTable = ({
                     const j = row.original.jadwal
                     return (
                         <div>
-                            <div className="font-medium">{j.nama}</div>
+                            <div className="font-medium">{j.nama_jadwal}</div>
                             <div className="text-xs text-gray-400">
                                 {HARI_MAP[j.hari]} · {j.jam_mulai}–{j.jam_selesai}
                             </div>
-                            <div className="text-xs text-gray-400">{j.program.nama}</div>
+                            <div className="text-xs text-gray-400">{j.program.nama_program}</div>
                         </div>
                     )
                 },
@@ -86,7 +86,7 @@ const DaftarTable = ({
                 id: 'tarif',
                 size: 160,
                 cell: ({ row }: CellContext<IDaftarKelas, unknown>) =>
-                    row.original.tarif ? row.original.tarif.nama : (
+                    row.original.tarif ? row.original.tarif.nama_tarif : (
                         <span className="text-gray-400 text-sm">-</span>
                     ),
             },

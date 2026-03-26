@@ -20,7 +20,7 @@ interface ModulFormProps {
 
 interface FormState {
     kode_modul: string
-    nama: string
+    nama_modul: string
     deskripsi: string
     urutan: string
     aktif: boolean
@@ -28,7 +28,7 @@ interface FormState {
 
 const INITIAL_STATE: FormState = {
     kode_modul: '',
-    nama: '',
+    nama_modul: '',
     deskripsi: '',
     urutan: '1',
     aktif: true,
@@ -52,7 +52,7 @@ const ModulForm = ({
         if (editData) {
             setForm({
                 kode_modul: editData.kode_modul,
-                nama: editData.nama,
+                nama_modul: editData.nama_modul,
                 deskripsi: editData.deskripsi ?? '',
                 urutan: String(editData.urutan),
                 aktif: editData.aktif === 1,
@@ -67,7 +67,7 @@ const ModulForm = ({
         const newErrors: Partial<Record<keyof FormState, string>> = {}
         if (!form.kode_modul.trim())
             newErrors.kode_modul = 'Kode modul wajib diisi'
-        if (!form.nama.trim()) newErrors.nama = 'Nama modul wajib diisi'
+        if (!form.nama_modul.trim()) newErrors.nama_modul = 'Nama modul wajib diisi'
         if (!form.urutan || Number(form.urutan) < 1)
             newErrors.urutan = 'No. urut wajib diisi (min. 1)'
         setErrors(newErrors)
@@ -78,7 +78,7 @@ const ModulForm = ({
         if (!validate()) return
         const payload: IModulCreate = {
             kode_modul: form.kode_modul.trim().toUpperCase(),
-            nama: form.nama.trim(),
+            nama_modul: form.nama_modul.trim(),
             deskripsi: form.deskripsi.trim() || null,
             urutan: Number(form.urutan),
             aktif: form.aktif ? 1 : 0,
@@ -125,15 +125,15 @@ const ModulForm = ({
                 <FormItem
                     label="Nama Modul"
                     asterisk
-                    invalid={!!errors.nama}
-                    errorMessage={errors.nama}
+                    invalid={!!errors.nama_modul}
+                    errorMessage={errors.nama_modul}
                 >
                     <Input
                         placeholder="contoh: Absensi Karyawan"
-                        value={form.nama}
-                        invalid={!!errors.nama}
+                        value={form.nama_modul}
+                        invalid={!!errors.nama_modul}
                         onChange={(e) =>
-                            setForm((p) => ({ ...p, nama: e.target.value }))
+                            setForm((p) => ({ ...p, nama_modul: e.target.value }))
                         }
                     />
                 </FormItem>

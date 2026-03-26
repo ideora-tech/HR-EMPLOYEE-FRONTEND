@@ -38,10 +38,10 @@ const TarifTable = ({
             },
             {
                 header: 'Nama Tarif',
-                accessorKey: 'nama',
+                accessorKey: 'nama_tarif',
                 size: 220,
                 cell: ({ row }: CellContext<ITarif, unknown>) => (
-                    <span className="font-semibold">{row.original.nama}</span>
+                    <span className="font-semibold">{row.original.nama_tarif}</span>
                 ),
             },
             {
@@ -51,12 +51,12 @@ const TarifTable = ({
                 cell: ({ row }: CellContext<ITarif, unknown>) => (
                     <Tag
                         className={
-                            row.original.jenis === 'PAKET'
+                            row.original.jenis_tarif === 'PAKET'
                                 ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-100'
                                 : 'bg-cyan-100 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-100'
                         }
                     >
-                        {row.original.jenis === 'PAKET' ? 'Paket' : 'Per Sesi'}
+                        {row.original.jenis_tarif === 'PAKET' ? 'Paket' : 'Per Sesi'}
                     </Tag>
                 ),
             },
@@ -65,7 +65,7 @@ const TarifTable = ({
                 accessorKey: 'jumlah_pertemuan',
                 size: 130,
                 cell: ({ row }: CellContext<ITarif, unknown>) =>
-                    row.original.jenis === 'PAKET' && row.original.jumlah_pertemuan
+                    row.original.jenis_tarif === 'PAKET' && row.original.jumlah_pertemuan
                         ? `${row.original.jumlah_pertemuan}x`
                         : '-',
             },

@@ -28,7 +28,7 @@ const PeranCard = ({ peran, onEdit, onDelete }: PeranCardProps) => {
                 </Tag>
             </div>
 
-            <h6 className="font-bold mb-4">{peran.nama}</h6>
+            <h6 className="font-bold mb-4">{peran.nama_peran}</h6>
 
             <div className="flex gap-2">
                 <Button

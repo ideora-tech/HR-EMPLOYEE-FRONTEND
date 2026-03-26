@@ -15,7 +15,6 @@ import {
     HiPlusCircle,
     HiOutlineSearch,
     HiOutlineX,
-    HiOutlineLogout,
 } from 'react-icons/hi'
 import KaryawanExitTable from '@/components/karyawan-exit/KaryawanExitTable'
 import KaryawanExitService from '@/services/karyawan-exit.service'

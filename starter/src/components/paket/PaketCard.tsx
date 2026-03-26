@@ -55,7 +55,7 @@ const PaketCard = ({ paket, onEdit, onDelete }: PaketCardProps) => {
                 </Tag>
             </div>
 
-            <h6 className="font-bold mb-1">{paket.nama}</h6>
+            <h6 className="font-bold mb-1">{paket.nama_paket}</h6>
 
             <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-2">
                 <HiCurrencyDollar className="text-base" />

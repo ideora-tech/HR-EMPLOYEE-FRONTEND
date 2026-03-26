@@ -51,19 +51,19 @@ const JabatanTable = ({
             },
             {
                 header: 'Kode',
-                accessorKey: 'kode',
+                accessorKey: 'kode_jabatan',
                 size: 130,
                 cell: ({ row }: CellContext<IJabatan, unknown>) => (
                     <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-1 rounded">
-                        {row.original.kode}
+                        {row.original.kode_jabatan}
                     </span>
                 ),
             },
             {
                 header: 'Nama Jabatan',
-                accessorKey: 'nama',
+                accessorKey: 'nama_jabatan',
                 cell: ({ row }: CellContext<IJabatan, unknown>) => (
-                    <span className="font-semibold">{row.original.nama}</span>
+                    <span className="font-semibold">{row.original.nama_jabatan}</span>
                 ),
             },
             {
@@ -72,7 +72,7 @@ const JabatanTable = ({
                 size: 180,
                 cell: ({ row }: CellContext<IJabatan, unknown>) => (
                     <span className="text-gray-600 dark:text-gray-300">
-                        {row.original.departemen?.nama ?? '—'}
+                        {row.original.departemen?.nama_departemen ?? '—'}
                     </span>
                 ),
             },

@@ -97,7 +97,7 @@ const DaftarFormPage = ({
                 if (siswaRes.success) setSiswaList(siswaRes.data)
                 if (jadwalRes.success) setJadwalList(jadwalRes.data)
             })
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => setLoadingDropdowns(false))
     }, [isEdit])
 
@@ -143,7 +143,7 @@ const DaftarFormPage = ({
             })
             .catch(() => setTarifList([]))
             .finally(() => setLoadingTarif(false))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.id_jadwal, jadwalList, isEdit])
 
     const validate = (): boolean => {
@@ -181,7 +181,7 @@ const DaftarFormPage = ({
         { value: '', label: '— Pilih Siswa —' },
         ...siswaList.map((s) => ({
             value: s.id_siswa,
-            label: `${s.nama}${s.telepon ? ` (${s.telepon})` : ''}`,
+            label: `${s.nama_siswa}${s.telepon ? ` (${s.telepon})` : ''}`,
         })),
     ]
 
@@ -191,7 +191,7 @@ const DaftarFormPage = ({
             .filter((j) => j.aktif === 1)
             .map((j) => ({
                 value: j.id_jadwal,
-                label: `${j.nama} — ${HARI_MAP[j.hari]} ${j.jam_mulai}–${j.jam_selesai}`,
+                label: `${j.nama_jadwal}`,
                 id_program: j.id_program,
             })),
     ]
@@ -200,7 +200,7 @@ const DaftarFormPage = ({
         { value: '', label: '— Tanpa tarif —' },
         ...tarifList.map((t) => ({
             value: t.id_tarif,
-            label: `${t.nama} (${t.jenis === 'PAKET' ? `${t.jumlah_pertemuan}x` : 'per sesi'})`,
+            label: `${t.nama_tarif} (${t.jenis_tarif === 'PAKET' ? `${t.jumlah_pertemuan}x` : 'per sesi'})`,
         })),
     ]
 
@@ -212,10 +212,10 @@ const DaftarFormPage = ({
     const tarifHint = loadingTarif
         ? 'Memuat tarif...'
         : !isEdit && !form.id_jadwal
-        ? 'Pilih jadwal dulu untuk melihat tarif tersedia'
-        : tarifList.length === 0
-        ? 'Tidak ada tarif aktif untuk program ini'
-        : ''
+            ? 'Pilih jadwal dulu untuk melihat tarif tersedia'
+            : tarifList.length === 0
+                ? 'Tidak ada tarif aktif untuk program ini'
+                : ''
 
     if (!isEdit && loadingDropdowns) {
         return (
@@ -268,7 +268,7 @@ const DaftarFormPage = ({
                             <div className="flex items-start gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
                                 <div className="flex-1">
                                     <p className="font-semibold text-gray-800 dark:text-gray-100">
-                                        {editData?.siswa.nama}
+                                        {editData?.siswa.nama_siswa}
                                     </p>
                                     {(editData?.siswa.telepon || editData?.siswa.email) && (
                                         <p className="text-xs text-gray-400 mt-0.5">
@@ -277,7 +277,7 @@ const DaftarFormPage = ({
                                     )}
                                 </div>
                                 <div className="text-right text-sm text-gray-500">
-                                    <p className="font-medium">{editData?.jadwal.nama}</p>
+                                    <p className="font-medium">{editData?.jadwal.nama_jadwal}</p>
                                     <p className="text-xs text-gray-400 mt-0.5">
                                         {HARI_MAP[editData?.jadwal.hari ?? 1]}{' '}
                                         {editData?.jadwal.jam_mulai}–{editData?.jadwal.jam_selesai}

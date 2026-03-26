@@ -9,7 +9,8 @@ import type { NavigationTree } from '@/@types/navigation'
 
 interface ApiMenuItem {
     id_menu: string
-    nama: string
+    nama?: string
+    nama_menu?: string
     icon: string | null
     path: string | null
     kode_modul: string | null
@@ -21,11 +22,12 @@ interface ApiMenuItem {
 
 function toNavTree(item: ApiMenuItem): NavigationTree {
     const hasChildren = Array.isArray(item.children) && item.children.length > 0
+    const title = item.nama_menu ?? item.nama ?? ''
     return {
         key: item.id_menu,
         path: item.path ?? '',
-        title: item.nama,
-        translateKey: item.nama,
+        title,
+        translateKey: title,
         icon: item.icon ?? '',
         type: hasChildren ? NAV_ITEM_TYPE_COLLAPSE : NAV_ITEM_TYPE_ITEM,
         authority: [],
@@ -59,7 +61,7 @@ const fetchNavigation = cache(async (): Promise<{
         if (!res.ok) return { tree: navigationConfig, fromBackend: false }
 
         const json = await res.json()
-        if (!json.success || !Array.isArray(json.data))
+        if (!Array.isArray(json?.data))
             return { tree: navigationConfig, fromBackend: false }
 
         return { tree: json.data.map(toNavTree), fromBackend: true }

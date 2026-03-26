@@ -50,7 +50,7 @@ const PenggunaTable = ({
                 size: 280,
                 cell: ({ row }: CellContext<IPengguna, unknown>) => (
                     <div>
-                        <p className="font-semibold">{row.original.nama}</p>
+                        <p className="font-semibold">{row.original.nama_pengguna}</p>
                         <p className="text-xs text-gray-400">{row.original.email}</p>
                     </div>
                 ),

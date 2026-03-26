@@ -51,7 +51,7 @@ const dateRangeLabel = (mulai: string, selesai: string) => {
         const d = iso.split(/[T ]/)[0]
         if (!d) return ''
         const [y, m, dd] = d.split('-')
-        const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
         return `${dd} ${months[parseInt(m, 10) - 1]} ${y}`
     }
     const a = fmt(mulai)
@@ -74,7 +74,7 @@ const STATUS_STYLE: Record<number, string> = {
 const STATUS_LABEL: Record<number, string> = { 1: 'Aktif', 2: 'Selesai', 3: 'Berhenti' }
 
 type StatusOption = { value: string; label: string }
-type TarifOption  = { value: string; label: string }
+type TarifOption = { value: string; label: string }
 
 /* ─── props ──────────────────────────────────────────────── */
 
@@ -94,24 +94,24 @@ const JadwalDetailDrawer = ({
     onRefresh,
 }: JadwalDetailDrawerProps) => {
     /* ── list siswa terdaftar ── */
-    const [daftarList, setDaftarList]     = useState<IDaftarKelas[]>([])
+    const [daftarList, setDaftarList] = useState<IDaftarKelas[]>([])
     const [loadingDaftar, setLoadingDaftar] = useState(false)
-    const [kuota, setKuota]               = useState<IKuotaJadwal | null>(null)
+    const [kuota, setKuota] = useState<IKuotaJadwal | null>(null)
 
     /* ── sub-modal state ── */
-    const [enrollOpen, setEnrollOpen]     = useState(false)
-    const [editTarget, setEditTarget]     = useState<IDaftarKelas | null>(null)
+    const [enrollOpen, setEnrollOpen] = useState(false)
+    const [editTarget, setEditTarget] = useState<IDaftarKelas | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<IDaftarKelas | null>(null)
-    const [submitting, setSubmitting]     = useState(false)
+    const [submitting, setSubmitting] = useState(false)
 
     /* ── enroll form ── */
-    const [siswaSearch, setSiswaSearch]       = useState('')
-    const [siswaResults, setSiswaResults]     = useState<ISiswa[]>([])
-    const [selectedSiswa, setSelectedSiswa]   = useState<ISiswa | null>(null)
-    const [tarifList, setTarifList]           = useState<ITarif[]>([])
+    const [siswaSearch, setSiswaSearch] = useState('')
+    const [siswaResults, setSiswaResults] = useState<ISiswa[]>([])
+    const [selectedSiswa, setSelectedSiswa] = useState<ISiswa | null>(null)
+    const [tarifList, setTarifList] = useState<ITarif[]>([])
     const [selectedTarifId, setSelectedTarifId] = useState('')
-    const [tanggalDaftar, setTanggalDaftar]   = useState<Date | null>(new Date())
-    const [loadingSearch, setLoadingSearch]   = useState(false)
+    const [tanggalDaftar, setTanggalDaftar] = useState<Date | null>(new Date())
+    const [loadingSearch, setLoadingSearch] = useState(false)
     const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     /* ── edit status form ── */
@@ -141,7 +141,7 @@ const JadwalDetailDrawer = ({
             loadDaftar()
             TarifService.getByProgram(jadwal.id_program)
                 .then((res) => { if (res.success) setTarifList(res.data) })
-                .catch(() => {})
+                .catch(() => { })
         } else {
             setDaftarList([])
             setKuota(null)
@@ -256,7 +256,7 @@ const JadwalDetailDrawer = ({
         { value: '', label: '— Tanpa Tarif —' },
         ...tarifList.map((t) => ({
             value: t.id_tarif,
-            label: `${t.nama} (${t.jenis === 'PAKET' ? `${t.jumlah_pertemuan}x` : 'Per Sesi'} · ${formatRupiah(parseFloat(t.harga))})`,
+            label: `${t.nama_tarif} (${t.jenis_tarif === 'PAKET' ? `${t.jumlah_pertemuan}x` : 'Per Sesi'} · ${formatRupiah(parseFloat(t.harga))})`,
         })),
     ]
 
@@ -273,7 +273,7 @@ const JadwalDetailDrawer = ({
                     <div className="flex items-center gap-2">
                         <HiOutlineUserGroup className="text-primary text-lg" />
                         <span className="font-semibold text-gray-800 dark:text-gray-100">
-                            {jadwal?.nama ?? 'Detail Jadwal'}
+                            {jadwal?.nama_jadwal ?? 'Detail Jadwal'}
                         </span>
                     </div>
                 }
@@ -372,13 +372,13 @@ const JadwalDetailDrawer = ({
                                     >
                                         {/* Avatar */}
                                         <div className="flex-shrink-0 w-9 h-9 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-                                            {item.siswa.nama.charAt(0).toUpperCase()}
+                                            {item.siswa.nama_siswa.charAt(0).toUpperCase()}
                                         </div>
 
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
-                                                {item.siswa.nama}
+                                                {item.siswa.nama_siswa}
                                             </p>
                                             <div className="flex items-center gap-2 mt-0.5">
                                                 <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${STATUS_STYLE[item.status]}`}>
@@ -386,7 +386,7 @@ const JadwalDetailDrawer = ({
                                                 </span>
                                                 {item.tarif && (
                                                     <span className="text-[10px] text-gray-400 truncate">
-                                                        {item.tarif.nama} · {formatRupiah(parseFloat(item.tarif.harga))}
+                                                        {item.tarif.nama_tarif} · {formatRupiah(parseFloat(item.tarif.harga))}
                                                     </span>
                                                 )}
                                             </div>
@@ -459,9 +459,9 @@ const JadwalDetailDrawer = ({
                                             key={s.id_siswa}
                                             type="button"
                                             className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                                            onClick={() => { setSelectedSiswa(s); setSiswaSearch(s.nama); setSiswaResults([]) }}
+                                            onClick={() => { setSelectedSiswa(s); setSiswaSearch(s.nama_siswa); setSiswaResults([]) }}
                                         >
-                                            <span className="font-medium text-gray-800 dark:text-gray-100">{s.nama}</span>
+                                            <span className="font-medium text-gray-800 dark:text-gray-100">{s.nama_siswa}</span>
                                             {s.telepon && <span className="ml-2 text-xs text-gray-400">{s.telepon}</span>}
                                         </button>
                                     ))
@@ -473,7 +473,7 @@ const JadwalDetailDrawer = ({
                         {selectedSiswa && (
                             <div className="mt-1 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary text-sm font-medium">
                                 <HiOutlineUser />
-                                {selectedSiswa.nama}
+                                {selectedSiswa.nama_siswa}
                                 <button
                                     type="button"
                                     className="ml-auto text-primary/60 hover:text-primary"
@@ -529,7 +529,7 @@ const JadwalDetailDrawer = ({
                 {editTarget && (
                     <div className="flex flex-col gap-1">
                         <p className="text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-3">
-                            {editTarget.siswa.nama}
+                            {editTarget.siswa.nama_siswa}
                         </p>
                         <FormItem label="Status">
                             <Select<StatusOption>
@@ -575,7 +575,7 @@ const JadwalDetailDrawer = ({
             >
                 <p className="text-sm">
                     Siswa{' '}
-                    <span className="font-semibold">&ldquo;{deleteTarget?.siswa.nama}&rdquo;</span>{' '}
+                    <span className="font-semibold">&ldquo;{deleteTarget?.siswa.nama_siswa}&rdquo;</span>{' '}
                     akan dikeluarkan dari kelas ini.
                 </p>
             </ConfirmDialog>

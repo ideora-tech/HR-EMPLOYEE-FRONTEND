@@ -20,8 +20,8 @@ type StatusValue = 1 | 2 | 3 | 4
 
 type AbsenRow = {
     id_daftar: string
-    siswa_nama: string
-    siswa_telepon: string | null
+    nama_siswa: string
+    telepon_siswa: string | null
     status: StatusValue | null
 }
 
@@ -136,8 +136,8 @@ const AbsenDrawer = ({
             setRows(
                 res.data.map((entry) => ({
                     id_daftar: entry.id_daftar,
-                    siswa_nama: entry.siswa.nama_siswa,
-                    siswa_telepon: entry.siswa.telepon,
+                    nama_siswa: entry.siswa.nama_siswa,
+                    telepon_siswa: entry.siswa.telepon,
                     // null = belum pernah diabsen → tidak ada default
                     status: entry.presensi
                         ? (Number(entry.presensi.status) as StatusValue)
@@ -155,7 +155,6 @@ const AbsenDrawer = ({
                 )
             })
             .finally(() => setLoading(false))
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, jadwal, presensiId])
 
     /* ── Handlers ── */
@@ -217,7 +216,7 @@ const AbsenDrawer = ({
     /* ── Filtered rows for display ── */
     const filteredRows = search.trim()
         ? rows.filter((r) =>
-            r.siswa_nama.toLowerCase().includes(search.trim().toLowerCase()),
+            r.nama_siswa.toLowerCase().includes(search.trim().toLowerCase()),
         )
         : rows
 
@@ -366,7 +365,7 @@ const AbsenDrawer = ({
                     ) : (
                         <div className="divide-y divide-gray-50 dark:divide-gray-800">
                             {filteredRows.map((row) => {
-                                const initials = row.siswa_nama
+                                const initials = row.nama_siswa
                                     .split(' ')
                                     .slice(0, 2)
                                     .map((w) => w[0])
@@ -384,11 +383,11 @@ const AbsenDrawer = ({
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
-                                                    {row.siswa_nama}
+                                                    {row.nama_siswa}
                                                 </p>
-                                                {row.siswa_telepon && (
+                                                {row.telepon_siswa && (
                                                     <p className="text-xs text-gray-400 truncate">
-                                                        {row.siswa_telepon}
+                                                        {row.telepon_siswa}
                                                     </p>
                                                 )}
                                             </div>

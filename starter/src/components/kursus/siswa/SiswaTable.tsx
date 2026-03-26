@@ -43,10 +43,10 @@ const SiswaTable = ({
             },
             {
                 header: 'Nama',
-                accessorKey: 'nama',
+                accessorKey: 'nama_siswa',
                 size: 220,
                 cell: ({ row }: CellContext<ISiswa, unknown>) => (
-                    <span className="font-semibold">{row.original.nama}</span>
+                    <span className="font-semibold">{row.original.nama_siswa}</span>
                 ),
             },
             {

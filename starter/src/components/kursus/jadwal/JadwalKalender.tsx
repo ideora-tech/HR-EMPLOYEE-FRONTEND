@@ -14,7 +14,6 @@ import {
     HiOutlineDownload,
 } from 'react-icons/hi'
 import type { IJadwalKelas } from '@/@types/kursus.types'
-import { API_ENDPOINTS } from '@/constants/api.constant'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
 
 /* ─── constants ──────────────────────────────────────────── */
@@ -33,12 +32,6 @@ function getMondayOf(date: dayjs.Dayjs): dayjs.Dayjs {
 /** day.day(): 0=Sun,1=Mon,...,6=Sat  →  hari: 1=Mon,...,7=Sun */
 function toHari(day: dayjs.Dayjs): number {
     const d = day.day()
-    return d === 0 ? 7 : d
-}
-
-/** "YYYY-MM-DD HH:MM:SS" atau "YYYY-MM-DDTHH:MM:SS" → hari 1-7 */
-function hariFromISO(iso: string): number {
-    const d = new Date(iso.replace(' ', 'T')).getDay()
     return d === 0 ? 7 : d
 }
 

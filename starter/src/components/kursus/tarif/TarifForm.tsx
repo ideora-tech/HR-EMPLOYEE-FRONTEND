@@ -40,8 +40,8 @@ interface TarifFormProps {
 
 interface FormState {
     id_program: string
-    nama: string
-    jenis: 'PER_SESI' | 'PAKET'
+    nama_tarif: string
+    jenis_tarif: 'PER_SESI' | 'PAKET'
     harga: string
     jumlah_pertemuan: string
     aktif: boolean
@@ -49,8 +49,8 @@ interface FormState {
 
 const INITIAL_STATE: FormState = {
     id_program: '',
-    nama: '',
-    jenis: 'PER_SESI',
+    nama_tarif: '',
+    jenis_tarif: 'PER_SESI',
     harga: '0',
     jumlah_pertemuan: '',
     aktif: true,
@@ -71,15 +71,15 @@ const TarifForm = ({
 
     const programOptions: ProgramOption[] = [
         { value: '', label: '— Pilih Program —' },
-        ...programList.map((p) => ({ value: p.id_program, label: `${p.kode_program} — ${p.nama}` })),
+        ...programList.map((p) => ({ value: p.id_program, label: `${p.kode_program} — ${p.nama_program}` })),
     ]
 
     useEffect(() => {
         if (editData) {
             setForm({
                 id_program: editData.id_program,
-                nama: editData.nama,
-                jenis: editData.jenis,
+                nama_tarif: editData.nama_tarif,
+                jenis_tarif: editData.jenis_tarif,
                 harga: formatNum(parseFloat(editData.harga)),
                 jumlah_pertemuan: editData.jumlah_pertemuan ? String(editData.jumlah_pertemuan) : '',
                 aktif: editData.aktif === 1,
@@ -93,9 +93,9 @@ const TarifForm = ({
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof FormState, string>> = {}
         if (!form.id_program) newErrors.id_program = 'Program wajib dipilih'
-        if (!form.nama.trim()) newErrors.nama = 'Nama tarif wajib diisi'
+        if (!form.nama_tarif.trim()) newErrors.nama_tarif = 'Nama tarif wajib diisi'
         if (parseRupiah(form.harga) <= 0) newErrors.harga = 'Harga wajib diisi (min. 1)'
-        if (form.jenis === 'PAKET' && (!form.jumlah_pertemuan || Number(form.jumlah_pertemuan) < 1))
+        if (form.jenis_tarif === 'PAKET' && (!form.jumlah_pertemuan || Number(form.jumlah_pertemuan) < 1))
             newErrors.jumlah_pertemuan = 'Jumlah pertemuan wajib diisi untuk jenis Paket'
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
@@ -106,10 +106,10 @@ const TarifForm = ({
 
         const base: ICreateTarif = {
             id_program: form.id_program,
-            nama: form.nama.trim(),
-            jenis: form.jenis,
+            nama_tarif: form.nama_tarif.trim(),
+            jenis_tarif: form.jenis_tarif,
             harga: parseRupiah(form.harga),
-            jumlah_pertemuan: form.jenis === 'PAKET' ? Number(form.jumlah_pertemuan) : undefined,
+            jumlah_pertemuan: form.jenis_tarif === 'PAKET' ? Number(form.jumlah_pertemuan) : undefined,
         }
 
         if (isEdit) {
@@ -120,7 +120,7 @@ const TarifForm = ({
     }
 
     const selectedProgram = programOptions.find((o) => o.value === form.id_program) ?? programOptions[0]
-    const selectedJenis = JENIS_OPTIONS.find((o) => o.value === form.jenis) ?? JENIS_OPTIONS[0]
+    const selectedJenis = JENIS_OPTIONS.find((o) => o.value === form.jenis_tarif) ?? JENIS_OPTIONS[0]
 
     return (
         <Dialog
@@ -150,14 +150,14 @@ const TarifForm = ({
                 <FormItem
                     label="Nama Tarif"
                     asterisk
-                    invalid={!!errors.nama}
-                    errorMessage={errors.nama}
+                    invalid={!!errors.nama_tarif}
+                    errorMessage={errors.nama_tarif}
                 >
                     <Input
                         placeholder="contoh: Paket 10 Sesi, Per Sesi Reguler"
-                        value={form.nama}
-                        invalid={!!errors.nama}
-                        onChange={(e) => setForm((p) => ({ ...p, nama: e.target.value }))}
+                        value={form.nama_tarif}
+                        invalid={!!errors.nama_tarif}
+                        onChange={(e) => setForm((p) => ({ ...p, nama_tarif: e.target.value }))}
                     />
                 </FormItem>
 
@@ -169,14 +169,14 @@ const TarifForm = ({
                             onChange={(opt) =>
                                 setForm((p) => ({
                                     ...p,
-                                    jenis: (opt as JenisOption).value,
+                                    jenis_tarif: (opt as JenisOption).value,
                                     jumlah_pertemuan: '',
                                 }))
                             }
                         />
                     </FormItem>
 
-                    {form.jenis === 'PAKET' && (
+                    {form.jenis_tarif === 'PAKET' && (
                         <FormItem
                             label="Jumlah Pertemuan"
                             asterisk

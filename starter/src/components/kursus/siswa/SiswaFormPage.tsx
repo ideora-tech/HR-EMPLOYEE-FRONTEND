@@ -29,7 +29,7 @@ interface SiswaFormPageProps {
 }
 
 interface FormState {
-    nama: string
+    nama_siswa: string
     email: string
     telepon: string
     tanggal_lahir: Date | null
@@ -39,7 +39,7 @@ interface FormState {
 }
 
 const INITIAL_STATE: FormState = {
-    nama: '',
+    nama_siswa: '',
     email: '',
     telepon: '',
     tanggal_lahir: null,
@@ -70,7 +70,7 @@ const SiswaFormPage = ({
     useEffect(() => {
         if (editData) {
             setForm({
-                nama: editData.nama,
+                nama_siswa: editData.nama_siswa,
                 email: editData.email ?? '',
                 telepon: editData.telepon ?? '',
                 tanggal_lahir: editData.tanggal_lahir
@@ -90,7 +90,7 @@ const SiswaFormPage = ({
 
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof FormState, string>> = {}
-        if (!form.nama.trim()) newErrors.nama = 'Nama siswa wajib diisi'
+        if (!form.nama_siswa.trim()) newErrors.nama_siswa = 'Nama siswa wajib diisi'
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -104,7 +104,7 @@ const SiswaFormPage = ({
 
         if (isEdit) {
             onSubmit({
-                nama: form.nama.trim(),
+                nama_siswa: form.nama_siswa.trim(),
                 email: form.email.trim() || undefined,
                 telepon: form.telepon.trim() || undefined,
                 tanggal_lahir: tglLahir,
@@ -116,7 +116,7 @@ const SiswaFormPage = ({
             } as IUpdateSiswa)
         } else {
             onSubmit({
-                nama: form.nama.trim(),
+                nama_siswa: form.nama_siswa.trim(),
                 email: form.email.trim() || undefined,
                 telepon: form.telepon.trim() || undefined,
                 tanggal_lahir: tglLahir,
@@ -172,15 +172,15 @@ const SiswaFormPage = ({
                             <FormItem
                                 label="Nama Lengkap"
                                 asterisk
-                                invalid={!!errors.nama}
-                                errorMessage={errors.nama}
+                                invalid={!!errors.nama_siswa}
+                                errorMessage={errors.nama_siswa}
                             >
                                 <Input
                                     placeholder="contoh: Budi Santoso"
-                                    value={form.nama}
-                                    invalid={!!errors.nama}
+                                    value={form.nama_siswa}
+                                    invalid={!!errors.nama_siswa}
                                     onChange={(e) =>
-                                        setForm((p) => ({ ...p, nama: e.target.value }))
+                                        setForm((p) => ({ ...p, nama_siswa: e.target.value }))
                                     }
                                 />
                             </FormItem>

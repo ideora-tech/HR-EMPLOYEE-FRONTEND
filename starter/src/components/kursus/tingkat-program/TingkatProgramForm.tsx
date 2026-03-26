@@ -23,15 +23,15 @@ interface TingkatProgramFormProps {
 }
 
 interface FormState {
-    kode: string
-    nama: string
+    kode_tingkat: string
+    nama_tingkat: string
     urutan: string
     aktif: boolean
 }
 
 const INITIAL_STATE: FormState = {
-    kode: '',
-    nama: '',
+    kode_tingkat: '',
+    nama_tingkat: '',
     urutan: '1',
     aktif: true,
 }
@@ -51,8 +51,8 @@ const TingkatProgramForm = ({
     useEffect(() => {
         if (editData) {
             setForm({
-                kode: editData.kode_tingkat,
-                nama: editData.nama_tingkat,
+                kode_tingkat: editData.kode_tingkat,
+                nama_tingkat: editData.nama_tingkat,
                 urutan: String(editData.urutan ?? 1),
                 aktif: editData.aktif === 1,
             })
@@ -64,8 +64,8 @@ const TingkatProgramForm = ({
 
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof FormState, string>> = {}
-        if (!form.kode.trim()) newErrors.kode = 'Kode tingkat wajib diisi'
-        if (!form.nama.trim()) newErrors.nama = 'Nama tingkat wajib diisi'
+        if (!form.kode_tingkat.trim()) newErrors.kode_tingkat = 'Kode tingkat wajib diisi'
+        if (!form.nama_tingkat.trim()) newErrors.nama_tingkat = 'Nama tingkat wajib diisi'
         const urutan = Number(form.urutan)
         if (!form.urutan || isNaN(urutan) || urutan < 1)
             newErrors.urutan = 'Urutan harus berupa angka lebih dari 0'
@@ -77,8 +77,8 @@ const TingkatProgramForm = ({
         if (!validate()) return
 
         const base = {
-            kode_tingkat: form.kode.trim().toUpperCase(),
-            nama_tingkat: form.nama.trim(),
+            kode_tingkat: form.kode_tingkat.trim().toUpperCase(),
+            nama_tingkat: form.nama_tingkat.trim(),
             urutan: Number(form.urutan),
         }
 
@@ -104,8 +104,8 @@ const TingkatProgramForm = ({
                 <FormItem
                     label="Kode Tingkat"
                     asterisk
-                    invalid={!!errors.kode}
-                    errorMessage={errors.kode}
+                    invalid={!!errors.kode_tingkat}
+                    errorMessage={errors.kode_tingkat}
                     extra={
                         <span className="text-xs text-gray-400">
                             Akan diubah ke huruf kapital otomatis. Contoh: PEMULA, MAHIR
@@ -114,13 +114,13 @@ const TingkatProgramForm = ({
                 >
                     <Input
                         placeholder="contoh: PEMULA"
-                        value={form.kode}
-                        invalid={!!errors.kode}
+                        value={form.kode_tingkat}
+                        invalid={!!errors.kode_tingkat}
                         disabled={isEdit}
                         onChange={(e) =>
                             setForm((p) => ({
                                 ...p,
-                                kode: e.target.value.toUpperCase(),
+                                kode_tingkat: e.target.value.toUpperCase(),
                             }))
                         }
                     />
@@ -129,15 +129,15 @@ const TingkatProgramForm = ({
                 <FormItem
                     label="Nama Tingkat"
                     asterisk
-                    invalid={!!errors.nama}
-                    errorMessage={errors.nama}
+                    invalid={!!errors.nama_tingkat}
+                    errorMessage={errors.nama_tingkat}
                 >
                     <Input
                         placeholder="contoh: Pemula"
-                        value={form.nama}
-                        invalid={!!errors.nama}
+                        value={form.nama_tingkat}
+                        invalid={!!errors.nama_tingkat}
                         onChange={(e) =>
-                            setForm((p) => ({ ...p, nama: e.target.value }))
+                            setForm((p) => ({ ...p, nama_tingkat: e.target.value }))
                         }
                     />
                 </FormItem>

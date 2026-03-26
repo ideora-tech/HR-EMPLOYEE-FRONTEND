@@ -21,7 +21,7 @@ interface PaketFormProps {
 
 interface FormState {
     kode_paket: string
-    nama: string
+    nama_paket: string
     harga: string
     maks_karyawan: string
     aktif: boolean
@@ -29,7 +29,7 @@ interface FormState {
 
 const INITIAL_STATE: FormState = {
     kode_paket: '',
-    nama: '',
+    nama_paket: '',
     harga: '0',
     maks_karyawan: '10',
     aktif: true,
@@ -62,7 +62,7 @@ const PaketForm = ({
         if (editData) {
             setForm({
                 kode_paket: editData.kode_paket,
-                nama: editData.nama,
+                nama_paket: editData.nama_paket,
                 harga: formatNum(Number(editData.harga)),
                 maks_karyawan: String(editData.maks_karyawan),
                 aktif: editData.aktif === 1,
@@ -77,7 +77,7 @@ const PaketForm = ({
         const newErrors: Partial<Record<keyof FormState, string>> = {}
         if (!form.kode_paket.trim())
             newErrors.kode_paket = 'Kode paket wajib diisi'
-        if (!form.nama.trim()) newErrors.nama = 'Nama paket wajib diisi'
+        if (!form.nama_paket.trim()) newErrors.nama_paket = 'Nama paket wajib diisi'
         if (parseRupiah(form.harga) < 0)
             newErrors.harga = 'Harga tidak boleh negatif'
         if (!form.maks_karyawan || Number(form.maks_karyawan) < 1)
@@ -90,7 +90,7 @@ const PaketForm = ({
         if (!validate()) return
         const payload: IPaketCreate = {
             kode_paket: form.kode_paket.trim().toUpperCase(),
-            nama: form.nama.trim(),
+            nama_paket: form.nama_paket.trim(),
             harga: parseRupiah(form.harga),
             maks_karyawan: Number(form.maks_karyawan),
             aktif: form.aktif ? 1 : 0,
@@ -137,15 +137,15 @@ const PaketForm = ({
                 <FormItem
                     label="Nama Paket"
                     asterisk
-                    invalid={!!errors.nama}
-                    errorMessage={errors.nama}
+                    invalid={!!errors.nama_paket}
+                    errorMessage={errors.nama_paket}
                 >
                     <Input
                         placeholder="contoh: Free Plan"
-                        value={form.nama}
-                        invalid={!!errors.nama}
+                        value={form.nama_paket}
+                        invalid={!!errors.nama_paket}
                         onChange={(e) =>
-                            setForm((p) => ({ ...p, nama: e.target.value }))
+                            setForm((p) => ({ ...p, nama_paket: e.target.value }))
                         }
                     />
                 </FormItem>

@@ -5,18 +5,15 @@ import { useRouter, useParams } from 'next/navigation'
 import { Notification, Spinner, toast } from '@/components/ui'
 import MenuFormPage from '@/components/menu/MenuFormPage'
 import MenuService from '@/services/menu.service'
-import ModulService from '@/services/modul.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { IMenu, IMenuUpdate } from '@/@types/menu.types'
-import type { IModul } from '@/@types/modul.types'
 
 const EditMenuPage = () => {
     const router = useRouter()
     const { id } = useParams<{ id: string }>()
     const [editData, setEditData] = useState<IMenu | null>(null)
     const [menuList, setMenuList] = useState<IMenu[]>([])
-    const [modulList, setModulList] = useState<IModul[]>([])
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
 
@@ -26,12 +23,10 @@ const EditMenuPage = () => {
         Promise.all([
             MenuService.getById(id),
             MenuService.getAll({ limit: 200 }),
-            ModulService.getAll({ aktif: 1, limit: 100 }),
         ])
-            .then(([detailRes, listRes, modulRes]) => {
+            .then(([detailRes, listRes]) => {
                 if (detailRes.success) setEditData(detailRes.data)
                 if (listRes.success) setMenuList(listRes.data)
-                if (modulRes.success) setModulList(modulRes.data)
             })
             .catch((err) => {
                 toast.push(
@@ -78,7 +73,6 @@ const EditMenuPage = () => {
         <MenuFormPage
             editData={editData}
             menuList={menuList}
-            modulList={modulList}
             submitting={submitting}
             onSubmit={handleSubmit}
             onCancel={() => router.push('/menu')}

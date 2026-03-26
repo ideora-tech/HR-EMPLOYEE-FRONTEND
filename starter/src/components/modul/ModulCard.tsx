@@ -28,7 +28,7 @@ const ModulCard = ({ modul, onEdit, onDelete }: ModulCardProps) => {
                 </Tag>
             </div>
 
-            <h6 className="font-bold mb-2">{modul.nama}</h6>
+            <h6 className="font-bold mb-2">{modul.nama_modul}</h6>
 
             <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-2">
                 <HiMenuAlt2 className="text-base" />

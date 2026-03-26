@@ -52,8 +52,8 @@ const PresensiDetailPage = () => {
                     res.data.detail.map((d) => ({
                         id_detail: d.id_detail,
                         id_daftar: d.daftar?.id_daftar ?? '',
-                        siswa_nama: d.siswa.nama_siswa,
-                        siswa_telepon: d.siswa.telepon,
+                        nama_siswa: d.siswa.nama_siswa,
+                        telepon: d.siswa.telepon,
                         keterangan: d.keterangan,
                         catatan: d.catatan ?? '',
                     })),
@@ -113,10 +113,6 @@ const PresensiDetailPage = () => {
     }
 
     const j = presensi?.jadwal
-    const hadir = rows.filter((r) => r.keterangan === 1).length
-    const izin = rows.filter((r) => r.keterangan === 2).length
-    const sakit = rows.filter((r) => r.keterangan === 3).length
-    const alpha = rows.filter((r) => r.keterangan === 4).length
 
     return (
         <div className="flex flex-col gap-4">

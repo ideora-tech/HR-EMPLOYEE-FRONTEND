@@ -39,20 +39,20 @@ const TingkatProgramTable = ({
             },
             {
                 header: 'Kode',
-                accessorKey: 'kode',
+                accessorKey: 'kode_tingkat',
                 size: 160,
                 cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
                     <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-1 rounded">
-                        {row.original.kode}
+                        {row.original.kode_tingkat}
                     </span>
                 ),
             },
             {
                 header: 'Nama Tingkat',
-                accessorKey: 'nama',
+                accessorKey: 'nama_tingkat',
                 size: 280,
                 cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
-                    <span className="font-semibold">{row.original.nama}</span>
+                    <span className="font-semibold">{row.original.nama_tingkat}</span>
                 ),
             },
             {

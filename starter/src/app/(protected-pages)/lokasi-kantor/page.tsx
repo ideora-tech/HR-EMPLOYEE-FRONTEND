@@ -248,7 +248,7 @@ const LokasiKantorPage = () => {
             >
                 <p className="text-sm">
                     Yakin ingin menghapus lokasi kantor{' '}
-                    <strong>{deleteTarget?.nama}</strong>? Tindakan ini tidak dapat
+                    <strong>{deleteTarget?.nama_lokasi}</strong>? Tindakan ini tidak dapat
                     dibatalkan.
                 </p>
             </ConfirmDialog>

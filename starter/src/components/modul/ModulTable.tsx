@@ -42,7 +42,7 @@ const ModulTable = ({
                 accessorKey: 'nama',
                 size: 280,
                 cell: ({ row }: CellContext<IModul, unknown>) => (
-                    <span className="font-semibold">{row.original.nama}</span>
+                    <span className="font-semibold">{row.original.nama_modul}</span>
                 ),
             },
             {

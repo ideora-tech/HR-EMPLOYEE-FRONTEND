@@ -9,22 +9,19 @@ import ModulService from '@/services/modul.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { IMenu, IMenuCreate, IMenuUpdate } from '@/@types/menu.types'
-import type { IModul } from '@/@types/modul.types'
 
 const TambahMenuPage = () => {
     const router = useRouter()
     const [submitting, setSubmitting] = useState(false)
     const [menuList, setMenuList] = useState<IMenu[]>([])
-    const [modulList, setModulList] = useState<IModul[]>([])
 
     useEffect(() => {
         Promise.all([
             MenuService.getAll({ limit: 200 }),
             ModulService.getAll({ aktif: 1, limit: 100 }),
-        ]).then(([menuRes, modulRes]) => {
+        ]).then(([menuRes]) => {
             if (menuRes.success) setMenuList(menuRes.data)
-            if (modulRes.success) setModulList(modulRes.data)
-        }).catch(() => {})
+        }).catch(() => { })
     }, [])
 
     const handleSubmit = async (payload: IMenuCreate | IMenuUpdate) => {
@@ -49,7 +46,6 @@ const TambahMenuPage = () => {
     return (
         <MenuFormPage
             menuList={menuList}
-            modulList={modulList}
             submitting={submitting}
             onSubmit={handleSubmit}
             onCancel={() => router.push('/menu')}

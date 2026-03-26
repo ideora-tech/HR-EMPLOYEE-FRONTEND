@@ -274,7 +274,7 @@ const AksesModulPage = () => {
                                         >
                                             <td className="px-4 py-3 sticky left-0 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50 transition-colors z-10">
                                                 <div className="font-bold text-base text-gray-700 dark:text-gray-200 mb-1">
-                                                    {modul.nama}
+                                                    {modul.nama_modul}
                                                 </div>
                                                 <Tag className="bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-100 text-xs">
                                                     {modul.kode_modul}

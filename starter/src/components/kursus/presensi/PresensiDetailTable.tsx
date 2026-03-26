@@ -1,7 +1,6 @@
 'use client'
 
 import { Select } from '@/components/ui'
-import type { IPresensiDetail } from '@/@types/kursus.types'
 
 export type KeteranganValue = 1 | 2 | 3 | 4
 
@@ -24,8 +23,8 @@ const KET_CLASS: Record<KeteranganValue, string> = {
 export type PresensiRow = {
     id_detail: string
     id_daftar: string
-    siswa_nama: string
-    siswa_telepon: string | null
+    nama_siswa: string
+    telepon: string | null
     keterangan: KeteranganValue
     catatan: string
 }
@@ -67,10 +66,10 @@ const PresensiDetailTable = ({ rows, onChange, disabled = false }: PresensiDetai
                                 <td className="py-2 px-3 text-gray-400">{idx + 1}</td>
                                 <td className="py-2 px-3">
                                     <div className="font-medium text-gray-800 dark:text-gray-100">
-                                        {row.siswa_nama}
+                                        {row.nama_siswa}
                                     </div>
-                                    {row.siswa_telepon && (
-                                        <div className="text-xs text-gray-400">{row.siswa_telepon}</div>
+                                    {row.telepon && (
+                                        <div className="text-xs text-gray-400">{row.telepon}</div>
                                     )}
                                 </td>
                                 <td className="py-2 px-3">

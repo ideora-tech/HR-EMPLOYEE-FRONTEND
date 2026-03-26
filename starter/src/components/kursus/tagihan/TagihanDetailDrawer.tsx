@@ -196,7 +196,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged }: TagihanDetai
                             </div>
 
                             {tagihan.catatan && (
-                                <p className="text-sm text-gray-400 italic">"{tagihan.catatan}"</p>
+                                <p className="text-sm text-gray-400 italic">&quot;{tagihan.catatan}&quot;</p>
                             )}
                         </div>
                     )}

@@ -17,7 +17,7 @@ const MenuCard = ({ menu, onEdit, onDelete }: MenuCardProps) => {
             <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                     <div className="font-bold text-base text-gray-800 dark:text-gray-100 truncate">
-                        {menu.nama}
+                        {menu.nama_menu}
                     </div>
                     {menu.kode_modul ? (
                         <Tag className="mt-1 bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-100 text-xs">

@@ -23,7 +23,7 @@ interface MenuFormProps {
 }
 
 interface FormState {
-    nama: string
+    nama_menu: string
     path: string
     icon: string
     parent_id: string   // '' = root (null)
@@ -32,7 +32,7 @@ interface FormState {
 }
 
 const INITIAL_STATE: FormState = {
-    nama: '',
+    nama_menu: '',
     path: '',
     icon: '',
     parent_id: '',
@@ -63,15 +63,15 @@ const MenuForm = ({
             .map((m) => ({
                 value: m.id_menu,
                 label: m.parent_id
-                    ? `    ↳ ${m.nama}`   // indent jika sudah punya parent
-                    : m.nama,
+                    ? `    ↳ ${m.nama_menu}`   // indent jika sudah punya parent
+                    : m.nama_menu,
             })),
     ]
 
     useEffect(() => {
         if (editData) {
             setForm({
-                nama: editData.nama,
+                nama_menu: editData.nama_menu,
                 path: editData.path ?? '',
                 icon: editData.icon ?? '',
                 parent_id: editData.parent_id ?? '',
@@ -86,7 +86,7 @@ const MenuForm = ({
 
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof FormState, string>> = {}
-        if (!form.nama.trim()) newErrors.nama = 'Nama menu wajib diisi'
+        if (!form.nama_menu.trim()) newErrors.nama_menu = 'Nama menu wajib diisi'
         if (!form.urutan || Number(form.urutan) < 0)
             newErrors.urutan = 'No. urut wajib diisi (min. 0)'
         setErrors(newErrors)
@@ -100,7 +100,7 @@ const MenuForm = ({
 
         if (isEdit) {
             const payload: IMenuUpdate = {
-                nama: form.nama.trim(),
+                nama_menu: form.nama_menu.trim(),
                 path: form.path.trim() || null,
                 icon: form.icon.trim() || null,
                 parent_id: parentId,
@@ -110,7 +110,7 @@ const MenuForm = ({
             onSubmit(payload)
         } else {
             const payload: IMenuCreate = {
-                nama: form.nama.trim(),
+                nama_menu: form.nama_menu.trim(),
                 path: form.path.trim() || undefined,
                 icon: form.icon.trim() || undefined,
                 parent_id: parentId,
@@ -138,15 +138,15 @@ const MenuForm = ({
                 <FormItem
                     label="Nama Menu"
                     asterisk
-                    invalid={!!errors.nama}
-                    errorMessage={errors.nama}
+                    invalid={!!errors.nama_menu}
+                    errorMessage={errors.nama_menu}
                 >
                     <Input
                         placeholder="contoh: Dashboard, Manajemen Karyawan"
-                        value={form.nama}
-                        invalid={!!errors.nama}
+                        value={form.nama_menu}
+                        invalid={!!errors.nama_menu}
                         onChange={(e) =>
-                            setForm((p) => ({ ...p, nama: e.target.value }))
+                            setForm((p) => ({ ...p, nama_menu: e.target.value }))
                         }
                     />
                 </FormItem>

@@ -13,8 +13,8 @@ interface LokasiKantorFormProps {
 }
 
 interface FormState {
-    kode: string
-    nama: string
+    kode_lokasi: string
+    nama_lokasi: string
     alamat: string
     kota: string
     provinsi: string
@@ -24,8 +24,8 @@ interface FormState {
 }
 
 const INITIAL_STATE: FormState = {
-    kode: '',
-    nama: '',
+    kode_lokasi: '',
+    nama_lokasi: '',
     alamat: '',
     kota: '',
     provinsi: '',
@@ -49,8 +49,8 @@ const LokasiKantorForm = ({
     useEffect(() => {
         if (editData) {
             setForm({
-                kode: editData.kode,
-                nama: editData.nama,
+                kode_lokasi: editData.kode_lokasi,
+                nama_lokasi: editData.nama_lokasi,
                 alamat: editData.alamat ?? '',
                 kota: editData.kota ?? '',
                 provinsi: editData.provinsi ?? '',
@@ -66,8 +66,8 @@ const LokasiKantorForm = ({
 
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof FormState, string>> = {}
-        if (!form.kode.trim()) newErrors.kode = 'Kode lokasi wajib diisi'
-        if (!form.nama.trim()) newErrors.nama = 'Nama lokasi wajib diisi'
+        if (!form.kode_lokasi.trim()) newErrors.kode_lokasi = 'Kode lokasi wajib diisi'
+        if (!form.nama_lokasi.trim()) newErrors.nama_lokasi = 'Nama lokasi wajib diisi'
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -76,8 +76,8 @@ const LokasiKantorForm = ({
         if (!validate()) return
 
         const base: ICreateLokasiKantor = {
-            kode: form.kode.trim().toUpperCase(),
-            nama: form.nama.trim(),
+            kode_lokasi: form.kode_lokasi.trim().toUpperCase(),
+            nama_lokasi: form.nama_lokasi.trim(),
             alamat: form.alamat.trim() || undefined,
             kota: form.kota.trim() || undefined,
             provinsi: form.provinsi.trim() || undefined,
@@ -107,8 +107,8 @@ const LokasiKantorForm = ({
                 <FormItem
                     label="Kode Lokasi"
                     asterisk
-                    invalid={!!errors.kode}
-                    errorMessage={errors.kode}
+                    invalid={!!errors.kode_lokasi}
+                    errorMessage={errors.kode_lokasi}
                     extra={
                         <span className="text-xs text-gray-400">
                             Akan diubah ke huruf kapital otomatis. Contoh: JKT-HO, SBY-BR
@@ -117,11 +117,11 @@ const LokasiKantorForm = ({
                 >
                     <Input
                         placeholder="contoh: JKT-HO"
-                        value={form.kode}
-                        invalid={!!errors.kode}
+                        value={form.kode_lokasi}
+                        invalid={!!errors.kode_lokasi}
                         disabled={isEdit}
                         onChange={(e) =>
-                            setForm((p) => ({ ...p, kode: e.target.value.toUpperCase() }))
+                            setForm((p) => ({ ...p, kode_lokasi: e.target.value.toUpperCase() }))
                         }
                     />
                 </FormItem>
@@ -129,14 +129,14 @@ const LokasiKantorForm = ({
                 <FormItem
                     label="Nama Lokasi"
                     asterisk
-                    invalid={!!errors.nama}
-                    errorMessage={errors.nama}
+                    invalid={!!errors.nama_lokasi}
+                    errorMessage={errors.nama_lokasi}
                 >
                     <Input
                         placeholder="contoh: Kantor Pusat Jakarta"
-                        value={form.nama}
-                        invalid={!!errors.nama}
-                        onChange={(e) => setForm((p) => ({ ...p, nama: e.target.value }))}
+                        value={form.nama_lokasi}
+                        invalid={!!errors.nama_lokasi}
+                        onChange={(e) => setForm((p) => ({ ...p, nama_lokasi: e.target.value }))}
                     />
                 </FormItem>
 

@@ -50,10 +50,10 @@ const PaketTable = ({
             },
             {
                 header: 'Nama Paket',
-                accessorKey: 'nama',
+                accessorKey: 'nama_paket',
                 size: 280,
                 cell: ({ row }: CellContext<IPaket, unknown>) => (
-                    <span className="font-semibold">{row.original.nama}</span>
+                    <span className="font-semibold">{row.original.nama_paket}</span>
                 ),
             },
             {

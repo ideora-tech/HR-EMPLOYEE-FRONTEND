@@ -7,7 +7,7 @@ import OrgChart from '@/components/organisasi/OrgChart'
 import OrganisasiService from '@/services/organisasi.service'
 import PerusahaanService from '@/services/perusahaan.service'
 import { parseApiError } from '@/utils/parseApiError'
-import { MESSAGES, ENTITY } from '@/constants/message.constant'
+import { MESSAGES } from '@/constants/message.constant'
 import type { IOrgChartStruktur } from '@/@types/organisasi.types'
 import type { IPerusahaan } from '@/@types/perusahaan.types'
 

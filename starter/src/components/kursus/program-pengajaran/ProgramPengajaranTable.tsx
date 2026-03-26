@@ -64,10 +64,10 @@ const ProgramPengajaranTable = ({
             },
             {
                 header: 'Nama Program',
-                accessorKey: 'nama',
+                accessorKey: 'nama_program',
                 size: 280,
                 cell: ({ row }: CellContext<IProgramPengajaran, unknown>) => (
-                    <span className="font-semibold">{row.original.nama}</span>
+                    <span className="font-semibold">{row.original.nama_program}</span>
                 ),
             },
             {

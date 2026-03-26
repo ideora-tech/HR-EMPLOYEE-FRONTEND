@@ -37,19 +37,19 @@ const LokasiKantorTable = ({
             },
             {
                 header: 'Kode',
-                accessorKey: 'kode',
+                accessorKey: 'kode_lokasi',
                 size: 120,
                 cell: ({ row }: CellContext<ILokasiKantor, unknown>) => (
                     <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-1 rounded">
-                        {row.original.kode}
+                        {row.original.kode_lokasi}
                     </span>
                 ),
             },
             {
                 header: 'Nama Lokasi',
-                accessorKey: 'nama',
+                accessorKey: 'nama_lokasi',
                 cell: ({ row }: CellContext<ILokasiKantor, unknown>) => (
-                    <span className="font-semibold">{row.original.nama}</span>
+                    <span className="font-semibold">{row.original.nama_lokasi}</span>
                 ),
             },
             {

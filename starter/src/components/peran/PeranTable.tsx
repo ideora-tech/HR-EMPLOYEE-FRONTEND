@@ -39,10 +39,10 @@ const PeranTable = ({
             },
             {
                 header: 'Nama Peran',
-                accessorKey: 'nama',
+                accessorKey: 'nama_peran',
                 size: 280,
                 cell: ({ row }: CellContext<IPeran, unknown>) => (
-                    <span className="font-semibold">{row.original.nama}</span>
+                    <span className="font-semibold">{row.original.nama_peran}</span>
                 ),
             },
             {

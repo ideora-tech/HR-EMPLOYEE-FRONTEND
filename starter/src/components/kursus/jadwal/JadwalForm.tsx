@@ -64,7 +64,7 @@ interface JadwalFormProps {
 
 interface FormState {
     id_program: string
-    nama: string
+    nama_jadwal: string
     tanggal_mulai: Date | null
     tanggal_selesai: Date | null
     jam_mulai: string
@@ -77,7 +77,7 @@ interface FormState {
 
 const INITIAL_STATE: FormState = {
     id_program: '',
-    nama: '',
+    nama_jadwal: '',
     tanggal_mulai: null,
     tanggal_selesai: null,
     jam_mulai: '08:00',
@@ -112,7 +112,7 @@ const JadwalForm = ({
             if (res.success) {
                 setInstrukturOptions([
                     { value: '', label: '— Tanpa Instruktur —' },
-                    ...res.data.map((k) => ({ value: k.nama, label: k.nama })),
+                    ...res.data.map((k) => ({ value: k.nama_karyawan, label: k.nama_karyawan })),
                 ])
             }
         } catch {
@@ -132,7 +132,7 @@ const JadwalForm = ({
         { value: '', label: '— Pilih Program —' },
         ...programList.map((p) => ({
             value: p.id_program,
-            label: `${p.kode_program} — ${p.nama}`,
+            label: `${p.kode_program} — ${p.nama_program}`,
         })),
     ]
 
@@ -140,7 +140,7 @@ const JadwalForm = ({
         if (editData) {
             setForm({
                 id_program: editData.id_program,
-                nama: editData.nama,
+                nama_jadwal: editData.nama_jadwal,
                 tanggal_mulai: isoToDate(editData.tanggal_mulai),
                 tanggal_selesai: isoToDate(editData.tanggal_selesai),
                 jam_mulai: isoToTime(editData.tanggal_mulai) || '08:00',
@@ -159,7 +159,7 @@ const JadwalForm = ({
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof FormState, string>> = {}
         if (!form.id_program) newErrors.id_program = 'Program wajib dipilih'
-        if (!form.nama.trim()) newErrors.nama = 'Nama kelas wajib diisi'
+        if (!form.nama_jadwal.trim()) newErrors.nama_jadwal = 'Nama kelas wajib diisi'
         if (!form.tanggal_mulai || !form.tanggal_selesai)
             newErrors.tanggal_mulai = 'Periode jadwal wajib diisi'
         if (!form.jam_mulai) newErrors.jam_mulai = 'Jam mulai wajib diisi'
@@ -176,7 +176,7 @@ const JadwalForm = ({
         if (isEdit) {
             const updatePayload: IUpdateJadwalKelas = {
                 id_program: form.id_program,
-                nama: form.nama.trim(),
+                nama_jadwal: form.nama_jadwal.trim(),
                 tanggal_mulai: toDateTime(form.tanggal_mulai!, form.jam_mulai),
                 tanggal_selesai: toDateTime(form.tanggal_selesai!, form.jam_selesai),
                 instruktur: form.instruktur.trim() || undefined,
@@ -188,7 +188,7 @@ const JadwalForm = ({
         } else {
             const createPayload: ICreateJadwalKelas = {
                 id_program: form.id_program,
-                nama: form.nama.trim(),
+                nama_jadwal: form.nama_jadwal.trim(),
                 tanggal_mulai: dateToYMD(form.tanggal_mulai!),
                 tanggal_selesai: dateToYMD(form.tanggal_selesai!),
                 jam_mulai: form.jam_mulai,
@@ -232,14 +232,14 @@ const JadwalForm = ({
                 <FormItem
                     label="Nama Kelas"
                     asterisk
-                    invalid={!!errors.nama}
-                    errorMessage={errors.nama}
+                    invalid={!!errors.nama_jadwal}
+                    errorMessage={errors.nama_jadwal}
                 >
                     <Input
                         placeholder="contoh: Tari Bali Kelas Pagi"
-                        value={form.nama}
-                        invalid={!!errors.nama}
-                        onChange={(e) => setForm((p) => ({ ...p, nama: e.target.value }))}
+                        value={form.nama_jadwal}
+                        invalid={!!errors.nama_jadwal}
+                        onChange={(e) => setForm((p) => ({ ...p, nama_jadwal: e.target.value }))}
                     />
                 </FormItem>
 

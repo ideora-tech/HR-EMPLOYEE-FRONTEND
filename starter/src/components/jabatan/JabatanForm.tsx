@@ -56,14 +56,14 @@ const JabatanForm = ({
 
     const departemenOptions: SelectOption[] = [
         { value: '', label: 'Tanpa Departemen' },
-        ...departemenList.map((d) => ({ value: d.id_departemen, label: d.nama })),
+        ...departemenList.map((d) => ({ value: d.id_departemen, label: d.nama_departemen })),
     ]
 
     useEffect(() => {
         if (editData) {
             setForm({
-                kode: editData.kode,
-                nama: editData.nama,
+                kode: editData.kode_jabatan,
+                nama: editData.nama_jabatan,
                 id_departemen: editData.id_departemen ?? '',
                 level: editData.level != null ? String(editData.level) : '',
                 deskripsi: editData.deskripsi ?? '',
@@ -87,8 +87,8 @@ const JabatanForm = ({
         if (!validate()) return
 
         const base: ICreateJabatan = {
-            kode: form.kode.trim().toUpperCase(),
-            nama: form.nama.trim(),
+            kode_jabatan: form.kode.trim().toUpperCase(),
+            nama_jabatan: form.nama.trim(),
             id_departemen: form.id_departemen || undefined,
             level: form.level ? Number(form.level) : undefined,
             deskripsi: form.deskripsi.trim() || undefined,

@@ -30,7 +30,7 @@ interface ProgramPengajaranFormPageProps {
 
 interface FormState {
     kode_program: string
-    nama: string
+    nama_program: string
     deskripsi: string
     tingkat: string
     durasi_menit: string
@@ -39,7 +39,7 @@ interface FormState {
 
 const INITIAL_STATE: FormState = {
     kode_program: '',
-    nama: '',
+    nama_program: '',
     deskripsi: '',
     tingkat: '',
     durasi_menit: '60',
@@ -78,7 +78,7 @@ const ProgramPengajaranFormPage = ({
         if (editData) {
             setForm({
                 kode_program: editData.kode_program,
-                nama: editData.nama_program,
+                nama_program: editData.nama_program,
                 deskripsi: editData.deskripsi ?? '',
                 tingkat: editData.tingkat ?? '',
                 durasi_menit: String(editData.durasi_menit ?? 60),
@@ -93,7 +93,7 @@ const ProgramPengajaranFormPage = ({
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof FormState, string>> = {}
         if (!form.kode_program.trim()) newErrors.kode_program = 'Kode program wajib diisi'
-        if (!form.nama.trim()) newErrors.nama = 'Nama program wajib diisi'
+        if (!form.nama_program.trim()) newErrors.nama_program = 'Nama program wajib diisi'
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -103,7 +103,7 @@ const ProgramPengajaranFormPage = ({
 
         const base = {
             kode_program: form.kode_program.trim().toUpperCase(),
-            nama_program: form.nama.trim(),
+            nama_program: form.nama_program.trim(),
             deskripsi: form.deskripsi.trim() || undefined,
             tingkat: form.tingkat || undefined,
             durasi_menit: form.durasi_menit ? Number(form.durasi_menit) : undefined,
@@ -183,15 +183,15 @@ const ProgramPengajaranFormPage = ({
                             <FormItem
                                 label="Nama Program"
                                 asterisk
-                                invalid={!!errors.nama}
-                                errorMessage={errors.nama}
+                                invalid={!!errors.nama_program}
+                                errorMessage={errors.nama_program}
                             >
                                 <Input
                                     placeholder="contoh: Tari Bali Tingkat Dasar"
-                                    value={form.nama}
-                                    invalid={!!errors.nama}
+                                    value={form.nama_program}
+                                    invalid={!!errors.nama_program}
                                     onChange={(e) =>
-                                        setForm((p) => ({ ...p, nama: e.target.value }))
+                                        setForm((p) => ({ ...p, nama_program: e.target.value }))
                                     }
                                 />
                             </FormItem>

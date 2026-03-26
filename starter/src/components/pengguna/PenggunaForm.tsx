@@ -74,7 +74,7 @@ const PenggunaForm = ({
 }: PenggunaFormProps) => {
     const peranOptions: PeranOption[] = peranList.map((p) => ({
         value: p.kode_peran,
-        label: p.nama,
+        label: p.nama_peran,
     }))
     const [form, setForm] = useState<FormState>(INITIAL_STATE)
     const [errors, setErrors] = useState<FormErrors>({})
@@ -86,7 +86,7 @@ const PenggunaForm = ({
     useEffect(() => {
         if (editData) {
             setForm({
-                username: editData.nama,
+                username: editData.nama_pengguna,
                 kata_sandi: '',
                 konfirmasi_sandi: '',
                 peran: editData.peran,
@@ -131,7 +131,7 @@ const PenggunaForm = ({
 
         if (isEdit) {
             const payload: IPenggunaUpdate = {
-                nama: form.username.trim(),
+                nama_pengguna: form.username.trim(),
                 peran: form.peran,
                 aktif: form.aktif ? 1 : 0,
             }
@@ -141,7 +141,7 @@ const PenggunaForm = ({
             onSubmit(payload)
         } else {
             const payload: IPenggunaCreate = {
-                nama: form.username.trim(),
+                nama_pengguna: form.username.trim(),
                 kata_sandi: form.kata_sandi.trim(),
                 peran: form.peran,
                 aktif: form.aktif ? 1 : 0,

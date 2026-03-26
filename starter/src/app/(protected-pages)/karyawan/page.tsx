@@ -297,7 +297,7 @@ const KaryawanPage = () => {
                 <p className="text-sm">
                     Karyawan{' '}
                     <span className="font-semibold">
-                        &ldquo;{deleteTarget?.nama}&rdquo;
+                        &ldquo;{deleteTarget?.nama_karyawan}&rdquo;
                     </span>{' '}
                     akan dihapus secara permanen. Tindakan ini tidak dapat
                     dibatalkan.

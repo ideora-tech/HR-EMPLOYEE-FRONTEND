@@ -39,7 +39,7 @@ const PenggunaCard = ({ pengguna, onEdit, onDelete }: PenggunaCardProps) => {
                 </Tag>
             </div>
 
-            <h6 className="font-bold mb-1">{pengguna.nama}</h6>
+            <h6 className="font-bold mb-1">{pengguna.nama_pengguna}</h6>
             <p className="text-sm text-gray-400 mb-4">{pengguna.email}</p>
 
             <div className="flex gap-2">

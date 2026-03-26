@@ -78,7 +78,7 @@ const KaryawanTable = ({
                 accessorKey: 'nama',
                 size: 220,
                 cell: ({ row }: CellContext<IKaryawan, unknown>) => {
-                    const initials = row.original.nama
+                    const initials = row.original.nama_karyawan
                         .split(' ')
                         .slice(0, 2)
                         .map((w) => w[0])
@@ -90,7 +90,7 @@ const KaryawanTable = ({
                                 {initials}
                             </div>
                             <span className="font-semibold">
-                                {row.original.nama}
+                                {row.original.nama_karyawan}
                             </span>
                         </div>
                     )

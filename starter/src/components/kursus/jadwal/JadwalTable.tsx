@@ -7,10 +7,6 @@ import { HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
 import type { IJadwalKelas } from '@/@types/kursus.types'
 
-const HARI_MAP: Record<number, string> = {
-    1: 'Senin', 2: 'Selasa', 3: 'Rabu', 4: 'Kamis',
-    5: 'Jumat', 6: 'Sabtu', 7: 'Minggu',
-}
 
 interface JadwalTableProps {
     data: IJadwalKelas[]
@@ -41,24 +37,11 @@ const JadwalTable = ({
                     (pagingData.pageIndex - 1) * pagingData.pageSize + row.index + 1,
             },
             {
-                header: 'Nama Kelas',
-                accessorKey: 'nama',
+                header: 'Nama Jadwal',
+                accessorKey: 'nama_jadwal',
                 size: 200,
                 cell: ({ row }: CellContext<IJadwalKelas, unknown>) => (
-                    <span className="font-semibold">{row.original.nama}</span>
-                ),
-            },
-            {
-                header: 'Hari & Waktu',
-                id: 'waktu',
-                size: 200,
-                cell: ({ row }: CellContext<IJadwalKelas, unknown>) => (
-                    <div>
-                        <div className="font-medium">{HARI_MAP[row.original.hari] ?? '-'}</div>
-                        <div className="text-sm text-gray-500">
-                            {row.original.jam_mulai} – {row.original.jam_selesai}
-                        </div>
-                    </div>
+                    <span className="font-semibold">{row.original.nama_jadwal}</span>
                 ),
             },
             {
