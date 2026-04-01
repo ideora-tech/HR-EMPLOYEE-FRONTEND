@@ -5,19 +5,19 @@ import DataTable from '@/components/shared/DataTable'
 import { Tag, Tooltip } from '@/components/ui'
 import { HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
-import type { ITingkatProgram } from '@/@types/kursus.types'
+import type { IKategoriUmur } from '@/@types/kursus.types'
 
-interface TingkatProgramTableProps {
-    data: ITingkatProgram[]
+interface KategoriUmurTableProps {
+    data: IKategoriUmur[]
     loading?: boolean
     pagingData: { total: number; pageIndex: number; pageSize: number }
     onPaginationChange: (page: number) => void
     onSelectChange: (pageSize: number) => void
-    onEdit: (item: ITingkatProgram) => void
-    onDelete: (item: ITingkatProgram) => void
+    onEdit: (item: IKategoriUmur) => void
+    onDelete: (item: IKategoriUmur) => void
 }
 
-const TingkatProgramTable = ({
+const KategoriUmurTable = ({
     data,
     loading = false,
     pagingData,
@@ -25,49 +25,49 @@ const TingkatProgramTable = ({
     onSelectChange,
     onEdit,
     onDelete,
-}: TingkatProgramTableProps) => {
-    const columns: ColumnDef<ITingkatProgram>[] = useMemo(
+}: KategoriUmurTableProps) => {
+    const columns: ColumnDef<IKategoriUmur>[] = useMemo(
         () => [
             {
                 header: 'No',
                 id: 'no',
-                size: 70,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) =>
-                    (pagingData.pageIndex - 1) * pagingData.pageSize +
-                    row.index +
-                    1,
+                size: 60,
+                cell: ({ row }: CellContext<IKategoriUmur, unknown>) =>
+                    (pagingData.pageIndex - 1) * pagingData.pageSize + row.index + 1,
             },
             {
-                header: 'Kode',
-                accessorKey: 'kode_tingkat',
-                size: 160,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
-                    <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-1 rounded">
-                        {row.original.kode_tingkat}
-                    </span>
+                header: 'Nama Kategori',
+                accessorKey: 'nama_kategori_umur',
+                cell: ({ row }: CellContext<IKategoriUmur, unknown>) => (
+                    <span className="font-semibold">{row.original.nama_kategori_umur}</span>
                 ),
             },
             {
-                header: 'Nama Paket',
-                accessorKey: 'nama_tingkat',
-                size: 280,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
-                    <span className="font-semibold">{row.original.nama_tingkat}</span>
-                ),
+                header: 'Kelas',
+                accessorKey: 'nama_kelas',
+                size: 140,
+                cell: ({ row }: CellContext<IKategoriUmur, unknown>) =>
+                    row.original.nama_kelas ?? '-',
             },
-            // {
-            //     header: 'Urutan',
-            //     accessorKey: 'urutan',
-            //     size: 120,
-            //     cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
-            //         <span>{row.original.urutan}</span>
-            //     ),
-            // },
+            {
+                header: 'Paket',
+                accessorKey: 'nama_paket',
+                size: 140,
+                cell: ({ row }: CellContext<IKategoriUmur, unknown>) =>
+                    row.original.nama_paket ?? '-',
+            },
+            {
+                header: 'Durasi (bulan)',
+                accessorKey: 'durasi',
+                size: 130,
+                cell: ({ row }: CellContext<IKategoriUmur, unknown>) =>
+                    row.original.durasi != null ? `${row.original.durasi} bulan` : '-',
+            },
             {
                 header: 'Status',
                 accessorKey: 'aktif',
-                size: 120,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
+                size: 110,
+                cell: ({ row }: CellContext<IKategoriUmur, unknown>) => (
                     <Tag
                         className={
                             row.original.aktif === 1
@@ -83,7 +83,7 @@ const TingkatProgramTable = ({
                 header: '',
                 id: 'action',
                 size: 100,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
+                cell: ({ row }: CellContext<IKategoriUmur, unknown>) => (
                     <div className="flex items-center justify-end gap-2">
                         <Tooltip title="Edit">
                             <span
@@ -121,4 +121,4 @@ const TingkatProgramTable = ({
     )
 }
 
-export default TingkatProgramTable
+export default KategoriUmurTable

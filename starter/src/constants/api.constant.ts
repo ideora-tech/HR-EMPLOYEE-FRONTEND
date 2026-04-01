@@ -102,57 +102,53 @@ export const API_ENDPOINTS = {
     // Kursus Dansa
     KURSUS: {
         DASHBOARD: {
-            SUMMARY: `${PROXY}/kursus/dashboard/summary`,
+            BASE: `${PROXY}/kursus/dashboard`,
         },
-        TINGKAT: {
-            BASE: `${PROXY}/kursus/tingkat-program`,
-            BY_ID: (id: string) => `${PROXY}/kursus/tingkat-program/${id}`,
+        KELAS: {
+            BASE: `${PROXY}/kursus/kelas`,
+            BY_ID: (id: string) => `${PROXY}/kursus/kelas/${id}`,
         },
-        SISWA: {
-            BASE: `${PROXY}/kursus/siswa`,
-            BY_ID: (id: string) => `${PROXY}/kursus/siswa/${id}`,
-            IMPORT: `${PROXY}/kursus/siswa/upload/excel`,
-            TEMPLATE: `${PROXY}/kursus/siswa/template/excel`,
-            MONITORING: `${PROXY}/kursus/siswa/monitoring`,
+        PAKET: {
+            BASE: `${PROXY}/kursus/paket`,
+            BY_ID: (id: string) => `${PROXY}/kursus/paket/${id}`,
+            BY_KELAS: (idKelas: string) => `${PROXY}/kursus/paket/kelas/${idKelas}`,
         },
-        PROGRAM: {
-            BASE: `${PROXY}/kursus/program-pengajaran`,
-            BY_ID: (id: string) => `${PROXY}/kursus/program-pengajaran/${id}`,
+        KATEGORI_UMUR: {
+            BASE: `${PROXY}/kursus/kategori-umur`,
+            BY_ID: (id: string) => `${PROXY}/kursus/kategori-umur/${id}`,
+            BY_KELAS: (idKelas: string) => `${PROXY}/kursus/kategori-umur/kelas/${idKelas}`,
+            BY_PAKET: (idPaket: string) => `${PROXY}/kursus/kategori-umur/paket/${idPaket}`,
         },
-        TARIF: {
-            BASE: `${PROXY}/kursus/tarif`,
-            BY_ID: (id: string) => `${PROXY}/kursus/tarif/${id}`,
-            BY_PROGRAM: (idProgram: string) =>
-                `${PROXY}/kursus/tarif/program/${idProgram}`,
+        BIAYA: {
+            BASE: `${PROXY}/kursus/biaya`,
+            BY_ID: (id: string) => `${PROXY}/kursus/biaya/${id}`,
+            BY_KELAS: (idKelas: string) => `${PROXY}/kursus/biaya/kelas/${idKelas}`,
+            BY_PAKET: (idPaket: string) => `${PROXY}/kursus/biaya/paket/${idPaket}`,
+            BY_KATEGORI_UMUR: (idKategori: string) =>
+                `${PROXY}/kursus/biaya/kategori-umur/${idKategori}`,
+        },
+        DISKON: {
+            BASE: `${PROXY}/kursus/diskon`,
+            BY_ID: (id: string) => `${PROXY}/kursus/diskon/${id}`,
+            AKTIF: `${PROXY}/kursus/diskon/aktif`,
         },
         JADWAL: {
             BASE: `${PROXY}/kursus/jadwal-kelas`,
             BY_ID: (id: string) => `${PROXY}/kursus/jadwal-kelas/${id}`,
-            KUOTA: (id: string) => `${PROXY}/kursus/jadwal-kelas/${id}/kuota`,
-            EXPORT_EXCEL: (bulan: string) => `${PROXY}/kursus/jadwal-kelas/export/excel?bulan=${bulan}`,
-
-            EXPORT: (weekStart: string, weekEnd: string) =>
-                `${PROXY}/kursus/jadwal-kelas/export?week_start=${weekStart}&week_end=${weekEnd}`,
+            BY_KELAS: (idKelas: string) => `${PROXY}/kursus/jadwal-kelas/kelas/${idKelas}`,
+            EXPORT_EXCEL: `${PROXY}/kursus/jadwal-kelas/export/excel`,
         },
-        DAFTAR: {
-            BASE: `${PROXY}/kursus/daftar-kelas`,
-            BY_ID: (id: string) => `${PROXY}/kursus/daftar-kelas/${id}`,
-            BY_SISWA: (idSiswa: string) =>
-                `${PROXY}/kursus/daftar-kelas/siswa/${idSiswa}`,
-            BY_JADWAL: (idJadwal: string) =>
-                `${PROXY}/kursus/daftar-kelas/jadwal/${idJadwal}`,
-        },
-        PRESENSI: {
-            BASE: `${PROXY}/kursus/presensi`,
-            BY_ID: (id: string) => `${PROXY}/kursus/presensi/${id}`,
-            BY_JADWAL: (idJadwal: string) => `${PROXY}/kursus/presensi/jadwal/${idJadwal}`,
-            BATCH: `${PROXY}/kursus/presensi/batch`,
+        SISWA: {
+            BASE: `${PROXY}/kursus/siswa`,
+            BY_ID: (id: string) => `${PROXY}/kursus/siswa/${id}`,
+            TUNGGAKAN: `${PROXY}/kursus/siswa/tunggakan`,
+            IMPORT: `${PROXY}/kursus/siswa/upload/excel`,
+            TEMPLATE: `${PROXY}/kursus/siswa/template/excel`,
         },
         TAGIHAN: {
             BASE: `${PROXY}/kursus/tagihan`,
             BY_ID: (id: string) => `${PROXY}/kursus/tagihan/${id}`,
             BY_SISWA: (idSiswa: string) => `${PROXY}/kursus/tagihan/siswa/${idSiswa}`,
-            GENERATE_BULANAN: `${PROXY}/kursus/tagihan/generate-bulanan`,
         },
         PEMBAYARAN: {
             BASE: `${PROXY}/kursus/pembayaran`,

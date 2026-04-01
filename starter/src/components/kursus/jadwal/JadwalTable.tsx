@@ -32,44 +32,58 @@ const JadwalTable = ({
             {
                 header: 'No',
                 id: 'no',
-                size: 70,
+                size: 60,
                 cell: ({ row }: CellContext<IJadwalKelas, unknown>) =>
                     (pagingData.pageIndex - 1) * pagingData.pageSize + row.index + 1,
             },
             {
-                header: 'Nama Jadwal',
-                accessorKey: 'nama_jadwal',
-                size: 200,
+                header: 'Kelas',
+                accessorKey: 'nama_kelas',
+                size: 150,
                 cell: ({ row }: CellContext<IJadwalKelas, unknown>) => (
-                    <span className="font-semibold">{row.original.nama_jadwal}</span>
+                    <span className="font-semibold">{row.original.nama_kelas}</span>
                 ),
             },
             {
                 header: 'Instruktur',
-                accessorKey: 'instruktur',
-                size: 160,
+                accessorKey: 'nama_karyawan',
+                size: 150,
                 cell: ({ row }: CellContext<IJadwalKelas, unknown>) =>
-                    row.original.instruktur ?? '-',
+                    row.original.nama_karyawan,
             },
             {
-                header: 'Lokasi',
-                accessorKey: 'lokasi',
-                size: 160,
+                header: 'Kategori Umur',
+                accessorKey: 'nama_kategori_umur',
+                size: 140,
                 cell: ({ row }: CellContext<IJadwalKelas, unknown>) =>
-                    row.original.lokasi ?? '-',
+                    row.original.nama_kategori_umur,
             },
             {
-                header: 'Kuota',
-                accessorKey: 'kuota',
+                header: 'Hari',
+                accessorKey: 'hari',
                 size: 100,
+                cell: ({ row }: CellContext<IJadwalKelas, unknown>) =>
+                    row.original.hari,
+            },
+            {
+                header: 'Jam',
+                id: 'jam',
+                size: 120,
+                cell: ({ row }: CellContext<IJadwalKelas, unknown>) =>
+                    `${row.original.jam_mulai} – ${row.original.jam_selesai}`,
+            },
+            {
+                header: 'Sesi',
+                accessorKey: 'sesi_pertemuan',
+                size: 80,
                 cell: ({ row }: CellContext<IJadwalKelas, unknown>) => (
-                    <span className="font-medium">{row.original.kuota}</span>
+                    <span className="font-medium">{row.original.sesi_pertemuan}x</span>
                 ),
             },
             {
                 header: 'Status',
                 accessorKey: 'aktif',
-                size: 120,
+                size: 110,
                 cell: ({ row }: CellContext<IJadwalKelas, unknown>) => (
                     <Tag
                         className={

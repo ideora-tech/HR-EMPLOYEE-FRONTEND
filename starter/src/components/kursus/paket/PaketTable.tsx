@@ -5,19 +5,19 @@ import DataTable from '@/components/shared/DataTable'
 import { Tag, Tooltip } from '@/components/ui'
 import { HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
-import type { ITingkatProgram } from '@/@types/kursus.types'
+import type { IPaket } from '@/@types/kursus.types'
 
-interface TingkatProgramTableProps {
-    data: ITingkatProgram[]
+interface PaketTableProps {
+    data: IPaket[]
     loading?: boolean
     pagingData: { total: number; pageIndex: number; pageSize: number }
     onPaginationChange: (page: number) => void
     onSelectChange: (pageSize: number) => void
-    onEdit: (item: ITingkatProgram) => void
-    onDelete: (item: ITingkatProgram) => void
+    onEdit: (item: IPaket) => void
+    onDelete: (item: IPaket) => void
 }
 
-const TingkatProgramTable = ({
+const PaketTable = ({
     data,
     loading = false,
     pagingData,
@@ -25,49 +25,46 @@ const TingkatProgramTable = ({
     onSelectChange,
     onEdit,
     onDelete,
-}: TingkatProgramTableProps) => {
-    const columns: ColumnDef<ITingkatProgram>[] = useMemo(
+}: PaketTableProps) => {
+    const columns: ColumnDef<IPaket>[] = useMemo(
         () => [
             {
                 header: 'No',
                 id: 'no',
-                size: 70,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) =>
-                    (pagingData.pageIndex - 1) * pagingData.pageSize +
-                    row.index +
-                    1,
+                size: 60,
+                cell: ({ row }: CellContext<IPaket, unknown>) =>
+                    (pagingData.pageIndex - 1) * pagingData.pageSize + row.index + 1,
             },
             {
-                header: 'Kode',
-                accessorKey: 'kode_tingkat',
+                header: 'Nama Paket',
+                accessorKey: 'nama_paket',
+                cell: ({ row }: CellContext<IPaket, unknown>) => (
+                    <span className="font-semibold">{row.original.nama_paket}</span>
+                ),
+            },
+            {
+                header: 'Kelas',
+                accessorKey: 'nama_kelas',
                 size: 160,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
-                    <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-1 rounded">
-                        {row.original.kode_tingkat}
+                cell: ({ row }: CellContext<IPaket, unknown>) =>
+                    row.original.nama_kelas ?? '-',
+            },
+            {
+                header: 'Deskripsi',
+                accessorKey: 'deskripsi',
+                cell: ({ row }: CellContext<IPaket, unknown>) => (
+                    <span className="text-gray-500">
+                        {row.original.deskripsi ?? (
+                            <span className="italic text-gray-300">—</span>
+                        )}
                     </span>
                 ),
             },
             {
-                header: 'Nama Paket',
-                accessorKey: 'nama_tingkat',
-                size: 280,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
-                    <span className="font-semibold">{row.original.nama_tingkat}</span>
-                ),
-            },
-            // {
-            //     header: 'Urutan',
-            //     accessorKey: 'urutan',
-            //     size: 120,
-            //     cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
-            //         <span>{row.original.urutan}</span>
-            //     ),
-            // },
-            {
                 header: 'Status',
                 accessorKey: 'aktif',
-                size: 120,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
+                size: 110,
+                cell: ({ row }: CellContext<IPaket, unknown>) => (
                     <Tag
                         className={
                             row.original.aktif === 1
@@ -83,7 +80,7 @@ const TingkatProgramTable = ({
                 header: '',
                 id: 'action',
                 size: 100,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
+                cell: ({ row }: CellContext<IPaket, unknown>) => (
                     <div className="flex items-center justify-end gap-2">
                         <Tooltip title="Edit">
                             <span
@@ -121,4 +118,4 @@ const TingkatProgramTable = ({
     )
 }
 
-export default TingkatProgramTable
+export default PaketTable

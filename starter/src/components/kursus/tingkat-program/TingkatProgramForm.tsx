@@ -66,10 +66,10 @@ const TingkatProgramForm = ({
         const newErrors: Partial<Record<keyof FormState, string>> = {}
         if (!form.kode_tingkat.trim()) newErrors.kode_tingkat = 'Kode tingkat wajib diisi'
         if (!form.nama_tingkat.trim()) newErrors.nama_tingkat = 'Nama tingkat wajib diisi'
-        const urutan = Number(form.urutan)
-        if (!form.urutan || isNaN(urutan) || urutan < 1)
-            newErrors.urutan = 'Urutan harus berupa angka lebih dari 0'
-        setErrors(newErrors)
+        // const urutan = Number(form.urutan)
+        // if (!form.urutan || isNaN(urutan) || urutan < 1)
+        //     newErrors.urutan = 'Urutan harus berupa angka lebih dari 0'
+        // setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
 
@@ -142,7 +142,7 @@ const TingkatProgramForm = ({
                     />
                 </FormItem>
 
-                <FormItem
+                {/* <FormItem
                     label="Urutan Tampil"
                     asterisk
                     invalid={!!errors.urutan}
@@ -163,7 +163,7 @@ const TingkatProgramForm = ({
                             setForm((p) => ({ ...p, urutan: e.target.value }))
                         }
                     />
-                </FormItem>
+                </FormItem> */}
 
                 {isEdit && (
                     <FormItem label="Status Tingkat">

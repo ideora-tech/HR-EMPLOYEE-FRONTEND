@@ -37,9 +37,182 @@ export interface IKursusQuery {
     aktif?: number
     page?: number
     limit?: number
-    week_start?: string
-    week_end?: string
 }
+
+// ─── Kelas ────────────────────────────────────────────────────────────────────
+// Table: kursus_kelas | PK: id_kelas (UUID)
+
+export interface IKelas {
+    id_kelas: string               // UUID
+    nama_kelas: string
+    deskripsi: string | null
+    aktif: number                  // 1 = aktif, 0 = nonaktif
+    dibuat_pada: string
+    diubah_pada: string | null
+}
+
+export interface ICreateKelas {
+    nama_kelas: string
+    deskripsi?: string
+    aktif?: 0 | 1
+}
+
+export type IUpdateKelas = Partial<ICreateKelas>
+
+// ─── Paket ────────────────────────────────────────────────────────────────────
+// Table: kursus_paket | PK: id_paket (UUID) | FK: id_kelas
+
+export interface IPaket {
+    id_paket: string               // UUID
+    id_kelas: string
+    nama_kelas?: string            // joined dari kelas
+    nama_paket: string
+    deskripsi: string | null
+    aktif: number
+    dibuat_pada: string
+    diubah_pada: string | null
+}
+
+export interface ICreatePaket {
+    id_kelas: string
+    nama_paket: string
+    deskripsi?: string
+    aktif?: 0 | 1
+}
+
+export type IUpdatePaket = Partial<ICreatePaket>
+
+// ─── Kategori Umur ────────────────────────────────────────────────────────────
+// Table: kursus_kategori_umur | PK: id_kategori_umur (UUID) | FK: id_paket, id_kelas
+
+export interface IKategoriUmur {
+    id_kategori_umur: string       // UUID
+    id_kelas: string
+    id_paket: string
+    nama_kelas?: string            // joined
+    nama_paket?: string            // joined
+    nama_kategori_umur: string     // contoh: "3-6 Tahun", "7-12 Tahun"
+    durasi: number | null          // durasi dalam bulan
+    deskripsi: string | null
+    aktif: number
+    dibuat_pada: string
+    diubah_pada: string | null
+}
+
+export interface ICreateKategoriUmur {
+    id_kelas: string
+    id_paket: string
+    nama_kategori_umur: string
+    durasi?: number
+    deskripsi?: string
+    aktif?: 0 | 1
+}
+
+export type IUpdateKategoriUmur = Partial<ICreateKategoriUmur>
+
+// ─── Biaya ────────────────────────────────────────────────────────────────────
+// Table: kursus_biaya | PK: id_biaya (UUID) | FK: id_kategori_umur, id_paket, id_kelas
+
+export type JenisBiaya = 'PENDAFTARAN' | 'BULANAN' | 'LAINNYA'
+
+export interface IBiaya {
+    id_biaya: string               // UUID
+    id_kelas: string
+    id_paket: string
+    id_kategori_umur: string
+    nama_kelas?: string            // joined
+    nama_paket?: string            // joined
+    nama_kategori_umur?: string    // joined
+    jenis_biaya: JenisBiaya
+    nama_biaya: string             // contoh: "Biaya Bulanan"
+    harga_biaya: number            // integer rupiah
+    deskripsi: string | null
+    aktif: number
+    dibuat_pada: string
+    diubah_pada: string | null
+}
+
+export interface ICreateBiaya {
+    id_kelas?: string
+    id_paket?: string
+    id_kategori_umur?: string
+    jenis_biaya: JenisBiaya
+    nama_biaya: string
+    harga_biaya: number
+    deskripsi?: string
+    aktif?: 0 | 1
+}
+
+export type IUpdateBiaya = Partial<ICreateBiaya>
+
+// ─── Diskon ───────────────────────────────────────────────────────────────────
+// Table: kursus_diskon | PK: id_diskon (UUID)
+
+export interface IDiskon {
+    id_diskon: string              // UUID
+    kode_diskon: string            // unik, maks 20 karakter
+    nama_diskon: string
+    persentase: number | null      // 0-100, decimal
+    harga: number | null           // diskon nominal (rupiah)
+    berlaku_mulai: string | null   // "YYYY-MM-DD"
+    berlaku_sampai: string | null  // "YYYY-MM-DD"
+    deskripsi: string | null
+    aktif: number
+    dibuat_pada: string
+    diubah_pada: string | null
+}
+
+export interface ICreateDiskon {
+    kode_diskon: string
+    nama_diskon: string
+    persentase?: number
+    harga?: number
+    berlaku_mulai?: string
+    berlaku_sampai?: string
+    deskripsi?: string
+    aktif?: 0 | 1
+}
+
+export type IUpdateDiskon = Partial<ICreateDiskon>
+
+// ─── Jadwal Kelas ─────────────────────────────────────────────────────────────
+// Table: kursus_jadwal_kelas | PK: id_jadwal_kelas (UUID)
+
+export interface IJadwalKelas {
+    id_jadwal_kelas: string        // UUID
+    id_kelas: string
+    nama_kelas: string
+    id_karyawan: string
+    nama_karyawan: string
+    id_kategori_umur: string
+    nama_kategori_umur: string
+    hari: string                   // "Senin" | "Selasa" | "Rabu" | "Kamis" | "Jumat" | "Sabtu" | "Minggu"
+    jam_mulai: string              // "HH:MM"
+    jam_selesai: string            // "HH:MM"
+    tanggal_mulai: string          // "YYYY-MM-DD"
+    tanggal_selesai: string        // "YYYY-MM-DD"
+    sesi_pertemuan: number
+    deskripsi: string | null
+    aktif: number
+    dibuat_pada?: string
+    diubah_pada?: string | null
+}
+
+export interface ICreateJadwalKelas {
+    id_kelas: string
+    id_karyawan: string
+    id_kategori_umur: string
+    hari: string
+    jam_mulai: string              // "HH:MM"
+    jam_selesai: string            // "HH:MM"
+    tanggal_mulai: string          // "YYYY-MM-DD" atau DATETIME
+    tanggal_selesai: string        // "YYYY-MM-DD" atau DATETIME
+    sesi_pertemuan: number
+    deskripsi?: string
+    aktif?: 0 | 1
+}
+
+export type IUpdateJadwalKelas = Partial<ICreateJadwalKelas>
 
 // ─── Siswa ────────────────────────────────────────────────────────────────────
 
@@ -48,13 +221,22 @@ export interface ISiswa {
     nama_siswa: string
     email: string | null
     telepon: string | null
-    tanggal_lahir: string | null   // ISO date string: "2000-01-15"
+    tanggal_lahir: string | null   // "YYYY-MM-DD"
     alamat: string | null
     jenis_kelamin: number | null   // 1 = Laki-laki, 2 = Perempuan
     foto_url: string | null
-    aktif: number                  // 1 = aktif, 0 = nonaktif
+    aktif: number
     dibuat_pada: string
     diubah_pada: string | null
+}
+
+export interface ISiswaTunggakan {
+    id_siswa: string
+    nama_siswa: string
+    email: string | null
+    telepon: string | null
+    jumlah_tagihan_belum_lunas: number
+    total_tunggakan: number
 }
 
 export interface ICreateSiswa {
@@ -69,47 +251,122 @@ export interface ICreateSiswa {
 
 export type IUpdateSiswa = Partial<ICreateSiswa> & { aktif?: 0 | 1 }
 
-export interface ISiswaMonitoringKelas {
-    id_daftar: string
-    id_jadwal: string
-    nama_jadwal: string
-    tanggal_selesai: string
-    status_daftar: number
-    hari_tersisa: number | null
-}
+// ─── Tagihan ──────────────────────────────────────────────────────────────────
+// Table: kursus_tagihan | PK: id_tagihan (UUID)
+// Status: 1=MENUNGGU, 2=SEBAGIAN, 3=LUNAS, 4=DIBATALKAN
 
-export interface ISiswaMonitoringEntry {
+export interface ITagihan {
+    id_tagihan: string
     id_siswa: string
     nama_siswa: string
-    email: string | null
-    telepon: string | null
-    kelas: ISiswaMonitoringKelas[]
+    id_biaya: string
+    nama_biaya: string
+    id_kategori_umur: string
+    nama_kategori_umur: string
+    id_paket: string
+    nama_paket: string
+    id_kelas: string
+    nama_kelas: string
+    periode: string | null         // "YYYY-MM"
+    sesi_pertemuan: number | null
+    total_harga: number
+    total_bayar: number
+    status: 1 | 2 | 3 | 4
+    deskripsi: string | null
+    aktif: number
+    dibuat_pada: string
+    diubah_pada: string | null
 }
 
-export interface ISiswaMonitoring {
-    berhenti: ISiswaMonitoringEntry[]
-    akan_expired: ISiswaMonitoringEntry[]
+export interface ICreateTagihan {
+    id_siswa: string
+    id_biaya: string
+    id_kategori_umur: string
+    id_paket: string
+    id_kelas: string
+    periode?: string               // "YYYY-MM"
+    sesi_pertemuan?: number
+    total_harga: number
+    deskripsi?: string
+}
+
+export interface IUpdateTagihan {
+    periode?: string | null
+    sesi_pertemuan?: number | null
+    total_harga?: number
+    status?: 1 | 2 | 3 | 4
+    deskripsi?: string | null
+    aktif?: number
+}
+
+export interface ITagihanQuery {
+    search?: string
+    aktif?: number
+    page?: number
+    limit?: number
+}
+
+// ─── Pembayaran ───────────────────────────────────────────────────────────────
+// Table: kursus_pembayaran | PK: id_pembayaran (UUID)
+// Metode: "TUNAI" | "TRANSFER" | "QRIS"
+
+export interface IPembayaran {
+    id_pembayaran: string
+    id_tagihan: string
+    jumlah: number
+    tanggal_bayar: string          // "YYYY-MM-DD"
+    metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
+    referensi: string | null
+    deskripsi: string | null
+    aktif: number
+    dibuat_pada: string
+    diubah_pada: string | null
+    tagihan?: {
+        id_tagihan: string
+        nama_siswa: string
+        total_harga: number
+        total_bayar: number
+        status: 1 | 2 | 3 | 4
+    }
+}
+
+export interface ICreatePembayaran {
+    id_tagihan: string
+    jumlah: number
+    tanggal_bayar: string          // "YYYY-MM-DD"
+    metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
+    referensi?: string | null
+    deskripsi?: string | null
+    aktif?: 0 | 1
+}
+
+export interface IPembayaranQuery {
+    search?: string
+    page?: number
+    limit?: number
 }
 
 // ─── Dashboard Kursus ─────────────────────────────────────────────────────────
+
 export interface IKursusDashboardPendapatan {
     bulan: string
     total: number
 }
 
-export interface IKursusDashboardSiswaProgram {
-    nama_program: string
+export interface IKursusDashboardSiswaKelas {
+    nama_kelas: string
     jumlah: number
 }
 
 export interface IKursusDashboardJadwal {
-    id_jadwal: string
-    nama_jadwal: string
-    instruktur: string
+    id_jadwal_kelas: string
+    id_kelas: string
+    nama_kelas: string
+    nama_karyawan: string
+    hari: string
     jam_mulai: string
     jam_selesai: string
-    kuota: number
-    terisi: number
+    sesi_pertemuan: number
 }
 
 export interface IKursusDashboardPembayaran {
@@ -125,353 +382,9 @@ export interface IKursusDashboard {
     kelas_hari_ini: number
     pendapatan_bulan_ini: number
     tagihan_belum_lunas: number
-    siswa_akan_expired: number
-    siswa_berhenti: number
     pendapatan_6_bulan: IKursusDashboardPendapatan[]
-    siswa_per_program: IKursusDashboardSiswaProgram[]
+    siswa_per_kelas: IKursusDashboardSiswaKelas[]
     jadwal_hari_ini: IKursusDashboardJadwal[]
     pembayaran_terbaru: IKursusDashboardPembayaran[]
-}
-
-// ─── Tingkat Program ──────────────────────────────────────────────────────────
-
-export interface ITingkatProgram {
-    id_tingkat: string
-    kode_tingkat: string                   // contoh: "PEMULA", "MENENGAH", "MAHIR"
-    nama_tingkat: string                   // contoh: "Pemula", "Menengah", "Mahir"
-    urutan: number
-    aktif: number
-    dibuat_pada: string
-    diubah_pada: string | null
-}
-
-export interface ICreateTingkatProgram {
-    kode_tingkat: string                   // format: A-Z0-9_
-    nama_tingkat: string
-    urutan?: number
-}
-
-export type IUpdateTingkatProgram = Partial<ICreateTingkatProgram> & { aktif?: 0 | 1 }
-
-// ─── Program Pengajaran ───────────────────────────────────────────────────────
-
-export interface IProgramPengajaran {
-    id_program: string
-    kode_program: string           // format: A-Z0-9_ (contoh: "TARI_BALI_01")
-    nama_program: string
-    deskripsi: string | null
-    tingkat: string | null         // kode_tingkat dari master data tingkat_program
-    durasi_menit: number           // default: 60
-    aktif: number
-    dibuat_pada: string
-    diubah_pada: string | null
-}
-
-export interface ICreateProgramPengajaran {
-    kode_program: string
-    nama_program: string
-    deskripsi?: string
-    tingkat?: string               // kode_tingkat dari GET /kursus/tingkat-program
-    durasi_menit?: number
-}
-
-export type IUpdateProgramPengajaran = Partial<ICreateProgramPengajaran> & { aktif?: 0 | 1 }
-
-// ─── Tarif ────────────────────────────────────────────────────────────────────
-
-export interface ITarif {
-    id_tarif: string
-    id_program: string
-    nama_tarif: string
-    jenis_tarif: 'PER_SESI' | 'PAKET'
-    jumlah_pertemuan: number | null  // hanya untuk jenis PAKET
-    harga: string                    // DECIMAL dari MySQL → string, parse dengan parseFloat()
-    aktif: number
-    dibuat_pada: string
-    diubah_pada: string | null
-}
-
-export interface ICreateTarif {
-    id_program: string
-    nama_tarif: string
-    jenis_tarif: 'PER_SESI' | 'PAKET'
-    harga: number
-    jumlah_pertemuan?: number
-}
-
-export type IUpdateTarif = Partial<ICreateTarif> & { aktif?: 0 | 1 }
-
-// ─── Jadwal Kelas ─────────────────────────────────────────────────────────────
-
-export interface IJadwalKelas {
-    id_jadwal: string
-    id_program: string
-    nama_jadwal: string
-    instruktur: string | null
-    lokasi: string | null
-    kuota: number
-    aktif: number
-    tanggal_mulai: string   // ISO datetime "YYYY-MM-DDTHH:MM:00" (jam mulai tertanam)
-    tanggal_selesai: string // ISO datetime "YYYY-MM-DDTHH:MM:00" (jam selesai tertanam)
-    dibuat_pada: string
-    diubah_pada: string | null
-}
-
-export interface IKuotaJadwal {
-    kuota: number
-    terisi: number
-    sisa: number
-}
-
-export interface ICreateJadwalKelas {
-    id_program: string
-    nama_jadwal: string
-    tanggal_mulai: string   // "YYYY-MM-DD"
-    tanggal_selesai: string // "YYYY-MM-DD"
-    jam_mulai: string       // "HH:MM"
-    jam_selesai: string     // "HH:MM"
-    instruktur?: string
-    lokasi?: string
-    kuota?: number
-}
-
-export interface IUpdateJadwalKelas {
-    id_program?: string
-    nama_jadwal?: string
-    tanggal_mulai?: string   // "YYYY-MM-DD HH:MM:SS" (combined datetime)
-    tanggal_selesai?: string // "YYYY-MM-DD HH:MM:SS" (combined datetime)
-    instruktur?: string
-    lokasi?: string
-    kuota?: number
-    aktif?: 0 | 1
-}
-
-// ─── Daftar Kelas ─────────────────────────────────────────────────────────────
-
-export interface IDaftarKelas {
-    id_daftar: string
-    tanggal_daftar: string
-    status: 1 | 2 | 3               // 1=Aktif, 2=Selesai, 3=Berhenti
-    catatan: string | null
-    aktif: number
-    dibuat_pada: string
-    diubah_pada: string | null
-    siswa: {
-        id_siswa: string
-        nama_siswa: string
-        email: string | null
-        telepon: string | null
-    }
-    jadwal: {
-        id_jadwal: string
-        nama_jadwal: string
-        hari: number
-        jam_mulai: string
-        jam_selesai: string
-        instruktur: string | null
-        lokasi: string | null
-        program: {
-            id_program: string
-            nama_program: string
-            kode_program: string
-        }
-    }
-    tarif: {
-        id_tarif: string
-        nama_tarif: string
-        jenis_tarif: 'PER_SESI' | 'PAKET'
-        harga: string
-    } | null
-}
-
-export interface ICreateDaftarKelas {
-    id_siswa: string
-    id_jadwal: string
-    tanggal_daftar: string          // "YYYY-MM-DD"
-    id_tarif?: string
-    status?: 1 | 2 | 3
-    catatan?: string
-}
-
-export interface IUpdateDaftarKelas {
-    status?: 1 | 2 | 3
-    catatan?: string
-    id_tarif?: string
-    aktif?: 0 | 1
-}
-
-// ─── Presensi ─────────────────────────────────────────────────────────────────
-// Keterangan: 1=Hadir, 2=Izin, 3=Sakit, 4=Alpha
-
-export interface IPresensi {
-    id_presensi: string
-    status: 1 | 2 | 3 | 4
-    catatan: string | null
-    aktif: number
-    dibuat_pada: string
-    diubah_pada: string | null
-    daftar?: { id_daftar: string }
-    siswa?: {
-        id_siswa: string
-        nama_siswa: string
-        email?: string | null
-        telepon?: string | null
-    }
-    jadwal: {
-        id_jadwal: string
-        nama_jadwal: string
-        tanggal_mulai: string     // "YYYY-MM-DD HH:MM:SS"
-        tanggal_selesai: string   // "YYYY-MM-DD HH:MM:SS"
-        // fields below may not be returned by the API (legacy compat)
-        hari?: number
-        jam_mulai?: string
-        jam_selesai?: string
-        instruktur?: string | null
-        program?: { id_program: string; nama_program: string }
-    }
-}
-
-/** Entry dari GET /kursus/presensi/jadwal/:id_jadwal */
-export interface IPresensiJadwalEntry {
-    id_daftar: string
-    siswa: {
-        id_siswa: string
-        nama_siswa: string
-        email: string | null
-        telepon: string | null
-    }
-    presensi: {
-        id_presensi: string
-        status: 1 | 2 | 3 | 4
-        catatan: string | null
-    } | null
-}
-
-export interface IPresensiDetail {
-    id_detail: string
-    id_presensi: string
-    keterangan: 1 | 2 | 3 | 4    // 1=Hadir, 2=Izin, 3=Sakit, 4=Alpha
-    catatan: string | null
-    siswa: {
-        id_siswa: string
-        nama_siswa: string
-        telepon: string | null
-    }
-    daftar: {
-        id_daftar: string
-        tanggal_daftar: string
-    }
-}
-
-export interface IPresensiWithDetail extends IPresensi {
-    detail: IPresensiDetail[]
-}
-
-export interface ICreatePresensi {
-    id_daftar: string
-    status: 1 | 2 | 3 | 4
-    catatan?: string | null
-}
-
-export interface ICreateBatchPresensi {
-    id_jadwal: string
-    items: Array<{ id_daftar: string; status: 1 | 2 | 3 | 4; catatan?: string | null }>
-}
-
-export type IUpdatePresensi = { catatan?: string }
-
-export interface IPresensiQuery {
-    id_jadwal?: string
-    bulan?: string                // "YYYY-MM"
-    page?: number
-    limit?: number
-}
-
-// ─── Tagihan ──────────────────────────────────────────────────────────────────
-// status: 1=MENUNGGU, 2=SEBAGIAN, 3=LUNAS, 4=DIBATALKAN
-// jenis: "PAKET" | "BULANAN" | "LAINNYA"
-
-export interface ITagihan {
-    id_tagihan: string
-    jenis_tagihan: 'PAKET' | 'BULANAN' | 'LAINNYA'
-    periode: string | null          // "YYYY-MM"
-    jumlah_sesi: number | null
-    total_harga: number
-    total_bayar: number
-    status: 1 | 2 | 3 | 4
-    catatan: string | null
-    aktif: number
-    dibuat_pada: string
-    diubah_pada: string | null
-    siswa: {
-        id_siswa: string
-        nama_siswa: string
-        email: string | null
-        telepon: string | null
-    }
-}
-
-export interface ICreateTagihan {
-    id_siswa: string
-    jenis_tagihan: 'PAKET' | 'BULANAN' | 'LAINNYA'
-    periode?: string | null
-    jumlah_sesi?: number | null
-    total_harga: number
-    catatan?: string | null
-}
-
-export interface IUpdateTagihan {
-    jenis_tagihan?: 'PAKET' | 'BULANAN' | 'LAINNYA'
-    periode?: string | null
-    jumlah_sesi?: number | null
-    total_harga?: number
-    status?: 1 | 2 | 3 | 4
-    catatan?: string | null
-    aktif?: number
-}
-
-export interface ITagihanQuery {
-    search?: string
-    aktif?: number
-    page?: number
-    limit?: number
-}
-
-// ─── Pembayaran ───────────────────────────────────────────────────────────────
-// metode: "TUNAI" | "TRANSFER" | "QRIS"
-
-export interface IPembayaran {
-    id_pembayaran: string
-    id_tagihan: string
-    jumlah: number
-    tanggal_bayar: string           // "YYYY-MM-DD"
-    metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
-    referensi: string | null
-    catatan: string | null
-    dibuat_pada: string
-    diubah_pada: string | null
-    tagihan: {
-        id_tagihan: string
-        jenis_tagihan: 'PAKET' | 'BULANAN' | 'LAINNYA'
-        periode: string | null
-        total_harga: number
-        total_bayar: number
-        status: 1 | 2 | 3 | 4
-    }
-}
-
-export interface ICreatePembayaran {
-    id_tagihan: string
-    jumlah: number
-    tanggal_bayar: string           // "YYYY-MM-DD"
-    metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
-    referensi?: string | null
-    catatan?: string | null
-}
-
-export interface IPembayaranQuery {
-    search?: string
-    page?: number
-    limit?: number
 }
 

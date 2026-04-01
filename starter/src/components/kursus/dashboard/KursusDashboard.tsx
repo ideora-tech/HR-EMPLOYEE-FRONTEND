@@ -8,8 +8,6 @@ import {
     HiOutlineCalendar,
     HiOutlineCurrencyDollar,
     HiOutlineClipboardList,
-    HiOutlineClock,
-    HiOutlineUserRemove,
 } from 'react-icons/hi'
 import KursusDashboardService from '@/services/kursus/dashboard.service'
 import { formatRupiah } from '@/utils/formatNumber'
@@ -87,9 +85,9 @@ const KursusDashboard = () => {
         colors: [COLORS[0]],
     }
 
-    // ── Siswa per program donut chart ──
-    const donutSeries = data?.siswa_per_program.map((d) => d.jumlah) ?? []
-    const donutLabels = data?.siswa_per_program.map((d) => d.nama_program) ?? []
+    // ── Siswa per kelas donut chart ──
+    const donutSeries = data?.siswa_per_kelas.map((d) => d.jumlah) ?? []
+    const donutLabels = data?.siswa_per_kelas.map((d) => d.nama_kelas) ?? []
     const donutOptions: ApexOptions = {
         ...apexDonutChartDefaultOption,
         labels: donutLabels,
@@ -122,7 +120,7 @@ const KursusDashboard = () => {
     return (
         <div className="flex flex-col gap-6">
             {/* ── Stat Cards ─────────────────────────────── */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <StatCard
                     title="Siswa Aktif"
                     value={data?.siswa_aktif ?? 0}
@@ -159,24 +157,6 @@ const KursusDashboard = () => {
                     loading={loading}
                     href="/kursus/tagihan"
                 />
-                <StatCard
-                    title="Akan Expired"
-                    value={data?.siswa_akan_expired ?? 0}
-                    icon={<HiOutlineClock />}
-                    iconBg="bg-orange-50"
-                    iconColor="text-orange-500"
-                    loading={loading}
-                    href="/kursus/siswa"
-                />
-                <StatCard
-                    title="Siswa Berhenti"
-                    value={data?.siswa_berhenti ?? 0}
-                    icon={<HiOutlineUserRemove />}
-                    iconBg="bg-red-50"
-                    iconColor="text-red-500"
-                    loading={loading}
-                    href="/kursus/siswa"
-                />
             </div>
 
             {/* ── Charts ─────────────────────────────────── */}
@@ -195,8 +175,8 @@ const KursusDashboard = () => {
                     )}
                 </Card>
 
-                {/* Donut chart siswa per program */}
-                <Card header={{ content: <h5 className="font-semibold">Siswa per Program</h5>, bordered: false }}>
+                {/* Donut chart siswa per kelas */}
+                <Card header={{ content: <h5 className="font-semibold">Siswa per Kelas</h5>, bordered: false }}>
                     {loading ? (
                         <Skeleton height={220} />
                     ) : donutSeries.length === 0 ? (
@@ -224,26 +204,19 @@ const KursusDashboard = () => {
                         <div className="flex items-center justify-center py-12 text-gray-400 text-sm">Tidak ada jadwal hari ini</div>
                     ) : (
                         <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                            {data!.jadwal_hari_ini.map((j) => {
-                                const pct = j.kuota > 0 ? Math.round((j.terisi / j.kuota) * 100) : 0
-                                return (
-                                    <div key={j.id_jadwal} className="px-4 py-3 flex items-center justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <p className="font-medium text-sm truncate">{j.nama_jadwal}</p>
-                                            <p className="text-xs text-gray-500">{j.instruktur} · {j.jam_mulai}–{j.jam_selesai}</p>
-                                        </div>
-                                        <div className="shrink-0 text-right">
-                                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{j.terisi}/{j.kuota}</p>
-                                            <div className="w-20 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full mt-1">
-                                                <div
-                                                    className={`h-1.5 rounded-full ${pct >= 90 ? 'bg-red-500' : pct >= 60 ? 'bg-amber-400' : 'bg-emerald-500'}`}
-                                                    style={{ width: `${pct}%` }}
-                                                />
-                                            </div>
-                                        </div>
+                            {data!.jadwal_hari_ini.map((j) => (
+                                <div key={j.id_jadwal_kelas} className="px-4 py-3 flex items-center justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="font-medium text-sm truncate">{j.nama_kelas}</p>
+                                        <p className="text-xs text-gray-500">{j.nama_karyawan} · {j.jam_mulai}–{j.jam_selesai}</p>
                                     </div>
-                                )
-                            })}
+                                    <div className="shrink-0 text-right">
+                                        <p className="text-xs text-gray-500">
+                                            {j.sesi_pertemuan} sesi
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </Card>

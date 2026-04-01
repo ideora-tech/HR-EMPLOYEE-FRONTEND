@@ -2,11 +2,11 @@ import ApiService from '@/services/ApiService'
 import { API_ENDPOINTS } from '@/constants/api.constant'
 import type {
     ISiswa,
+    ISiswaTunggakan,
     ICreateSiswa,
     IUpdateSiswa,
     IKursusQuery,
     IImportResult,
-    ISiswaMonitoring,
     ApiResponse,
     ApiPaginatedResponse,
 } from '@/@types/kursus.types'
@@ -26,6 +26,13 @@ const SiswaService = {
 
         return ApiService.fetchDataWithAxios<ApiPaginatedResponse<ISiswa>>({
             url,
+            method: 'GET',
+        })
+    },
+
+    async getTunggakan(): Promise<ApiResponse<ISiswaTunggakan[]>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<ISiswaTunggakan[]>>({
+            url: API_ENDPOINTS.KURSUS.SISWA.TUNGGAKAN,
             method: 'GET',
         })
     },
@@ -82,19 +89,6 @@ const SiswaService = {
         a.download = 'Template_Import_Siswa.xlsx'
         a.click()
         URL.revokeObjectURL(url)
-    },
-
-    async getMonitoring(expiringDays?: number): Promise<ApiResponse<ISiswaMonitoring>> {
-        const params = new URLSearchParams()
-        if (expiringDays !== undefined) params.append('expiring_days', String(expiringDays))
-        const qs = params.toString()
-        const url = qs
-            ? `${API_ENDPOINTS.KURSUS.SISWA.MONITORING}?${qs}`
-            : API_ENDPOINTS.KURSUS.SISWA.MONITORING
-        return ApiService.fetchDataWithAxios<ApiResponse<ISiswaMonitoring>>({
-            url,
-            method: 'GET',
-        })
     },
 }
 

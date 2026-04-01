@@ -2,7 +2,6 @@ import ApiService from '@/services/ApiService'
 import { API_ENDPOINTS } from '@/constants/api.constant'
 import type {
     IJadwalKelas,
-    IKuotaJadwal,
     ICreateJadwalKelas,
     IUpdateJadwalKelas,
     IKursusQuery,
@@ -17,8 +16,6 @@ const JadwalKelasService = {
         if (query?.aktif !== undefined) params.append('aktif', String(query.aktif))
         if (query?.page) params.append('page', String(query.page))
         if (query?.limit) params.append('limit', String(query.limit))
-        if (query?.week_start) params.append('week_start', query.week_start)
-        if (query?.week_end) params.append('week_end', query.week_end)
 
         const qs = params.toString()
         const url = qs
@@ -31,9 +28,9 @@ const JadwalKelasService = {
         })
     },
 
-    async getKuota(id: string): Promise<ApiResponse<IKuotaJadwal>> {
-        return ApiService.fetchDataWithAxios<ApiResponse<IKuotaJadwal>>({
-            url: API_ENDPOINTS.KURSUS.JADWAL.KUOTA(id),
+    async getByKelas(idKelas: string): Promise<ApiResponse<IJadwalKelas[]>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<IJadwalKelas[]>>({
+            url: API_ENDPOINTS.KURSUS.JADWAL.BY_KELAS(idKelas),
             method: 'GET',
         })
     },
@@ -68,18 +65,12 @@ const JadwalKelasService = {
         })
     },
 
-    async exportExcel(bulan: string): Promise<void> {
-        const res = await ApiService.fetchDataWithAxios<Blob>({
-            url: API_ENDPOINTS.KURSUS.JADWAL.EXPORT_EXCEL(bulan),
+    async exportExcel(): Promise<Blob> {
+        return ApiService.fetchDataWithAxios<Blob>({
+            url: API_ENDPOINTS.KURSUS.JADWAL.EXPORT_EXCEL,
             method: 'GET',
             responseType: 'blob',
         })
-        const url = URL.createObjectURL(res)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `Jadwal_Kelas_${bulan}.xlsx`
-        a.click()
-        URL.revokeObjectURL(url)
     },
 }
 

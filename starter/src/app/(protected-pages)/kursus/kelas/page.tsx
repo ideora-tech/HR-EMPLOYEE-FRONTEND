@@ -11,16 +11,12 @@ import {
 } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
-import TingkatProgramTable from '@/components/kursus/tingkat-program/TingkatProgramTable'
-import TingkatProgramForm from '@/components/kursus/tingkat-program/TingkatProgramForm'
-import TingkatProgramService from '@/services/kursus/tingkat-program.service'
+import KelasTable from '@/components/kursus/kelas/KelasTable'
+import KelasForm from '@/components/kursus/kelas/KelasForm'
+import KelasService from '@/services/kursus/kelas.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
-import type {
-    ITingkatProgram,
-    ICreateTingkatProgram,
-    IUpdateTingkatProgram,
-} from '@/@types/kursus.types'
+import type { IKelas, ICreateKelas, IUpdateKelas } from '@/@types/kursus.types'
 
 type AktifOption = { value: '' | '1' | '0'; label: string }
 
@@ -30,8 +26,8 @@ const AKTIF_OPTIONS: AktifOption[] = [
     { value: '0', label: 'Nonaktif' },
 ]
 
-const TingkatProgramPage = () => {
-    const [list, setList] = useState<ITingkatProgram[]>([])
+const KelasPage = () => {
+    const [list, setList] = useState<IKelas[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
 
@@ -43,13 +39,13 @@ const TingkatProgramPage = () => {
     const [total, setTotal] = useState(0)
 
     const [formOpen, setFormOpen] = useState(false)
-    const [editData, setEditData] = useState<ITingkatProgram | null>(null)
-    const [deleteTarget, setDeleteTarget] = useState<ITingkatProgram | null>(null)
+    const [editData, setEditData] = useState<IKelas | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<IKelas | null>(null)
 
     const fetchData = useCallback(async () => {
         setLoading(true)
         try {
-            const res = await TingkatProgramService.getAll({
+            const res = await KelasService.getAll({
                 search: search || undefined,
                 aktif: aktifFilter !== '' ? Number(aktifFilter) : undefined,
                 page: currentPage,
@@ -61,10 +57,7 @@ const TingkatProgramPage = () => {
             }
         } catch (err) {
             toast.push(
-                <Notification
-                    type="danger"
-                    title={MESSAGES.ERROR.FETCH(ENTITY.TINGKAT_PROGRAM)}
-                >
+                <Notification type="danger" title={MESSAGES.ERROR.FETCH(ENTITY.KELAS)}>
                     {parseApiError(err)}
                 </Notification>,
             )
@@ -93,7 +86,7 @@ const TingkatProgramPage = () => {
         setFormOpen(true)
     }
 
-    const handleOpenEdit = (item: ITingkatProgram) => {
+    const handleOpenEdit = (item: IKelas) => {
         setEditData(item)
         setFormOpen(true)
     }
@@ -103,24 +96,18 @@ const TingkatProgramPage = () => {
         setEditData(null)
     }
 
-    const handleSubmit = async (payload: ICreateTingkatProgram | IUpdateTingkatProgram) => {
+    const handleSubmit = async (payload: ICreateKelas | IUpdateKelas) => {
         setSubmitting(true)
         try {
             if (editData) {
-                await TingkatProgramService.update(editData.id_tingkat, payload as IUpdateTingkatProgram)
+                await KelasService.update(editData.id_kelas, payload as IUpdateKelas)
                 toast.push(
-                    <Notification
-                        type="success"
-                        title={MESSAGES.SUCCESS.UPDATED(ENTITY.TINGKAT_PROGRAM)}
-                    />,
+                    <Notification type="success" title={MESSAGES.SUCCESS.UPDATED(ENTITY.KELAS)} />,
                 )
             } else {
-                await TingkatProgramService.create(payload as ICreateTingkatProgram)
+                await KelasService.create(payload as ICreateKelas)
                 toast.push(
-                    <Notification
-                        type="success"
-                        title={MESSAGES.SUCCESS.CREATED(ENTITY.TINGKAT_PROGRAM)}
-                    />,
+                    <Notification type="success" title={MESSAGES.SUCCESS.CREATED(ENTITY.KELAS)} />,
                 )
             }
             handleFormClose()
@@ -131,8 +118,8 @@ const TingkatProgramPage = () => {
                     type="danger"
                     title={
                         editData
-                            ? MESSAGES.ERROR.UPDATE(ENTITY.TINGKAT_PROGRAM)
-                            : MESSAGES.ERROR.CREATE(ENTITY.TINGKAT_PROGRAM)
+                            ? MESSAGES.ERROR.UPDATE(ENTITY.KELAS)
+                            : MESSAGES.ERROR.CREATE(ENTITY.KELAS)
                     }
                 >
                     {parseApiError(err)}
@@ -147,21 +134,15 @@ const TingkatProgramPage = () => {
         if (!deleteTarget) return
         setSubmitting(true)
         try {
-            await TingkatProgramService.remove(deleteTarget.id_tingkat)
+            await KelasService.remove(deleteTarget.id_kelas)
             toast.push(
-                <Notification
-                    type="success"
-                    title={MESSAGES.SUCCESS.DELETED(ENTITY.TINGKAT_PROGRAM)}
-                />,
+                <Notification type="success" title={MESSAGES.SUCCESS.DELETED(ENTITY.KELAS)} />,
             )
             setDeleteTarget(null)
             fetchData()
         } catch (err) {
             toast.push(
-                <Notification
-                    type="danger"
-                    title={MESSAGES.ERROR.DELETE(ENTITY.TINGKAT_PROGRAM)}
-                >
+                <Notification type="danger" title={MESSAGES.ERROR.DELETE(ENTITY.KELAS)}>
                     {parseApiError(err)}
                 </Notification>,
             )
@@ -174,7 +155,7 @@ const TingkatProgramPage = () => {
         <div className="flex flex-col gap-4">
             <Card
                 header={{
-                    content: <h4>Manajemen Paket </h4>,
+                    content: <h4>Manajemen Kelas</h4>,
                     extra: (
                         <Button
                             variant="solid"
@@ -182,7 +163,7 @@ const TingkatProgramPage = () => {
                             icon={<HiPlusCircle />}
                             onClick={handleOpenAdd}
                         >
-                            Tambah Paket
+                            Tambah Kelas
                         </Button>
                     ),
                     bordered: false,
@@ -192,7 +173,7 @@ const TingkatProgramPage = () => {
                 <div className="flex items-center gap-3 px-4 pb-3">
                     <Input
                         className="flex-1"
-                        placeholder="Cari kode atau nama paket... (tekan Enter)"
+                        placeholder="Cari nama kelas... (tekan Enter)"
                         suffix={
                             searchInput ? (
                                 <HiOutlineX
@@ -227,7 +208,7 @@ const TingkatProgramPage = () => {
                     </div>
                 </div>
 
-                <TingkatProgramTable
+                <KelasTable
                     data={list}
                     loading={loading}
                     pagingData={{ total, pageIndex: currentPage, pageSize }}
@@ -241,7 +222,7 @@ const TingkatProgramPage = () => {
                 />
             </Card>
 
-            <TingkatProgramForm
+            <KelasForm
                 open={formOpen}
                 editData={editData}
                 submitting={submitting}
@@ -252,7 +233,7 @@ const TingkatProgramPage = () => {
             <ConfirmDialog
                 isOpen={!!deleteTarget}
                 type="danger"
-                title="Hapus Tingkat Program?"
+                title="Hapus Kelas?"
                 confirmText="Ya, Hapus"
                 cancelText="Batal"
                 confirmButtonProps={{
@@ -265,9 +246,9 @@ const TingkatProgramPage = () => {
                 onConfirm={handleDelete}
             >
                 <p className="text-sm">
-                    Data tingkat program{' '}
+                    Kelas{' '}
                     <span className="font-semibold">
-                        &ldquo;{deleteTarget?.nama_tingkat}&rdquo;
+                        &ldquo;{deleteTarget?.nama_kelas}&rdquo;
                     </span>{' '}
                     akan dihapus secara permanen. Tindakan ini tidak dapat
                     dibatalkan.
@@ -277,4 +258,4 @@ const TingkatProgramPage = () => {
     )
 }
 
-export default TingkatProgramPage
+export default KelasPage

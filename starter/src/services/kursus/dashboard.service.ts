@@ -5,7 +5,7 @@ import type { IKursusDashboard, ApiResponse } from '@/@types/kursus.types'
 const KursusDashboardService = {
     async getSummary(): Promise<ApiResponse<IKursusDashboard>> {
         return ApiService.fetchDataWithAxios<ApiResponse<IKursusDashboard>>({
-            url: API_ENDPOINTS.KURSUS.DASHBOARD.SUMMARY,
+            url: API_ENDPOINTS.KURSUS.DASHBOARD.BASE,
             method: 'GET',
         })
     },

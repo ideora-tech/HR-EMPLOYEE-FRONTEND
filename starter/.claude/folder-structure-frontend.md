@@ -484,6 +484,28 @@ export function parseApiError(error: unknown): string {
 
 ---
 
+## ⚠️ Konvensi Penamaan Kolom DB — Wajib Diikuti di Semua Types
+
+Kolom `kode` dan `nama` menggunakan **prefix nama tabel** di semua module HR. Jangan pakai nama kolom lama!
+
+| Field | ❌ Lama | ✅ Benar |
+|---|---|---|
+| `departemen.kode` | `kode` | `kode_departemen` |
+| `departemen.nama` | `nama` | `nama_departemen` |
+| `jabatan.kode` | `kode` | `kode_jabatan` |
+| `jabatan.nama` | `nama` | `nama_jabatan` |
+| `lokasi_kantor.kode` | `kode` | `kode_lokasi` |
+| `lokasi_kantor.nama` | `nama` | `nama_lokasi` |
+| `lokasi_kantor.alamat` | `alamat` | `alamat_lokasi` |
+| `peran.nama` | `nama` | `nama_peran` |
+| `modul.nama` | `nama` | `nama_modul` |
+| `menu.nama` | `nama` | `nama_menu` |
+| `paket_langganan.nama` | `nama` | `nama_paket` |
+
+**Juga berlaku untuk nested objects** di response `jabatan`, `departemen`, `karyawan`, dll.
+
+---
+
 ## Modul HR — Struktur Organisasi (Departemen, Jabatan, Lokasi Kantor)
 
 ### Types — `src/@types/organisasi.types.ts`
@@ -495,13 +517,13 @@ export function parseApiError(error: unknown): string {
 export interface IDepartemen {
   id_departemen: string
   id_departemen_induk: string | null
-  kode: string
-  nama: string
+  kode_departemen: string
+  nama_departemen: string
   deskripsi: string | null
   aktif: number              // 1 = aktif, 0 = nonaktif
   dibuat_pada: string
   diubah_pada: string | null
-  departemen_induk: { id_departemen: string; nama: string } | null
+  departemen_induk: { id_departemen: string; nama_departemen: string } | null
 }
 
 export interface IDepartemenTree extends IDepartemen {
@@ -509,8 +531,8 @@ export interface IDepartemenTree extends IDepartemen {
 }
 
 export interface ICreateDepartemen {
-  kode: string
-  nama: string
+  kode_departemen: string
+  nama_departemen: string
   deskripsi?: string
   id_departemen_induk?: string    // UUID departemen induk, opsional
 }
@@ -526,20 +548,22 @@ export type IUpdateDepartemen = Partial<ICreateDepartemen> & {
 export interface IJabatan {
   id_jabatan: string
   id_departemen: string | null
-  kode: string
-  nama: string
+  id_peran: string | null
+  kode_jabatan: string
+  nama_jabatan: string
   level: number | null       // 1=Top Management, 2=Middle, 3=Supervisor, 4=Staff
   deskripsi: string | null
   aktif: number
   dibuat_pada: string
   diubah_pada: string | null
-  departemen: { id_departemen: string; nama: string } | null
+  departemen: { id_departemen: string; nama_departemen: string } | null
+  peran: { id_peran: string; kode_peran: string; nama_peran: string } | null
 }
 
 export interface ICreateJabatan {
   id_departemen?: string
-  kode: string
-  nama: string
+  kode_jabatan: string
+  nama_jabatan: string
   level?: 1 | 2 | 3 | 4
   deskripsi?: string
 }
@@ -551,9 +575,9 @@ export type IUpdateJabatan = Partial<ICreateJabatan> & { aktif?: 0 | 1 }
 // ============================================================
 export interface ILokasiKantor {
   id_lokasi: string
-  kode: string
-  nama: string
-  alamat: string | null
+  kode_lokasi: string
+  nama_lokasi: string
+  alamat_lokasi: string | null
   kota: string | null
   provinsi: string | null
   kode_pos: string | null
@@ -564,9 +588,9 @@ export interface ILokasiKantor {
 }
 
 export interface ICreateLokasiKantor {
-  kode: string
-  nama: string
-  alamat?: string
+  kode_lokasi: string
+  nama_lokasi: string
+  alamat_lokasi?: string
   kota?: string
   provinsi?: string
   kode_pos?: string
@@ -647,6 +671,262 @@ export const departemenService = {
     apiClient.get<ApiResponse<PaginatedResult<IDepartemen>>>(API_ENDPOINTS.organisasi.departemen.list, { params }),
 
   // Untuk komponen tree/sidebar — response nested parent → children
+  getTree: () =>
+    apiClient.get<ApiResponse<IDepartemenTree[]>>(API_ENDPOINTS.organisasi.departemen.tree),
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<IDepartemen>>(API_ENDPOINTS.organisasi.departemen.detail(id)),
+
+  create: (data: ICreateDepartemen) =>
+    apiClient.post<ApiResponse<IDepartemen>>(API_ENDPOINTS.organisasi.departemen.create, data),
+
+  update: (id: string, data: IUpdateDepartemen) =>
+    apiClient.patch<ApiResponse<IDepartemen>>(API_ENDPOINTS.organisasi.departemen.update(id), data),
+
+  delete: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(API_ENDPOINTS.organisasi.departemen.delete(id)),
+}
+```
+
+**`src/services/jabatan.service.ts`**
+```typescript
+import apiClient from './api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { IJabatan, ICreateJabatan, IUpdateJabatan } from '@/@types/organisasi.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export const jabatanService = {
+  getAll: (params?: { page?: number; limit?: number; search?: string; id_departemen?: string }) =>
+    apiClient.get<ApiResponse<PaginatedResult<IJabatan>>>(API_ENDPOINTS.organisasi.jabatan.list, { params }),
+
+  // Untuk dropdown — tanpa pagination
+  getByDepartemen: (idDepartemen: string) =>
+    apiClient.get<ApiResponse<IJabatan[]>>(API_ENDPOINTS.organisasi.jabatan.byDepartemen(idDepartemen)),
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<IJabatan>>(API_ENDPOINTS.organisasi.jabatan.detail(id)),
+
+  create: (data: ICreateJabatan) =>
+    apiClient.post<ApiResponse<IJabatan>>(API_ENDPOINTS.organisasi.jabatan.create, data),
+
+  update: (id: string, data: IUpdateJabatan) =>
+    apiClient.patch<ApiResponse<IJabatan>>(API_ENDPOINTS.organisasi.jabatan.update(id), data),
+
+  delete: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(API_ENDPOINTS.organisasi.jabatan.delete(id)),
+}
+```
+
+**`src/services/lokasi-kantor.service.ts`**
+```typescript
+import apiClient from './api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { ILokasiKantor, ICreateLokasiKantor, IUpdateLokasiKantor } from '@/@types/organisasi.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export const lokasiKantorService = {
+  getAll: (params?: { page?: number; limit?: number; search?: string }) =>
+    apiClient.get<ApiResponse<PaginatedResult<ILokasiKantor>>>(API_ENDPOINTS.organisasi.lokasiKantor.list, { params }),
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<ILokasiKantor>>(API_ENDPOINTS.organisasi.lokasiKantor.detail(id)),
+
+  create: (data: ICreateLokasiKantor) =>
+    apiClient.post<ApiResponse<ILokasiKantor>>(API_ENDPOINTS.organisasi.lokasiKantor.create, data),
+
+  update: (id: string, data: IUpdateLokasiKantor) =>
+    apiClient.patch<ApiResponse<ILokasiKantor>>(API_ENDPOINTS.organisasi.lokasiKantor.update(id), data),
+
+  delete: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(API_ENDPOINTS.organisasi.lokasiKantor.delete(id)),
+}
+```
+
+---
+
+### Struktur Halaman
+
+```
+src/app/(protected-pages)/
+└── organisasi/
+    ├── departemen/
+    │   ├── page.tsx          ← List departemen (tabel + search + pagination)
+    │   ├── create/
+    │   │   └── page.tsx      ← Form tambah departemen
+    │   └── [id]/
+    │       └── page.tsx      ← Detail / edit departemen
+    │
+    ├── jabatan/
+    │   ├── page.tsx          ← List jabatan (search, filter by departemen)
+    │   ├── create/
+    │   │   └── page.tsx      ← Form tambah jabatan (termasuk select departemen)
+    │   └── [id]/
+    │       └── page.tsx      ← Detail / edit jabatan
+    │
+    └── lokasi-kantor/
+        ├── page.tsx          ← List lokasi kantor
+        ├── create/
+        │   └── page.tsx      ← Form tambah lokasi kantor
+        └── [id]/
+            └── page.tsx      ← Detail / edit lokasi kantor
+```
+
+### Komponen
+
+```
+src/components/
+├── departemen/
+│   ├── DepartemenTable.tsx    ← Tabel list + aksi edit/hapus
+│   ├── DepartemenForm.tsx     ← Form create/edit
+│   └── DepartemenFilterBar.tsx
+│
+├── jabatan/
+│   ├── JabatanTable.tsx       ← Tampilkan kolom departemen dari nested object
+│   ├── JabatanForm.tsx        ← Select departemen via getByDepartemen
+│   └── JabatanFilterBar.tsx   ← Filter dropdown departemen
+│
+└── lokasi-kantor/
+    ├── LokasiKantorTable.tsx
+    ├── LokasiKantorForm.tsx
+    └── LokasiKantorFilterBar.tsx
+```
+
+> **Catatan Jabatan**: Field `departemen` di response adalah object `{ id_departemen, nama_departemen }` atau `null`.
+> Gunakan `jabatan.departemen?.nama_departemen ?? '-'` saat render di tabel.
+> Untuk form select departemen, gunakan `departemenService.getAll({ limit: 100 })` untuk mengisi dropdown.
+
+---
+
+## Modul HR — Karyawan
+
+### Types — `src/@types/karyawan.types.ts`
+
+```typescript
+import type { IDepartemen } from './organisasi.types'
+
+// ============================================================
+// KARYAWAN
+// ============================================================
+export interface IKaryawan {
+  id_karyawan: string
+  id_perusahaan: string
+  id_jabatan: string | null
+  id_departemen: string | null
+  id_lokasi_kantor: string | null
+
+  // Data pribadi
+  nik: string | null
+  nama: string
+  email: string | null
+  telepon: string | null
+  tanggal_lahir: string | null      // "YYYY-MM-DD"
+  jenis_kelamin: number | null      // 1=L, 2=P
+  alamat: string | null
+  foto_url: string | null
+
+  // Informasi pekerjaan
+  tanggal_masuk: string | null
+  tanggal_keluar: string | null
+  tanggal_mulai_kontrak: string | null
+  tanggal_akhir_kontrak: string | null
+  gaji_pokok: number | null
+  status_kepegawaian: string | null  // TETAP | KONTRAK | PROBASI | MAGANG
+
+  // Informasi bank
+  nama_bank: string | null
+  no_rekening: string | null
+  nama_pemilik_rekening: string | null
+
+  // Informasi pajak & BPJS
+  npwp: string | null
+  status_pajak: string | null        // TK/0, K/1, K/I/0, dll
+  no_bpjs_kesehatan: string | null
+  no_bpjs_ketenagakerjaan: string | null
+
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+
+  // Nested objects (null jika belum di-assign)
+  jabatan: { id_jabatan: string; nama_jabatan: string; level: number | null } | null
+  departemen: { id_departemen: string; nama_departemen: string } | null
+  lokasi_kantor: { id_lokasi: string; nama_lokasi: string } | null
+}
+
+export interface ICreateKaryawan {
+  nik?: string
+  nama: string
+  email?: string
+  telepon?: string
+  tanggal_lahir?: string
+  jenis_kelamin?: 1 | 2
+  alamat?: string
+  foto_url?: string
+  // Pekerjaan
+  id_jabatan?: string
+  id_departemen?: string
+  tanggal_masuk?: string
+  tanggal_keluar?: string
+  status_kepegawaian?: 'TETAP' | 'KONTRAK' | 'PROBASI' | 'MAGANG'
+  tanggal_mulai_kontrak?: string
+  tanggal_akhir_kontrak?: string
+  gaji_pokok?: number
+  // Bank
+  nama_bank?: string
+  no_rekening?: string
+  nama_pemilik_rekening?: string
+  // Pajak & BPJS
+  npwp?: string
+  status_pajak?: string
+  no_bpjs_kesehatan?: string
+  no_bpjs_ketenagakerjaan?: string
+}
+
+export type IUpdateKaryawan = Partial<ICreateKaryawan> & {
+  id_jabatan?: string | null        // null = hapus assignment
+  id_departemen?: string | null
+  aktif?: 0 | 1
+}
+
+export interface ILokasiKaryawan {
+  id_lokasi: string
+  kode_lokasi: string
+  nama_lokasi: string
+  alamat_lokasi: string | null
+  kota: string | null
+  provinsi: string | null
+  radius: number | null             // Radius geofencing dalam meter
+  aktif: number
+}
+
+// ============================================================
+// KARYAWAN CREATE RESPONSE (POST /karyawan)
+// Akun pengguna dibuat otomatis bersamaan dengan karyawan
+// ============================================================
+export interface IKaryawanCreateResponse {
+  karyawan: IKaryawan
+  pengguna: IPengguna            // Akun yang dibuat otomatis
+  default_password: string       // 'Karyawan@123' — tampilkan ke HR sekali saja!
+}
+```
+
+---
+
+### API Endpoints — `src/constants/api.constant.ts`
+
+Tambahkan ke `API_ENDPOINTS`:
+
+```typescript
+karyawan: {
+  list:            '/karyawan',
+  detail:          (id: string) => `/karyawan/${id}`,
+  create:          '/karyawan',
+  update:          (id: string) => `/karyawan/${id}`,
+  delete:          (id: string) => `/karyawan/${id}`,
+  templateExcel:   '/karyawan/template/excel',
+  uploadExcel:     '/karyawan/upload/excel',
+  getLokasi:       (id: string) => `/karyawan/${id}/lokasi`,
+  setLokasi:       (id:tree/sidebar — response nested parent → children
   getTree: () =>
     apiClient.get<ApiResponse<IDepartemenTree[]>>(API_ENDPOINTS.organisasi.departemen.tree),
 

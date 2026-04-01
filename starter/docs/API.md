@@ -1782,47 +1782,270 @@ Soft delete record exit.
 
 ---
 
-# Kursus Dansa — API Documentation
+# Kursus Dansa � API Documentation
 
 > Semua endpoint prefix `/kursus` dan membutuhkan `Authorization: Bearer <JWT>`.
-> **DATETIME** dikembalikan sebagai string `"YYYY-MM-DD HH:MM:SS"` (bukan ISO UTC) — tidak perlu konversi timezone.
+> **DATETIME** dikembalikan sebagai string `"YYYY-MM-DD HH:MM:SS"` (bukan ISO UTC) � tidak perlu konversi timezone.
+> **UUID** PKs digunakan di semua tabel kursus.
 
 ---
 
 ## Daftar Modul Kursus
 
-- [Siswa](#kursus-siswa)
-- [Tingkat Program](#kursus-tingkat-program)
-- [Program Pengajaran](#kursus-program-pengajaran)
-- [Tarif](#kursus-tarif)
+- [Kelas](#kursus-kelas)
+- [Paket](#kursus-paket)
+- [Kategori Umur](#kursus-kategori-umur)
+- [Biaya](#kursus-biaya)
+- [Diskon](#kursus-diskon)
 - [Jadwal Kelas](#kursus-jadwal-kelas)
-- [Daftar Kelas](#kursus-daftar-kelas)
-- [Presensi](#kursus-presensi)
+- [Siswa](#kursus-siswa)
+- [Tagihan](#kursus-tagihan)
+- [Pembayaran](#kursus-pembayaran)
+- [Dashboard](#kursus-dashboard)
 
 ---
 
-## Kursus — Siswa
+## Kursus � Kelas
 
-### GET `/kursus/siswa`
+> Table: `kursus_kelas` | PK: `id_kelas` (UUID)
 
-List siswa dengan pagination.
+### `GET /kursus/kelas`
 
-**Query Params:**
-| Param | Tipe | Default | Keterangan |
-|-------|------|---------|------------|
-| `page` | number | 1 | |
-| `limit` | number | 10 | |
-| `search` | string | - | Cari di nama / email / telepon |
-| `aktif` | 0\|1 | - | Filter status |
+Daftar kelas dengan pagination.
+
+**Query Params:** `page`, `limit`, `search`
 
 **Response `200`:**
 ```json
 {
-  "message": "Berhasil mengambil data siswa",
+  "message": "Berhasil mengambil daftar kelas",
+  "data": [
+    {
+      "id_kelas": "uuid",
+      "nama_kelas": "Ballet",
+      "deskripsi": "Kelas Ballet untuk pemula",
+      "aktif": 1,
+      "dibuat_pada": "2026-03-01T00:00:00.000Z",
+      "diubah_pada": null
+    }
+  ],
+  "meta": { "page": 1, "limit": 10, "total": 5, "totalPages": 1 }
+}
+```
+
+### `POST /kursus/kelas`
+
+**Request Body:**
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `nama_kelas` | ? | String, unik |
+| `deskripsi` | ? | Teks bebas |
+| `aktif` | ? | Default `1` |
+
+---
+
+## Kursus � Paket
+
+> Table: `kursus_paket` | PK: `id_paket` (UUID) | FK: `id_kelas`
+
+Paket tiap kelas (misal: Reguler, Intensif, Private).
+
+### `GET /kursus/paket`
+
+Daftar paket dengan pagination.
+
+### `GET /kursus/paket/kelas/:id_kelas`
+
+Daftar paket dalam satu kelas � **tanpa pagination** (untuk dropdown).
+
+### `GET /kursus/paket/:id`
+
+Detail satu paket.
+
+### `POST /kursus/paket`
+
+**Request Body:**
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `id_kelas` | ? | UUID kelas |
+| `nama_paket` | ? | String maks 50 karakter |
+| `deskripsi` | ? | Teks bebas |
+| `aktif` | ? | Default `1` |
+
+---
+
+## Kursus � Kategori Umur
+
+> Table: `kursus_kategori_umur` | PK: `id_kategori_umur` (UUID) | FK: `id_paket`, `id_kelas`
+
+Segmentasi usia per paket (misal: 3-6 tahun, 7-12 tahun, Dewasa).
+
+### `GET /kursus/kategori-umur`
+
+Daftar kategori umur dengan pagination.
+
+### `GET /kursus/kategori-umur/kelas/:id_kelas`
+
+Dropdown kategori umur berdasarkan kelas.
+
+### `GET /kursus/kategori-umur/paket/:id_paket`
+
+Dropdown kategori umur berdasarkan paket.
+
+### `POST /kursus/kategori-umur`
+
+**Request Body:**
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `id_kelas` | ? | UUID kelas |
+| `id_paket` | ? | UUID paket |
+| `nama_kategori_umur` | ? | Contoh: "3-6 Tahun" |
+| `durasi` | ? | Durasi dalam bulan |
+| `deskripsi` | ? | Teks bebas |
+| `aktif` | ? | Default `1` |
+
+---
+
+## Kursus � Biaya
+
+> Table: `kursus_biaya` | PK: `id_biaya` (UUID) | FK: `id_kategori_umur`, `id_paket`, `id_kelas`
+
+Daftar biaya/harga per kategori umur.
+
+### `GET /kursus/biaya`
+
+Daftar biaya dengan pagination.
+
+### `GET /kursus/biaya/kelas/:id_kelas`
+
+Dropdown biaya berdasarkan kelas.
+
+### `GET /kursus/biaya/paket/:id_paket`
+
+Dropdown biaya berdasarkan paket.
+
+### `GET /kursus/biaya/kategori-umur/:id_kategori_umur`
+
+Dropdown biaya berdasarkan kategori umur.
+
+### `POST /kursus/biaya`
+
+**Request Body:**
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `id_kelas` | ✅ | UUID kelas |
+| `id_paket` | ? | UUID paket |
+| `id_kategori_umur` | ? | UUID kategori umur |
+| `jenis_biaya` | ✅ | Enum: `PENDAFTARAN`, `BULANAN`, `LAINNYA` |
+| `nama_biaya` | ✅ | Contoh: "Biaya Bulanan" |
+| `harga_biaya` | ? | Integer (rupiah) |
+| `deskripsi` | ? | Teks bebas |
+| `aktif` | ? | Default `1` |
+
+---
+
+## Kursus � Diskon
+
+> Table: `kursus_diskon` | PK: `id_diskon` (UUID)
+
+### `GET /kursus/diskon`
+
+Daftar diskon dengan pagination.
+
+### `GET /kursus/diskon/aktif`
+
+Daftar diskon yang **berlaku sekarang** (tanpa pagination).
+
+### `POST /kursus/diskon`
+
+**Request Body:**
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `kode_diskon` | ? | String maks 20, unik |
+| `nama_diskon` | ? | String |
+| `persentase` | ? | Decimal 0-100 |
+| `harga` | ? | Integer (diskon nominal) |
+| `berlaku_mulai` | ? | Date YYYY-MM-DD |
+| `berlaku_sampai` | ? | Date YYYY-MM-DD |
+| `deskripsi` | ? | Teks bebas |
+| `aktif` | ? | Default `1` |
+
+---
+
+## Kursus � Jadwal Kelas
+
+> Table: `kursus_jadwal_kelas` | PK: `id_jadwal_kelas` (UUID)
+
+### `GET /kursus/jadwal-kelas`
+
+Daftar jadwal kelas dengan pagination.
+
+**Query Params:** `page`, `limit`, `search`
+
+**Response `200`:**
+```json
+{
+  "data": [
+    {
+      "id_jadwal_kelas": "uuid",
+      "id_kelas": "uuid",
+      "nama_kelas": "Ballet",
+      "id_karyawan": "uuid",
+      "nama_karyawan": "Sari Dewi",
+      "id_kategori_umur": "uuid",
+      "nama_kategori_umur": "3-6 Tahun",
+      "hari": "Senin",
+      "jam_mulai": "09:00",
+      "jam_selesai": "10:00",
+      "tanggal_mulai": "2026-04-01",
+      "tanggal_selesai": "2026-06-30",
+      "sesi_pertemuan": 24,
+      "deskripsi": null,
+      "aktif": 1
+    }
+  ],
+  "meta": { "page": 1, "limit": 10, "total": 3, "totalPages": 1 }
+}
+```
+
+### `GET /kursus/jadwal-kelas/kelas/:id_kelas`
+
+Dropdown jadwal berdasarkan kelas.
+
+### `POST /kursus/jadwal-kelas`
+
+**Request Body:**
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `id_kelas` | ? | UUID kelas |
+| `id_karyawan` | ? | UUID instruktur |
+| `id_kategori_umur` | ? | UUID kategori umur |
+| `hari` | ? | Senin/Selasa/dst |
+| `jam_mulai` | ? | Format HH:MM |
+| `jam_selesai` | ? | Format HH:MM |
+| `tanggal_mulai` | ? | DATETIME |
+| `tanggal_selesai` | ? | DATETIME |
+| `sesi_pertemuan` | ? | Integer |
+| `deskripsi` | ? | Teks bebas |
+| `aktif` | ? | Default `1` |
+
+---
+
+## Kursus � Siswa
+
+> Table: `siswa` | PK: `id_siswa` (UUID)
+
+### `GET /kursus/siswa`
+
+Daftar siswa dengan pagination & search.
+
+**Response `200`:**
+```json
+{
   "data": [
     {
       "id_siswa": "uuid",
-      "nama": "Andi Wijaya",
+      "nama_siswa": "Andi Wijaya",
       "email": "andi@email.com",
       "telepon": "081234567890",
       "tanggal_lahir": "2000-01-15",
@@ -1830,1698 +2053,200 @@ List siswa dengan pagination.
       "jenis_kelamin": 1,
       "foto_url": null,
       "aktif": 1,
-      "dibuat_pada": "2026-03-23 08:00:00",
+      "dibuat_pada": "2026-03-01T00:00:00.000Z",
       "diubah_pada": null
     }
   ],
-  "meta": { "page": 1, "limit": 10, "total": 25, "totalPages": 3 }
+  "meta": { "page": 1, "limit": 10, "total": 50, "totalPages": 5 }
 }
 ```
 
----
+### `GET /kursus/siswa/tunggakan`
 
-### GET `/kursus/siswa/template/excel`
+Daftar siswa yang memiliki tagihan belum lunas (status MENUNGGU atau SEBAGIAN).
 
-Download template Excel untuk import bulk siswa.
-
-**Response:** File `.xlsx`
-
-**Kolom template:**
-| Kolom | Wajib | Keterangan |
-|-------|-------|------------|
-| `nama*` | ✅ | |
-| `email` | ❌ | |
-| `telepon` | ❌ | |
-| `tanggal_lahir (YYYY-MM-DD)` | ❌ | Format `2000-01-15` |
-| `jenis_kelamin (1=L / 2=P)` | ❌ | `1` atau `2` |
-| `alamat` | ❌ | |
-
----
-
-### GET `/kursus/siswa/monitoring`
-
-Monitoring siswa aktif — siapa yang sudah berhenti dan siapa yang masa berlaku kelasnya akan habis.
-
-**Query Parameters:**
-
-| Parameter | Tipe | Default | Keterangan |
-|-----------|------|---------|-----------|
-| `expiring_days` | number | `30` | Rentang hari ke depan untuk filter "akan expired" |
-
-**Contoh:** `GET /kursus/siswa/monitoring?expiring_days=14`
-
-**Response 200:**
+**Response `200`:**
 ```json
 {
-  "message": "Berhasil mengambil data monitoring siswa",
+  "message": "Berhasil mengambil data tunggakan siswa",
+  "data": [
+    {
+      "id_siswa": "uuid",
+      "nama_siswa": "Andi Wijaya",
+      "email": "andi@email.com",
+      "telepon": "081234567890",
+      "jumlah_tagihan_belum_lunas": 2,
+      "total_tunggakan": 1500000
+    }
+  ]
+}
+```
+
+### `GET /kursus/siswa/template/excel`
+
+Download template Excel untuk import siswa (response: binary `.xlsx`).
+
+### `POST /kursus/siswa/upload/excel`
+
+Upload file Excel untuk import data siswa secara bulk.
+
+**Content-Type:** `multipart/form-data`
+
+**Form Field:** `file` (binary .xlsx)
+
+### `POST /kursus/siswa`
+
+**Request Body:**
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `nama_siswa` | ? | |
+| `email` | ? | |
+| `telepon` | ? | |
+| `tanggal_lahir` | ? | YYYY-MM-DD |
+| `alamat` | ? | |
+| `jenis_kelamin` | ? | `1`=Laki-laki, `2`=Perempuan |
+| `foto_url` | ? | URL foto |
+
+---
+
+## Kursus � Tagihan
+
+> Table: `kursus_tagihan` | PK: `id_tagihan` (UUID)
+> Status: `1`=MENUNGGU, `2`=SEBAGIAN, `3`=LUNAS, `4`=DIBATALKAN
+
+### `GET /kursus/tagihan`
+
+Daftar tagihan dengan pagination.
+
+### `GET /kursus/tagihan/siswa/:id_siswa`
+
+Semua tagihan satu siswa (tanpa pagination).
+
+### `GET /kursus/tagihan/:id`
+
+Detail satu tagihan.
+
+**Response `200`:**
+```json
+{
   "data": {
-    "berhenti": [
+    "id_tagihan": "uuid",
+    "id_siswa": "uuid",
+    "nama_siswa": "Andi Wijaya",
+    "id_biaya": "uuid",
+    "nama_biaya": "Biaya Bulanan",
+    "id_kategori_umur": "uuid",
+    "nama_kategori_umur": "3-6 Tahun",
+    "id_paket": "uuid",
+    "nama_paket": "Reguler",
+    "id_kelas": "uuid",
+    "nama_kelas": "Ballet",
+    "periode": "2026-04",
+    "sesi_pertemuan": 8,
+    "total_harga": 750000,
+    "total_bayar": 0,
+    "status": 1,
+    "deskripsi": null,
+    "aktif": 1
+  }
+}
+```
+
+### `POST /kursus/tagihan`
+
+**Request Body:**
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `id_siswa` | ? | UUID siswa |
+| `id_biaya` | ? | UUID biaya |
+| `id_kategori_umur` | ? | UUID kategori umur |
+| `id_paket` | ? | UUID paket |
+| `id_kelas` | ? | UUID kelas |
+| `periode` | ? | Format YYYY-MM |
+| `sesi_pertemuan` | ? | Integer |
+| `total_harga` | ? | Decimal |
+| `deskripsi` | ? | Teks bebas |
+
+---
+
+## Kursus � Pembayaran
+
+> Table: `kursus_pembayaran` | PK: `id_pembayaran` (UUID)
+> Metode: `TUNAI` / `TRANSFER` / `QRIS`
+
+### `GET /kursus/pembayaran`
+
+Daftar pembayaran dengan pagination.
+
+### `GET /kursus/pembayaran/tagihan/:id_tagihan`
+
+Semua pembayaran untuk satu tagihan.
+
+### `POST /kursus/pembayaran`
+
+Setelah berhasil membuat pembayaran, sistem otomatis *recalculate* status tagihan.
+
+**Request Body:**
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `id_tagihan` | ? | UUID tagihan |
+| `jumlah` | ? | Decimal |
+| `tanggal_bayar` | ? | YYYY-MM-DD |
+| `metode` | ? | TUNAI / TRANSFER / QRIS |
+| `referensi` | ? | No. referensi / nota |
+| `deskripsi` | ? | Keterangan tambahan |
+| `aktif` | ? | Default `1` |
+
+### `DELETE /kursus/pembayaran/:id`
+
+Soft delete pembayaran. Status tagihan otomatis di-recalculate.
+
+---
+
+## Kursus � Dashboard
+
+> Endpoint: `GET /kursus/dashboard`
+
+Ringkasan statistik kursus.
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil ringkasan dashboard",
+  "data": {
+    "siswa_aktif": 120,
+    "kelas_hari_ini": 5,
+    "pendapatan_bulan_ini": 18000000,
+    "tagihan_belum_lunas": 12,
+    "pendapatan_6_bulan": [
+      { "bulan": "2025-11", "total": 14000000 },
+      { "bulan": "2025-12", "total": 16000000 }
+    ],
+    "siswa_per_kelas": [
+      { "nama_kelas": "Ballet", "jumlah": 45 },
+      { "nama_kelas": "Hip Hop", "jumlah": 30 }
+    ],
+    "jadwal_hari_ini": [
       {
-        "id_siswa": "uuid-siswa",
-        "nama": "Budi Santoso",
-        "email": "budi@email.com",
-        "telepon": "081234567890",
-        "kelas": [
-          {
-            "id_daftar": "uuid-daftar",
-            "id_jadwal": "uuid-jadwal",
-            "nama_jadwal": "Ballet Senin 10:00",
-            "tanggal_selesai": "2026-03-31 10:00:00",
-            "status_daftar": 3,
-            "hari_tersisa": null
-          }
-        ]
+        "id_jadwal_kelas": "uuid",
+        "id_kelas": "uuid",
+        "nama_kelas": "Ballet",
+        "nama_karyawan": "Sari Dewi",
+        "hari": "Senin",
+        "jam_mulai": "09:00",
+        "jam_selesai": "10:00",
+        "sesi_pertemuan": 24
       }
     ],
-    "akan_expired": [
+    "pembayaran_terbaru": [
       {
-        "id_siswa": "uuid-siswa-2",
-        "nama": "Sari Dewi",
-        "email": null,
-        "telepon": "082345678901",
-        "kelas": [
-          {
-            "id_daftar": "uuid-daftar-2",
-            "id_jadwal": "uuid-jadwal-2",
-            "nama_jadwal": "Jazz Rabu 16:00",
-            "tanggal_selesai": "2026-04-05 16:00:00",
-            "status_daftar": 1,
-            "hari_tersisa": 12
-          }
-        ]
+        "id_pembayaran": "uuid",
+        "nama_siswa": "Andi Wijaya",
+        "jumlah": 750000,
+        "metode": "TRANSFER",
+        "tanggal_bayar": "2026-04-01"
       }
     ]
   }
 }
 ```
-
-**Catatan:**
-- `berhenti` — siswa yang punya `daftar_kelas.status = 3` (Berhenti). `hari_tersisa` selalu `null`.
-- `akan_expired` — siswa aktif (`status = 1`) yang `jadwal_kelas.tanggal_selesai` jatuh dalam rentang `expiring_days` hari ke depan. `hari_tersisa` = sisa hari hingga kelas berakhir.
-- Satu siswa bisa muncul dengan beberapa kelas sekaligus jika punya lebih dari satu enrollment yang relevan.
-
----
-
-### GET `/kursus/siswa/:id`
-
-**Response `404`:** jika tidak ditemukan.
-
----
-
-### POST `/kursus/siswa`
-
-**Request Body:**
-```json
-{
-  "nama": "Andi Wijaya",
-  "email": "andi@email.com",
-  "telepon": "081234567890",
-  "tanggal_lahir": "2000-01-15",
-  "alamat": "Jl. Sudirman No. 1",
-  "jenis_kelamin": 1
-}
-```
-
-| Field | Wajib | Keterangan |
-|-------|-------|------------|
-| `nama` | ✅ | |
-| `email` | ❌ | |
-| `telepon` | ❌ | |
-| `tanggal_lahir` | ❌ | Format `YYYY-MM-DD` |
-| `jenis_kelamin` | ❌ | `1`=Laki-laki, `2`=Perempuan |
-| `alamat` | ❌ | |
-| `foto_url` | ❌ | |
-
----
-
-### POST `/kursus/siswa/upload/excel`
-
-Import bulk siswa dari file Excel.
-
-**Request:** `multipart/form-data`, field `file` = file `.xlsx`
-
-**Response `201`:**
-```json
-{
-  "message": "Import selesai: 10 berhasil, 1 gagal",
-  "data": {
-    "berhasil": 10,
-    "gagal": 1,
-    "errors": ["Baris 5: kolom nama wajib diisi"]
-  }
-}
-```
-
----
-
-### PATCH `/kursus/siswa/:id`
-
-Semua field opsional, sama dengan POST.
-
----
-
-### DELETE `/kursus/siswa/:id`
-
-Soft delete.
-
----
-
-## Kursus — Tingkat Program
-
-Master data tingkat (PEMULA, MENENGAH, MAHIR, dll).
-
-### GET `/kursus/tingkat-program`
-
-**Query:** `page`, `limit`, `search`, `aktif`
-
-**Response `data[]`:**
-```json
-{
-  "id_tingkat": "uuid",
-  "kode": "PEMULA",
-  "nama": "Pemula",
-  "urutan": 1,
-  "deskripsi": null,
-  "aktif": 1,
-  "dibuat_pada": "2026-03-23 08:00:00",
-  "diubah_pada": null
-}
-```
-
-### GET `/kursus/tingkat-program/:id`
-
-### POST `/kursus/tingkat-program`
-
-```json
-{ "kode": "PEMULA", "nama": "Pemula", "urutan": 1, "deskripsi": "Level awal" }
-```
-
-### PATCH `/kursus/tingkat-program/:id`
-
-### DELETE `/kursus/tingkat-program/:id`
-
----
-
-## Kursus — Program Pengajaran
-
-### GET `/kursus/program-pengajaran`
-
-**Query:** `page`, `limit`, `search` (nama / kode_program), `aktif`
-
-**Response `data[]`:**
-```json
-{
-  "id_program": "uuid",
-  "kode_program": "TARI_BALI_01",
-  "nama": "Tari Bali Dasar",
-  "deskripsi": "Program untuk pemula",
-  "tingkat": "PEMULA",
-  "durasi_menit": 60,
-  "aktif": 1,
-  "dibuat_pada": "2026-03-23 08:00:00",
-  "diubah_pada": null
-}
-```
-
-### GET `/kursus/program-pengajaran/:id`
-
-### POST `/kursus/program-pengajaran`
-
-```json
-{
-  "kode_program": "TARI_BALI_01",
-  "nama": "Tari Bali Dasar",
-  "deskripsi": "Program untuk pemula",
-  "tingkat": "PEMULA",
-  "durasi_menit": 60
-}
-```
-
-**Response `409`:** jika `kode_program` sudah digunakan.
-
-### PATCH `/kursus/program-pengajaran/:id`
-
-**Response `409`:** jika `kode_program` baru sudah dipakai program lain.
-
-### DELETE `/kursus/program-pengajaran/:id`
-
----
-
-## Kursus — Tarif
-
-### GET `/kursus/tarif`
-
-**Query:** `page`, `limit`, `search` (nama), `aktif`
-
-**Response `data[]`:**
-```json
-{
-  "id_tarif": "uuid",
-  "id_program": "uuid",
-  "nama": "Paket 10 Sesi",
-  "jenis": "PAKET",
-  "jumlah_pertemuan": 10,
-  "harga": "500000.00",
-  "aktif": 1,
-  "dibuat_pada": "2026-03-23 08:00:00",
-  "diubah_pada": null
-}
-```
-
-> ⚠️ `harga` adalah **string** (MySQL DECIMAL) — gunakan `parseFloat(tarif.harga)` untuk kalkulasi.
-
----
-
-### GET `/kursus/tarif/program/:id_program`
-
-List tarif berdasarkan program. Gunakan untuk dropdown saat daftar kelas.
-
-**Response:** `data: ITarif[]` (array, tanpa pagination)
-
----
-
-### GET `/kursus/tarif/:id`
-
-### POST `/kursus/tarif`
-
-```json
-{
-  "id_program": "uuid-program",
-  "nama": "Paket 10 Sesi",
-  "jenis": "PAKET",
-  "harga": 500000,
-  "jumlah_pertemuan": 10
-}
-```
-
-| Field | Wajib | Keterangan |
-|-------|-------|------------|
-| `id_program` | ✅ | |
-| `nama` | ✅ | |
-| `jenis` | ✅ | `"PER_SESI"` atau `"PAKET"` |
-| `harga` | ✅ | number |
-| `jumlah_pertemuan` | ❌ | Wajib diisi jika `jenis = "PAKET"` |
-
-### PATCH `/kursus/tarif/:id`
-### DELETE `/kursus/tarif/:id`
-
----
-
-## Kursus — Jadwal Kelas
-
-> **Penting:** Setiap row = 1 sesi per hari.
-> POST create menghasilkan **N row** (satu per hari dalam range tanggal).
-
-### GET `/kursus/jadwal-kelas`
-
-**Query:**
-| Param | Tipe | Keterangan |
-|-------|------|------------|
-| `page`, `limit` | number | Pagination |
-| `search` | string | Cari di nama / instruktur / lokasi |
-| `aktif` | 0\|1 | Filter aktif |
-| `week_start` | `YYYY-MM-DD` | Tampilkan sesi mulai tanggal ini |
-| `week_end` | `YYYY-MM-DD` | Tampilkan sesi sampai tanggal ini |
-
-**Contoh filter satu minggu:**
-```
-GET /kursus/jadwal-kelas?week_start=2026-03-23&week_end=2026-03-29
-```
-
-**Response `data[]`:**
-```json
-{
-  "id_jadwal": "uuid",
-  "id_program": "uuid",
-  "nama": "Kelas Tari Bali Pagi",
-  "tanggal_mulai": "2026-03-23 08:00:00",
-  "tanggal_selesai": "2026-03-23 17:00:00",
-  "instruktur": "Budi Santoso",
-  "lokasi": "Studio A",
-  "kuota": 10,
-  "aktif": 1,
-  "dibuat_pada": "2026-03-23 12:00:00",
-  "diubah_pada": null
-}
-```
-
----
-
-### GET `/kursus/jadwal-kelas/:id/kuota`
-
-Info kuota satu sesi.
-
-**Response `200`:**
-```json
-{ "message": "...", "data": { "kuota": 10, "terisi": 6, "sisa": 4 } }
-```
-
----
-
-### GET `/kursus/jadwal-kelas/:id`
-
----
-
-### POST `/kursus/jadwal-kelas`
-
-Generate N jadwal sekaligus (1 row per hari dalam range).
-
-**Request Body:**
-```json
-{
-  "id_program": "uuid-program",
-  "nama": "Kelas Tari Bali Pagi",
-  "tanggal_mulai": "2026-03-23",
-  "tanggal_selesai": "2026-03-30",
-  "jam_mulai": "08:00",
-  "jam_selesai": "17:00",
-  "instruktur": "Budi Santoso",
-  "lokasi": "Studio A",
-  "kuota": 10
-}
-```
-
-| Field | Wajib | Keterangan |
-|-------|-------|------------|
-| `id_program` | ✅ | |
-| `nama` | ✅ | |
-| `tanggal_mulai` | ✅ | `YYYY-MM-DD` — tanggal mulai range |
-| `tanggal_selesai` | ✅ | `YYYY-MM-DD` — tanggal selesai range |
-| `jam_mulai` | ✅ | `HH:MM` (contoh: `"08:00"`) |
-| `jam_selesai` | ✅ | `HH:MM` — sama untuk semua hari dalam range |
-| `instruktur` | ❌ | |
-| `lokasi` | ❌ | |
-| `kuota` | ❌ | Default `10` |
-
-**Response `201`:** `data: IJadwalKelas[]` — array semua sesi yang dibuat.
-
-> POST range `2026-03-23` s/d `2026-03-30` → 8 row, masing-masing tanggal berbeda, jam sama.
-> **Response `409`:** jika instruktur memiliki jadwal yang overlap pada salah satu hari dalam range.
-
----
-
-### PATCH `/kursus/jadwal-kelas/:id`
-
-Update 1 sesi jadwal.
-
-**Request Body:**
-```json
-{
-  "nama": "Kelas Tari Bali Sore",
-  "tanggal_mulai": "2026-03-23T14:00:00",
-  "tanggal_selesai": "2026-03-23T17:00:00",
-  "instruktur": "Sari Dewi",
-  "kuota": 15,
-  "aktif": 1
-}
-```
-
-> `tanggal_mulai`/`tanggal_selesai` di PATCH menggunakan format ISO datetime (dengan `T`), berbeda dari POST.
-
----
-
-### DELETE `/kursus/jadwal-kelas/:id`
-
-**Response `400`:** jika masih ada siswa aktif (status=1) yang terdaftar di sesi ini.
-
-### GET `/kursus/jadwal-kelas/export/excel`
-
-Download jadwal kelas dalam format Excel pivot (baris = instruktur, kolom = tanggal).
-
-**Query:**
-| Param | Tipe | Keterangan |
-|-------|------|------------|
-| `bulan` | `YYYY-MM` | Bulan yang di-export. Default: bulan ini |
-| `search` | string | Filter nama / instruktur / lokasi |
-| `aktif` | 0\|1 | Filter aktif |
-
-**Contoh:**
-```
-GET /kursus/jadwal-kelas/export/excel?bulan=2026-03
-```
-
-**Response:** File `.xlsx` — `Content-Disposition: attachment; filename="jadwal-kelas-2026-03.xlsx"`
-
-**Struktur Excel:**
-```
-Baris 1 : [kosong] [Maret (merged)]
-Baris 2 : Instruktur | 1 | 2 | 3 | ... | 31
-Baris 3+: BUDI       | - | 09:00-10:00 | - | ...
-```
-
-> Semua tanggal dalam bulan selalu muncul sebagai kolom meski tidak ada jadwal (sel kosong).
-
----
-
-## Kursus — Daftar Kelas
-
-### GET `/kursus/daftar-kelas`
-
-List semua pendaftaran (JOIN siswa + jadwal + program + tarif).
-
-**Query:** `page`, `limit`, `search` (nama / email siswa), `aktif`
-
-**Response `data[]`:**
-```json
-{
-  "id_daftar": "uuid",
-  "tanggal_daftar": "2026-03-23",
-  "status": 1,
-  "catatan": null,
-  "aktif": 1,
-  "dibuat_pada": "2026-03-23 12:00:00",
-  "diubah_pada": null,
-  "siswa": {
-    "id_siswa": "uuid",
-    "nama": "Andi Wijaya",
-    "email": "andi@email.com",
-    "telepon": "081234567890"
-  },
-  "jadwal": {
-    "id_jadwal": "uuid",
-    "id_program": "uuid",
-    "nama": "Kelas Tari Bali Pagi",
-    "tanggal_mulai": "2026-03-23 08:00:00",
-    "tanggal_selesai": "2026-03-23 17:00:00",
-    "instruktur": "Budi Santoso",
-    "lokasi": "Studio A",
-    "program": {
-      "id_program": "uuid",
-      "nama": "Tari Bali Dasar",
-      "kode_program": "TARI_BALI_01"
-    }
-  },
-  "tarif": {
-    "id_tarif": "uuid",
-    "nama": "Paket 10 Sesi",
-    "jenis": "PAKET",
-    "harga": "500000.00"
-  }
-}
-```
-
-> `status`: `1`=Aktif, `2`=Selesai, `3`=Berhenti
-> `tarif` bisa `null` jika tidak dipilih saat daftar.
-
----
-
-### GET `/kursus/daftar-kelas/siswa/:id_siswa`
-
-Semua pendaftaran milik satu siswa.
-
-**Response:** `data: IDaftarKelas[]`
-
----
-
-### GET `/kursus/daftar-kelas/jadwal/:id_jadwal`
-
-Semua siswa yang terdaftar di satu sesi jadwal.
-
-**Response:** `data: IDaftarKelas[]`
-
----
-
-### GET `/kursus/daftar-kelas/:id`
-
----
-
-### POST `/kursus/daftar-kelas`
-
-Daftarkan 1 siswa ke 1 sesi jadwal.
-
-**Request Body:**
-```json
-{
-  "id_siswa": "uuid-siswa",
-  "id_jadwal": "uuid-jadwal",
-  "tanggal_daftar": "2026-03-23",
-  "id_tarif": "uuid-tarif",
-  "status": 1,
-  "catatan": "Catatan tambahan"
-}
-```
-
-| Field | Wajib | Keterangan |
-|-------|-------|------------|
-| `id_siswa` | ✅ | |
-| `id_jadwal` | ✅ | |
-| `tanggal_daftar` | ✅ | Format `YYYY-MM-DD` |
-| `id_tarif` | ❌ | |
-| `status` | ❌ | Default `1` |
-| `catatan` | ❌ | |
-
-**Response `400`:** Kuota kelas penuh.
-**Response `409`:** Siswa sudah terdaftar di jadwal ini (dan statusnya bukan Berhenti).
-
----
-
-### POST `/kursus/daftar-kelas/batch`
-
-Daftarkan 1 siswa ke banyak sesi jadwal sekaligus.
-
-**Request Body:**
-```json
-{
-  "id_siswa": "uuid-siswa",
-  "id_jadwal": ["uuid-jadwal-1", "uuid-jadwal-2", "uuid-jadwal-3"],
-  "tanggal_daftar": "2026-03-23",
-  "id_tarif": "uuid-tarif",
-  "status": 1,
-  "catatan": "Daftar kelas reguler"
-}
-```
-
-**Response `201`:** `data: IDaftarKelas[]`
-
-> Validasi dilakukan per jadwal. Jika salah satu jadwal penuh / duplikat, seluruh batch gagal.
-
----
-
-### PATCH `/kursus/daftar-kelas/:id`
-
-**Request Body:**
-```json
-{
-  "status": 2,
-  "catatan": "Siswa sudah menyelesaikan kursus",
-  "id_tarif": "uuid-tarif-baru",
-  "aktif": 0
-}
-```
-
----
-
-### DELETE `/kursus/daftar-kelas/:id`
-
----
-
-## Kursus — Presensi
-
-> Presensi mencatat kehadiran siswa per sesi.
-> Satu `daftar_kelas` (enrollment di satu sesi) = maksimal **1 presensi** (UNIQUE per `id_daftar`).
-> `sesi_terpakai` = total presensi dengan `status = 1 (HADIR)`.
-
-### GET `/kursus/presensi`
-
-List presensi dengan pagination.
-
-**Query:** `page`, `limit`, `search` (nama siswa)
-
-**Response `data[]`:**
-```json
-{
-  "id_presensi": "uuid",
-  "status": 1,
-  "catatan": null,
-  "aktif": 1,
-  "dibuat_pada": "2026-03-23 12:00:00",
-  "diubah_pada": null,
-  "daftar": { "id_daftar": "uuid" },
-  "siswa": {
-    "id_siswa": "uuid",
-    "nama": "Andi Wijaya",
-    "email": "andi@email.com",
-    "telepon": "081234567890"
-  },
-  "jadwal": {
-    "id_jadwal": "uuid",
-    "nama": "Kelas Tari Bali Pagi",
-    "tanggal_mulai": "2026-03-23 08:00:00",
-    "tanggal_selesai": "2026-03-23 17:00:00"
-  }
-}
-```
-
-> `status`: `1`=HADIR, `2`=TIDAK_HADIR, `3`=SAKIT, `4`=IZIN
-
----
-
-### GET `/kursus/presensi/jadwal/:id_jadwal`
-
-Absen list semua siswa di satu sesi. Siswa yang belum diabsen muncul dengan `presensi: null`.
-
-**Response `200`:**
-```json
-{
-  "message": "Berhasil mengambil absen jadwal",
-  "data": [
-    {
-      "id_daftar": "uuid",
-      "siswa": { "id_siswa": "uuid", "nama": "Andi Wijaya", "email": "andi@email.com", "telepon": null },
-      "presensi": { "id_presensi": "uuid", "status": 1, "catatan": null }
-    },
-    {
-      "id_daftar": "uuid",
-      "siswa": { "id_siswa": "uuid", "nama": "Budi Santoso", "email": null, "telepon": "08222" },
-      "presensi": null
-    }
-  ]
-}
-```
-
----
-
-### GET `/kursus/presensi/siswa/:id_siswa`
-
-Riwayat presensi satu siswa + total sesi yang dihadiri.
-
-**Response `200`:**
-```json
-{
-  "message": "Berhasil mengambil presensi siswa",
-  "data": [ ...IPresensi[] ],
-  "sesi_terpakai": 6
-}
-```
-
-> `sesi_terpakai` = COUNT presensi dengan `status = 1 (HADIR)` untuk siswa ini.
-
----
-
-### GET `/kursus/presensi/daftar/:id_daftar`
-
-Presensi untuk satu pendaftaran.
-
-**Response:** `data: IPresensi | null` (null jika belum diabsen)
-
----
-
-### GET `/kursus/presensi/:id`
-
----
-
-### POST `/kursus/presensi/batch`
-
-Absen massal semua siswa di satu sesi (upsert).
-
-**Request Body:**
-```json
-{
-  "id_jadwal": "uuid-jadwal",
-  "items": [
-    { "id_daftar": "uuid-daftar-1", "status": 1, "catatan": null },
-    { "id_daftar": "uuid-daftar-2", "status": 3, "catatan": "Sakit demam" },
-    { "id_daftar": "uuid-daftar-3", "status": 4, "catatan": "Izin pernikahan" }
-  ]
-}
-```
-
-| Field | Wajib | Keterangan |
-|-------|-------|------------|
-| `id_jadwal` | ✅ | Sesi yang akan diabsen |
-| `items` | ✅ | Min 1 item |
-| `items[].id_daftar` | ✅ | UUID enrollment yang terdaftar di `id_jadwal` ini |
-| `items[].status` | ✅ | `1`\|`2`\|`3`\|`4` |
-| `items[].catatan` | ❌ | |
-
-**Response `201`:** `data: IPresensi[]`
-
-> Jika presensi sudah ada → **update**. Jika belum ada → **create**. (Upsert)
-> Gunakan sebagai tombol **"Simpan Absen"** di halaman absen per sesi.
-> **Response `400`:** jika ada `id_daftar` yang bukan milik `id_jadwal` tersebut.
-
----
-
-### POST `/kursus/presensi`
-
-Catat presensi satu siswa.
-
-**Request Body:**
-```json
-{
-  "id_daftar": "uuid-daftar",
-  "status": 1,
-  "catatan": null
-}
-```
-
-**Response `409`:** Presensi untuk `id_daftar` ini sudah ada. Gunakan PATCH untuk mengubah.
-
----
-
-### PATCH `/kursus/presensi/:id`
-
-Koreksi status/catatan presensi.
-
-**Request Body:**
-```json
-{ "status": 2, "catatan": "Koreksi — tidak hadir" }
-```
-
----
-
-### DELETE `/kursus/presensi/:id`
-
-Soft delete.
-
----
-
----
-
-## 8. Tagihan
-
-> Prefix: `/kursus/tagihan` | Auth: Bearer Token
-
-### GET `/kursus/tagihan`
-
-List tagihan dengan pagination.
-
-**Query:** `page`, `limit`, `search` (nama siswa), `aktif`
-
-**Response 200:**
-```json
-{
-  "message": "Berhasil mengambil data tagihan",
-  "data": [
-    {
-      "id_tagihan": "uuid",
-      "jenis": "BULANAN",
-      "periode": "2026-03",
-      "jumlah_sesi": 8,
-      "total_harga": 480000,
-      "total_bayar": 240000,
-      "status": 2,
-      "catatan": null,
-      "aktif": 1,
-      "dibuat_pada": "2026-03-24T10:00:00.000Z",
-      "diubah_pada": null,
-      "siswa": { "id_siswa": "uuid", "nama": "Budi Santoso", "email": "budi@email.com", "telepon": "081234567890" }
-    }
-  ],
-  "meta": { "page": 1, "limit": 10, "total": 25, "totalPages": 3 }
-}
-```
-
----
-
-### GET `/kursus/tagihan/siswa/:id_siswa`
-
-Semua tagihan milik satu siswa.
-
-**Response 200:**
-```json
-{
-  "message": "Berhasil mengambil tagihan siswa",
-  "data": [ { ...TagihanResponseDto } ]
-}
-```
-
----
-
-### GET `/kursus/tagihan/:id`
-
-Detail tagihan by ID.
-
-**Response 200:**
-```json
-{
-  "message": "Berhasil mengambil detail tagihan",
-  "data": { ...TagihanResponseDto }
-}
-```
-
----
-
-### POST `/kursus/tagihan/generate-bulanan`
-
-Generate tagihan otomatis dari presensi **PER_SESI + HADIR** dalam satu periode bulan. Mengelompokkan per (siswa, tarif).
-
-**Request Body:**
-```json
-{ "periode": "2026-03" }
-```
-
-**Response 201:**
-```json
-{
-  "message": "4 tagihan berhasil di-generate untuk periode 2026-03",
-  "data": [ { ...TagihanResponseDto } ],
-  "count": 4
-}
-```
-
----
-
-### POST `/kursus/tagihan`
-
-Buat tagihan manual.
-
-**Request Body:**
-```json
-{
-  "id_siswa": "uuid-siswa",
-  "jenis": "PAKET",
-  "periode": "2026-03",
-  "jumlah_sesi": 8,
-  "total_harga": 480000,
-  "catatan": "Paket 8x sesi bulan Maret"
-}
-```
-
-**Response 201:**
-```json
-{
-  "message": "Tagihan berhasil dibuat",
-  "data": { ...TagihanResponseDto }
-}
-```
-
----
-
-### PATCH `/kursus/tagihan/:id`
-
-Update tagihan (koreksi status, total, catatan).
-
-**Request Body (semua opsional):**
-```json
-{
-  "jenis": "LAINNYA",
-  "periode": "2026-03",
-  "jumlah_sesi": 10,
-  "total_harga": 600000,
-  "status": 4,
-  "catatan": "Dibatalkan — siswa berhenti"
-}
-```
-
-**Response 200:** `{ "message": "Tagihan berhasil diupdate", "data": { ...TagihanResponseDto } }`
-
----
-
-### DELETE `/kursus/tagihan/:id`
-
-Soft delete tagihan.
-
----
-
-## 9. Pembayaran
-
-> Prefix: `/kursus/pembayaran` | Auth: Bearer Token
-
-Setiap pembayaran yang dicatat atau dihapus **otomatis me-recalculate** `total_bayar` dan `status` pada tagihan terkait.
-
-### GET `/kursus/pembayaran`
-
-List pembayaran dengan pagination.
-
-**Query:** `page`, `limit`, `search` (nama siswa via JOIN tagihan→siswa)
-
-**Response 200:**
-```json
-{
-  "message": "Berhasil mengambil data pembayaran",
-  "data": [
-    {
-      "id_pembayaran": "uuid",
-      "id_tagihan": "uuid",
-      "jumlah": 240000,
-      "tanggal_bayar": "2026-03-24",
-      "metode": "TRANSFER",
-      "referensi": "TRF-20260324-001",
-      "catatan": "DP pertama",
-      "dibuat_pada": "2026-03-24T10:00:00.000Z",
-      "diubah_pada": null,
-      "tagihan": {
-        "id_tagihan": "uuid",
-        "jenis": "BULANAN",
-        "periode": "2026-03",
-        "total_harga": 480000,
-        "total_bayar": 240000,
-        "status": 2
-      }
-    }
-  ],
-  "meta": { "page": 1, "limit": 10, "total": 10, "totalPages": 1 }
-}
-```
-
----
-
-### GET `/kursus/pembayaran/tagihan/:id_tagihan`
-
-Semua pembayaran untuk satu tagihan (riwayat cicilan).
-
-**Response 200:**
-```json
-{
-  "message": "Berhasil mengambil pembayaran tagihan",
-  "data": [ { ...PembayaranResponseDto } ]
-}
-```
-
----
-
-### GET `/kursus/pembayaran/:id`
-
-Detail pembayaran by ID.
-
----
-
-### POST `/kursus/pembayaran`
-
-Catat pembayaran baru. Otomatis update `total_bayar` dan `status` pada tagihan.
-
-**Request Body:**
-```json
-{
-  "id_tagihan": "uuid-tagihan",
-  "jumlah": 240000,
-  "tanggal_bayar": "2026-03-24",
-  "metode": "TRANSFER",
-  "referensi": "TRF-20260324-001",
-  "catatan": "DP pertama"
-}
-```
-
-**Logika status tagihan setelah pembayaran:**
-
-| Kondisi | Status Tagihan |
-|---------|---------------|
-| `total_bayar = 0` | `1` = MENUNGGU |
-| `0 < total_bayar < total_harga` | `2` = SEBAGIAN |
-| `total_bayar >= total_harga` | `3` = LUNAS |
-| Manual set | `4` = DIBATALKAN (via PATCH tagihan) |
-
-**Response 201:**
-```json
-{
-  "message": "Pembayaran berhasil dicatat",
-  "data": { ...PembayaranResponseDto }
-}
-```
-
----
-
-### DELETE `/kursus/pembayaran/:id`
-
-Soft delete pembayaran. Otomatis recalculate `total_bayar` dan `status` tagihan.
-
----
-
-## Kursus — Dashboard
-
-### GET `/kursus/dashboard/summary`
-
-Ambil semua data yang dibutuhkan halaman dashboard dalam satu request.
-
-**Response `data`:**
-```json
-{
-  "siswa_aktif": 45,
-  "kelas_hari_ini": 3,
-  "pendapatan_bulan_ini": 12500000,
-  "tagihan_belum_lunas": 8,
-  "siswa_akan_expired": 5,
-  "siswa_berhenti": 2,
-
-  "pendapatan_6_bulan": [
-    { "bulan": "2025-10", "total": 9800000 },
-    { "bulan": "2025-11", "total": 11200000 },
-    { "bulan": "2026-03", "total": 12500000 }
-  ],
-
-  "siswa_per_program": [
-    { "nama_program": "Tari Bali", "jumlah": 18 },
-    { "nama_program": "Tari Saman", "jumlah": 12 }
-  ],
-
-  "jadwal_hari_ini": [
-    {
-      "id_jadwal": "uuid",
-      "nama": "Kelas Tari Bali Pagi",
-      "instruktur": "Budi Santoso",
-      "jam_mulai": "08:00",
-      "jam_selesai": "10:00",
-      "kuota": 10,
-      "terisi": 7
-    }
-  ],
-
-  "pembayaran_terbaru": [
-    {
-      "id_pembayaran": "uuid",
-      "nama_siswa": "Siti Rahayu",
-      "jumlah": 500000,
-      "metode": "TRANSFER",
-      "tanggal_bayar": "2026-03-24"
-    }
-  ]
-}
-```
-
-**Keterangan field:**
-| Field | Keterangan |
-|-------|------------|
-| `siswa_aktif` | Jumlah siswa dengan `aktif=1` |
-| `kelas_hari_ini` | Jumlah sesi jadwal hari ini |
-| `pendapatan_bulan_ini` | Total `jumlah` pembayaran bulan berjalan |
-| `tagihan_belum_lunas` | Tagihan dengan status `1` (MENUNGGU) atau `2` (SEBAGIAN) |
-| `siswa_akan_expired` | Siswa aktif dengan `tanggal_selesai` dalam 30 hari ke depan |
-| `siswa_berhenti` | Jumlah distinct siswa dengan daftar kelas status `3` (BERHENTI) |
-| `pendapatan_6_bulan` | Pendapatan 6 bulan terakhir, sudah diurutkan ascending |
-| `siswa_per_program` | Jumlah siswa aktif per program, diurutkan terbanyak |
-| `jadwal_hari_ini` | Semua sesi hari ini berikut info `terisi` (siswa aktif terdaftar) |
-| `pembayaran_terbaru` | 5 pembayaran terbaru |
-
----
-
-## Error Reference — Kursus
-
-| HTTP | Penyebab |
-|:----:|---------|
-| `400` | Kuota kelas penuh / Jadwal masih ada siswa aktif (saat hapus) / `id_daftar` bukan milik jadwal ini |
-| `409` | Kode program duplikat / Siswa sudah terdaftar di jadwal / Instruktur jadwal overlap / Presensi sudah ada |
-| `404` | UUID tidak ditemukan atau sudah dihapus |
-
-## Enum — Kursus
-
-| Modul | Field | Nilai |
-|-------|-------|-------|
-| Siswa | `jenis_kelamin` | `1`=Laki-laki, `2`=Perempuan |
-| Program | `tingkat` | `"PEMULA"` / `"MENENGAH"` / `"MAHIR"` |
-| Tarif | `jenis` | `"PER_SESI"` / `"PAKET"` |
-| Daftar Kelas | `status` | `1`=Aktif, `2`=Selesai, `3`=Berhenti |
-| Presensi | `status` | `1`=HADIR, `2`=TIDAK_HADIR, `3`=SAKIT, `4`=IZIN |
-| Tagihan | `jenis` | `"PAKET"` / `"BULANAN"` / `"LAINNYA"` |
-| Tagihan | `status` | `1`=MENUNGGU, `2`=SEBAGIAN, `3`=LUNAS, `4`=DIBATALKAN |
-| Pembayaran | `metode` | `"TUNAI"` / `"TRANSFER"` / `"QRIS"` |
-| Presensi | `status` | `1`=HADIR, `2`=TIDAK_HADIR, `3`=SAKIT, `4`=IZIN |
-
----
-
----
-
-# Modul HR — Struktur Organisasi
-
-> Prefix endpoint: `/organisasi`
-> Semua endpoint memerlukan Bearer Token JWT.
-
----
-
-## Departemen
-
-### `GET /organisasi/departemen/tree`
-
-Struktur hierarki departemen — nested parent → children, tanpa pagination.
-
-**Response `200`:**
-```json
-{
-  "message": "Berhasil mengambil hierarki departemen",
-  "data": [
-    {
-      "id_departemen": "uuid-hrd",
-      "id_departemen_induk": null,
-      "kode_departemen": "HRD",
-      "nama_departemen": "Human Resources Department",
-      "deskripsi": null,
-      "aktif": 1,
-      "departemen_induk": null,
-      "children": [
-        {
-          "id_departemen": "uuid-rkt",
-          "id_departemen_induk": "uuid-hrd",
-          "kode_departemen": "RKT",
-          "nama_departemen": "Rekrutmen",
-          "departemen_induk": { "id_departemen": "uuid-hrd", "nama_departemen": "Human Resources Department" },
-          "children": []
-        }
-      ]
-    }
-  ]
-}
-```
-
-> Endpoint ini cocok untuk render komponen tree/sidebar navigasi departemen.
-> Hanya departemen aktif yang tidak dihapus yang ditampilkan.
-
----
-
-### `GET /organisasi/departemen`
-
-Daftar departemen dengan pagination dan search.
-
-**Query Parameters:**
-
-| Parameter | Tipe | Default | Keterangan |
-|-----------|------|---------|------------|
-| `page` | number | `1` | Halaman |
-| `limit` | number | `10` | Jumlah data per halaman |
-| `search` | string | - | Cari berdasarkan nama_departemen atau kode_departemen |
-
-**Response `200`:**
-```json
-{
-  "message": "Berhasil mengambil daftar departemen",
-  "data": [
-    {
-      "id_departemen": "uuid",
-      "id_departemen_induk": null,
-      "kode_departemen": "HRD",
-      "nama_departemen": "Human Resources Department",
-      "deskripsi": "Departemen yang mengelola SDM perusahaan",
-      "aktif": 1,
-      "dibuat_pada": "2026-03-24T08:00:00.000Z",
-      "diubah_pada": null,
-      "departemen_induk": null
-    }
-  ],
-  "meta": { "page": 1, "limit": 10, "total": 5, "totalPages": 1 }
-}
-```
-
----
-
-### `GET /organisasi/departemen/:id`
-
-Detail satu departemen.
-
-**Response `200`:**
-```json
-{
-  "message": "Berhasil mengambil detail departemen",
-  "data": {
-    "id_departemen": "uuid",
-    "kode_departemen": "HRD",
-    "nama_departemen": "Human Resources Department",
-    "deskripsi": "Departemen yang mengelola SDM perusahaan",
-    "aktif": 1,
-    "dibuat_pada": "2026-03-24T08:00:00.000Z",
-    "diubah_pada": null
-  }
-}
-```
-
----
-
-### `POST /organisasi/departemen`
-
-Tambah departemen baru.
-
-**Request Body:**
-```json
-{
-  "kode_departemen": "RKT",
-  "nama_departemen": "Rekrutmen",
-  "deskripsi": "Sub-departemen rekrutmen SDM",
-  "id_departemen_induk": "uuid-hrd"
-}
-```
-
-| Field | Wajib | Keterangan |
-|-------|-------|------------|
-| `kode_departemen` | Ya | Maks 20 karakter, harus unik → `409` jika duplikat |
-| `nama_departemen` | Ya | Maks 100 karakter |
-| `deskripsi` | Tidak | Teks bebas |
-| `id_departemen_induk` | Tidak | UUID departemen induk. Kosongkan untuk departemen level teratas → `404` jika UUID tidak ada, `400` jika circular |
-
-**Response `201`:**
-```json
-{
-  "message": "Departemen berhasil ditambahkan",
-  "data": { ...departemen }
-}
-```
-
----
-
-### `PATCH /organisasi/departemen/:id`
-
-Update data departemen. Semua field opsional (partial update).
-
-**Request Body:** sama seperti POST, semua field opsional.
-
-**Response `200`:**
-```json
-{
-  "message": "Departemen berhasil diupdate",
-  "data": { ...departemen }
-}
-```
-
----
-
-### `DELETE /organisasi/departemen/:id`
-
-Soft delete departemen (mengisi `dihapus_pada` dan `dihapus_oleh`).
-
-**Response `200`:**
-```json
-{
-  "message": "Departemen berhasil dihapus",
-  "data": null
-}
-```
-
----
-
-## Jabatan
-
-### `GET /organisasi/jabatan`
-
-Daftar jabatan dengan pagination, search, dan filter departemen.
-
-**Query Parameters:**
-
-| Parameter | Tipe | Default | Keterangan |
-|-----------|------|---------|------------|
-| `page` | number | `1` | Halaman |
-| `limit` | number | `10` | Data per halaman |
-| `search` | string | - | Cari berdasarkan nama_jabatan atau kode_jabatan |
-| `id_departemen` | string (UUID) | - | Filter jabatan dalam departemen tertentu |
-
-**Response `200`:**
-```json
-{
-  "message": "Berhasil mengambil daftar jabatan",
-  "data": [
-    {
-      "id_jabatan": "uuid",
-      "id_departemen": "uuid-dept",
-      "kode_jabatan": "MGR_HRD",
-      "nama_jabatan": "Manager HRD",
-      "level": 2,
-      "deskripsi": "Bertanggung jawab atas pengelolaan SDM",
-      "aktif": 1,
-      "dibuat_pada": "2026-03-24T08:00:00.000Z",
-      "diubah_pada": null,
-      "departemen": {
-        "id_departemen": "uuid-dept",
-        "nama_departemen": "Human Resources Department"
-      }
-    }
-  ],
-  "meta": { "page": 1, "limit": 10, "total": 10, "totalPages": 1 }
-}
-```
-
-> **Catatan:** Field `departemen` berisi object nested `{ id_departemen, nama_departemen }`. Jika jabatan tidak terikat departemen, nilainya `null`.
-
----
-
-### `GET /organisasi/jabatan/departemen/:id_departemen`
-
-Semua jabatan dalam satu departemen, **tanpa pagination** (untuk dropdown / select).
-
-**Response `200`:**
-```json
-{
-  "message": "Berhasil mengambil jabatan departemen",
-  "data": [
-    {
-      "id_jabatan": "uuid",
-      "kode_jabatan": "MGR_HRD",
-      "nama_jabatan": "Manager HRD",
-      "level": 2,
-      ...
-    }
-  ]
-}
-```
-
----
-
-### `GET /organisasi/jabatan/:id`
-
-Detail satu jabatan (termasuk nested departemen).
-
----
-
-### `POST /organisasi/jabatan`
-
-Tambah jabatan baru.
-
-**Request Body:**
-```json
-{
-  "id_departemen": "uuid-dept",
-  "kode_jabatan": "MGR_HRD",
-  "nama_jabatan": "Manager HRD",
-  "level": 2,
-  "deskripsi": "Bertanggung jawab atas pengelolaan SDM"
-}
-```
-
-| Field | Wajib | Keterangan |
-|-------|-------|------------|
-| `id_departemen` | Tidak | UUID departemen. Kosongkan untuk jabatan lintas departemen |
-| `kode_jabatan` | Ya | Maks 20 karakter, harus unik → `409` jika duplikat |
-| `nama_jabatan` | Ya | Maks 100 karakter |
-| `level` | Tidak | `1`=Top Management, `2`=Middle, `3`=Supervisor, `4`=Staff |
-| `deskripsi` | Tidak | Teks bebas |
-
-**Response `201`:**
-```json
-{
-  "message": "Jabatan berhasil ditambahkan",
-  "data": { ...jabatan }
-}
-```
-
----
-
-### `PATCH /organisasi/jabatan/:id`
-
-Update data jabatan. Semua field opsional.
-
----
-
-### `DELETE /organisasi/jabatan/:id`
-
-Soft delete jabatan.
-
-**Response `200`:**
-```json
-{
-  "message": "Jabatan berhasil dihapus",
-  "data": null
-}
-```
-
----
-
-## Lokasi Kantor
-
-### `GET /organisasi/lokasi-kantor`
-
-Daftar lokasi kantor dengan pagination dan search.
-
-**Query Parameters:**
-
-| Parameter | Tipe | Default | Keterangan |
-|-----------|------|---------|------------|
-| `page` | number | `1` | Halaman |
-| `limit` | number | `10` | Data per halaman |
-| `search` | string | - | Cari berdasarkan nama_lokasi, kode_lokasi, atau kota |
-
-**Response `200`:**
-```json
-{
-  "message": "Berhasil mengambil daftar lokasi kantor",
-  "data": [
-    {
-      "id_lokasi": "uuid",
-      "kode_lokasi": "KP-JKT",
-      "nama_lokasi": "Kantor Pusat Jakarta",
-      "alamat_lokasi": "Jl. Sudirman No. 1, Jakarta Pusat",
-      "kota": "Jakarta",
-      "provinsi": "DKI Jakarta",
-      "kode_pos": "10110",
-      "telepon": "021-12345678",
-      "aktif": 1,
-      "dibuat_pada": "2026-03-24T08:00:00.000Z",
-      "diubah_pada": null
-    }
-  ],
-  "meta": { "page": 1, "limit": 10, "total": 3, "totalPages": 1 }
-}
-```
-
----
-
-### `GET /organisasi/lokasi-kantor/:id`
-
-Detail satu lokasi kantor.
-
----
-
-### `POST /organisasi/lokasi-kantor`
-
-Tambah lokasi kantor baru.
-
-**Request Body:**
-```json
-{
-  "kode_lokasi": "KP-JKT",
-  "nama_lokasi": "Kantor Pusat Jakarta",
-  "alamat_lokasi": "Jl. Sudirman No. 1, Jakarta Pusat",
-  "kota": "Jakarta",
-  "provinsi": "DKI Jakarta",
-  "kode_pos": "10110",
-  "telepon": "021-12345678"
-}
-```
-
-| Field | Wajib | Keterangan |
-|-------|-------|------------|
-| `kode_lokasi` | Ya | Maks 20 karakter, harus unik → `409` jika duplikat |
-| `nama_lokasi` | Ya | Maks 100 karakter |
-| `alamat_lokasi` | Tidak | Teks bebas |
-| `kota` | Tidak | Maks 100 karakter |
-| `provinsi` | Tidak | Maks 100 karakter |
-| `kode_pos` | Tidak | Maks 10 karakter |
-| `telepon` | Tidak | Maks 20 karakter |
-
-**Response `201`:**
-```json
-{
-  "message": "Lokasi kantor berhasil ditambahkan",
-  "data": { ...lokasi_kantor }
-}
-```
-
----
-
-### `PATCH /organisasi/lokasi-kantor/:id`
-
-Update data lokasi kantor. Semua field opsional.
-
----
-
-### `DELETE /organisasi/lokasi-kantor/:id`
-
-Soft delete lokasi kantor.
-
-**Response `200`:**
-```json
-{
-  "message": "Lokasi kantor berhasil dihapus",
-  "data": null
-}
-```
-
----
-
----
-
-## Org Chart — Struktur Lengkap
-
-### `GET /organisasi/struktur`
-
-Mengembalikan seluruh struktur organisasi dalam format nested tree: **Departemen → Sub-Departemen → Jabatan → Karyawan**.
-Cocok untuk render org chart / bagan organisasi.
-
-**Query Parameters:**
-
-| Parameter | Tipe | Keterangan |
-|-----------|------|------------|
-| `id_perusahaan` | string (UUID) | Opsional — filter karyawan berdasarkan perusahaan |
-
-**Response `200`:**
-```json
-{
-  "message": "Berhasil mengambil struktur organisasi",
-  "data": {
-    "departemen": [
-      {
-        "id_departemen": "uuid-hrd",
-        "id_departemen_induk": null,
-        "kode_departemen": "HRD",
-        "nama_departemen": "Human Resources Department",
-        "jabatan": [
-          {
-            "id_jabatan": "uuid-jab",
-            "kode_jabatan": "MGR_HRD",
-            "nama_jabatan": "Manager HRD",
-            "level": 2,
-            "karyawan": [
-              {
-                "id_karyawan": "uuid-kar",
-                "id_jabatan": "uuid-jab",
-                "nik": "K001",
-                "nama": "Budi Santoso",
-                "foto_url": null,
-                "status_kepegawaian": "TETAP"
-              }
-            ]
-          }
-        ],
-        "sub_departemen": [
-          {
-            "id_departemen": "uuid-rkt",
-            "id_departemen_induk": "uuid-hrd",
-            "kode_departemen": "RKT",
-            "nama_departemen": "Rekrutmen",
-            "jabatan": [...],
-            "sub_departemen": []
-          }
-        ]
-      }
-    ],
-    "karyawan_tanpa_departemen": [
-      {
-        "id_karyawan": "uuid",
-        "id_jabatan": null,
-        "nik": "K099",
-        "nama": "Siti Rahayu",
-        "foto_url": null,
-        "status_kepegawaian": "MAGANG"
-      }
-    ],
-    "total_karyawan": 50,
-    "total_departemen": 8
-  }
-}
-```
-
-**Keterangan field:**
-
-| Field | Keterangan |
-|-------|------------|
-| `departemen` | Array departemen level teratas (tanpa induk), masing-masing memiliki `sub_departemen` rekursif |
-| `jabatan[].karyawan` | Karyawan yang memiliki `id_jabatan` tersebut |
-| `karyawan_tanpa_departemen` | Karyawan tanpa jabatan, atau jabatan yang tidak terikat departemen |
-| `total_karyawan` | Seluruh karyawan aktif (termasuk yang tanpa departemen) |
-| `total_departemen` | Jumlah departemen aktif |
-
----
-
-## Error Reference — Struktur Organisasi
-
-| HTTP | Penyebab |
-|:----:|---------|
-| `409` | Kode departemen / jabatan / lokasi kantor sudah terdaftar |
-| `404` | UUID tidak ditemukan atau sudah dihapus |
-
-## Enum — Jabatan Level
-
-| Nilai | Keterangan |
-|-------|------------|
-| `1` | Top Management |
-| `2` | Middle Management |
-| `3` | Supervisor |
-| `4` | Staff |
-
----
-
-## Master Data — Zona Waktu
-
-> **Base URL:** `/zona-waktu`
-> Digunakan untuk dropdown pilihan zona waktu pada pengaturan sistem perusahaan.
-
-### `GET /zona-waktu`
-
-Mengambil daftar zona waktu. Default hanya yang aktif (`aktif = 1`). Tambahkan `?semua=1` untuk menyertakan semua.
-
-**Query Parameters**
-
-| Parameter | Tipe | Wajib | Keterangan |
-|-----------|------|:-----:|-----------|
-| `semua` | string | ❌ | `1` → tampilkan semua termasuk yang tidak aktif |
-
-**Response `200`**
-
-```json
-{
-  "message": "Berhasil mengambil daftar zona waktu",
-  "data": [
-    {
-      "id_zona": "uuid-...",
-      "kode_zona": "Asia/Jakarta",
-      "nama_zona": "WIB — Waktu Indonesia Barat",
-      "offset_utc": "+07:00",
-      "urutan": 1,
-      "aktif": 1
-    },
-    {
-      "id_zona": "uuid-...",
-      "kode_zona": "Asia/Makassar",
-      "nama_zona": "WITA — Waktu Indonesia Tengah",
-      "offset_utc": "+08:00",
-      "urutan": 2,
-      "aktif": 1
-    },
-    {
-      "id_zona": "uuid-...",
-      "kode_zona": "Asia/Jayapura",
-      "nama_zona": "WIT — Waktu Indonesia Timur",
-      "offset_utc": "+09:00",
-      "urutan": 3,
-      "aktif": 1
-    }
-  ]
-}
-```
-
-**Field Response**
-
-| Field | Tipe | Keterangan |
-|-------|------|-----------|
-| `id_zona` | string (UUID) | ID unik zona waktu |
-| `kode_zona` | string | Kode IANA (misal `Asia/Jakarta`) |
-| `nama_zona` | string | Nama tampilan zona waktu |
-| `offset_utc` | string | Offset dari UTC (misal `+07:00`) |
-| `urutan` | number | Urutan tampil di dropdown |
-| `aktif` | number | `1` = aktif, `0` = tidak aktif |
-
----
-
-## Master Data — Mata Uang
-
-> **Base URL:** `/mata-uang`
-> Digunakan untuk dropdown pilihan mata uang pada pengaturan sistem perusahaan.
-
-### `GET /mata-uang`
-
-Mengambil daftar mata uang. Default hanya yang aktif (`aktif = 1`). Tambahkan `?semua=1` untuk menyertakan semua.
-
-**Query Parameters**
-
-| Parameter | Tipe | Wajib | Keterangan |
-|-----------|------|:-----:|-----------|
-| `semua` | string | ❌ | `1` → tampilkan semua termasuk yang tidak aktif |
-
-**Response `200`**
-
-```json
-{
-  "message": "Berhasil mengambil daftar mata uang",
-  "data": [
-    {
-      "id_mata_uang": "uuid-...",
-      "kode_mata_uang": "IDR",
-      "nama_mata_uang": "Rupiah Indonesia",
-      "simbol": "Rp",
-      "urutan": 1,
-      "aktif": 1
-    },
-    {
-      "id_mata_uang": "uuid-...",
-      "kode_mata_uang": "USD",
-      "nama_mata_uang": "Dolar Amerika Serikat",
-      "simbol": "$",
-      "urutan": 10,
-      "aktif": 1
-    },
-    {
-      "id_mata_uang": "uuid-...",
-      "kode_mata_uang": "EUR",
-      "nama_mata_uang": "Euro",
-      "simbol": "€",
-      "urutan": 20,
-      "aktif": 1
-    }
-  ]
-}
-```
-
-**Field Response**
-
-| Field | Tipe | Keterangan |
-|-------|------|-----------|
-| `id_mata_uang` | string (UUID) | ID unik mata uang |
-| `kode_mata_uang` | string | Kode ISO 4217 (misal `IDR`, `USD`) |
-| `nama_mata_uang` | string | Nama lengkap mata uang |
-| `simbol` | string | Simbol mata uang (misal `Rp`, `$`, `€`) |
-| `urutan` | number | Urutan tampil di dropdown |
-| `aktif` | number | `1` = aktif, `0` = tidak aktif |

@@ -26,8 +26,13 @@ export const ROUTES = {
     KURSUS_PROGRAM: '/kursus/program-pengajaran',
     KURSUS_TARIF: '/kursus/tarif',
     KURSUS_JADWAL: '/kursus/jadwal-kelas',
+    KURSUS_JADWAL_TAMBAH: '/kursus/jadwal-kelas/tambah',
+    KURSUS_JADWAL_EDIT: (id: string) => `/kursus/jadwal-kelas/${id}/edit`,
     KURSUS_DAFTAR: '/kursus/daftar-kelas',
     KURSUS_PRESENSI: '/kursus/presensi',
+    KURSUS_BIAYA: '/kursus/biaya',
+    KURSUS_BIAYA_TAMBAH: '/kursus/biaya/tambah',
+    KURSUS_BIAYA_EDIT: (id: string) => `/kursus/biaya/${id}/edit`,
     KURSUS_TAGIHAN: '/kursus/tagihan',
     KURSUS_PEMBAYARAN: '/kursus/pembayaran',
 

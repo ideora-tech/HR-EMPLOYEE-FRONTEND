@@ -48,14 +48,6 @@ const TagihanService = {
         })
     },
 
-    async generateBulanan(periode: string): Promise<ApiResponse<ITagihan[]>> {
-        return ApiService.fetchDataWithAxios<ApiResponse<ITagihan[]>, { periode: string }>({
-            url: API_ENDPOINTS.KURSUS.TAGIHAN.GENERATE_BULANAN,
-            method: 'POST',
-            data: { periode },
-        })
-    },
-
     async update(id: string, payload: IUpdateTagihan): Promise<ApiResponse<ITagihan>> {
         return ApiService.fetchDataWithAxios<ApiResponse<ITagihan>, IUpdateTagihan>({
             url: API_ENDPOINTS.KURSUS.TAGIHAN.BY_ID(id),

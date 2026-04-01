@@ -5,34 +5,19 @@ import DataTable from '@/components/shared/DataTable'
 import { Tag, Tooltip } from '@/components/ui'
 import { HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
-import type { IProgramPengajaran } from '@/@types/kursus.types'
+import type { IKelas } from '@/@types/kursus.types'
 
-const TINGKAT_COLORS = [
-    'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300',
-    'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300',
-    'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-300',
-    'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-300',
-    'bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-300',
-]
-
-/** Pilih warna berdasarkan hash kode agar konsisten */
-const getTingkatColor = (kode: string): string => {
-    let hash = 0
-    for (let i = 0; i < kode.length; i++) hash += kode.charCodeAt(i)
-    return TINGKAT_COLORS[hash % TINGKAT_COLORS.length]
-}
-
-interface ProgramPengajaranTableProps {
-    data: IProgramPengajaran[]
+interface KelasTableProps {
+    data: IKelas[]
     loading?: boolean
     pagingData: { total: number; pageIndex: number; pageSize: number }
     onPaginationChange: (page: number) => void
     onSelectChange: (pageSize: number) => void
-    onEdit: (item: IProgramPengajaran) => void
-    onDelete: (item: IProgramPengajaran) => void
+    onEdit: (item: IKelas) => void
+    onDelete: (item: IKelas) => void
 }
 
-const ProgramPengajaranTable = ({
+const KelasTable = ({
     data,
     loading = false,
     pagingData,
@@ -40,61 +25,37 @@ const ProgramPengajaranTable = ({
     onSelectChange,
     onEdit,
     onDelete,
-}: ProgramPengajaranTableProps) => {
-    const columns: ColumnDef<IProgramPengajaran>[] = useMemo(
+}: KelasTableProps) => {
+    const columns: ColumnDef<IKelas>[] = useMemo(
         () => [
             {
                 header: 'No',
                 id: 'no',
                 size: 70,
-                cell: ({ row }: CellContext<IProgramPengajaran, unknown>) =>
-                    (pagingData.pageIndex - 1) * pagingData.pageSize +
-                    row.index +
-                    1,
+                cell: ({ row }: CellContext<IKelas, unknown>) =>
+                    (pagingData.pageIndex - 1) * pagingData.pageSize + row.index + 1,
             },
             {
-                header: 'Kode',
-                accessorKey: 'kode_program',
-                size: 160,
-                cell: ({ row }: CellContext<IProgramPengajaran, unknown>) => (
-                    <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-1 rounded">
-                        {row.original.kode_program}
+                header: 'Nama Kelas',
+                accessorKey: 'nama_kelas',
+                cell: ({ row }: CellContext<IKelas, unknown>) => (
+                    <span className="font-semibold">{row.original.nama_kelas}</span>
+                ),
+            },
+            {
+                header: 'Deskripsi',
+                accessorKey: 'deskripsi',
+                cell: ({ row }: CellContext<IKelas, unknown>) => (
+                    <span className="text-gray-500">
+                        {row.original.deskripsi ?? <span className="italic text-gray-300">—</span>}
                     </span>
-                ),
-            },
-            {
-                header: 'Nama Program',
-                accessorKey: 'nama_program',
-                size: 280,
-                cell: ({ row }: CellContext<IProgramPengajaran, unknown>) => (
-                    <span className="font-semibold">{row.original.nama_program}</span>
-                ),
-            },
-            {
-                header: 'Tingkat',
-                accessorKey: 'tingkat',
-                size: 140,
-                cell: ({ row }: CellContext<IProgramPengajaran, unknown>) => {
-                    const tingkat = row.original.tingkat
-                    if (!tingkat) return <span className="text-gray-400">-</span>
-                    return (
-                        <Tag className={getTingkatColor(tingkat)}>{tingkat}</Tag>
-                    )
-                },
-            },
-            {
-                header: 'Durasi',
-                accessorKey: 'durasi_menit',
-                size: 120,
-                cell: ({ row }: CellContext<IProgramPengajaran, unknown>) => (
-                    <span>{row.original.durasi_menit} menit</span>
                 ),
             },
             {
                 header: 'Status',
                 accessorKey: 'aktif',
                 size: 120,
-                cell: ({ row }: CellContext<IProgramPengajaran, unknown>) => (
+                cell: ({ row }: CellContext<IKelas, unknown>) => (
                     <Tag
                         className={
                             row.original.aktif === 1
@@ -110,7 +71,7 @@ const ProgramPengajaranTable = ({
                 header: '',
                 id: 'action',
                 size: 100,
-                cell: ({ row }: CellContext<IProgramPengajaran, unknown>) => (
+                cell: ({ row }: CellContext<IKelas, unknown>) => (
                     <div className="flex items-center justify-end gap-2">
                         <Tooltip title="Edit">
                             <span
@@ -148,4 +109,4 @@ const ProgramPengajaranTable = ({
     )
 }
 
-export default ProgramPengajaranTable
+export default KelasTable

@@ -11,47 +11,51 @@ import {
 } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
-import TingkatProgramTable from '@/components/kursus/tingkat-program/TingkatProgramTable'
-import TingkatProgramForm from '@/components/kursus/tingkat-program/TingkatProgramForm'
-import TingkatProgramService from '@/services/kursus/tingkat-program.service'
+import PembayaranTable from '@/components/kursus/pembayaran/PembayaranTable'
+import PembayaranForm from '@/components/kursus/pembayaran/PembayaranForm'
+import PembayaranService from '@/services/kursus/pembayaran.service'
+import TagihanService from '@/services/kursus/tagihan.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
-import type {
-    ITingkatProgram,
-    ICreateTingkatProgram,
-    IUpdateTingkatProgram,
-} from '@/@types/kursus.types'
+import type { IPembayaran, ICreatePembayaran, ITagihan } from '@/@types/kursus.types'
 
-type AktifOption = { value: '' | '1' | '0'; label: string }
+type MetodeOption = { value: '' | 'TUNAI' | 'TRANSFER' | 'QRIS'; label: string }
 
-const AKTIF_OPTIONS: AktifOption[] = [
-    { value: '', label: 'Semua Status' },
-    { value: '1', label: 'Aktif' },
-    { value: '0', label: 'Nonaktif' },
+const METODE_OPTIONS: MetodeOption[] = [
+    { value: '', label: 'Semua Metode' },
+    { value: 'TUNAI', label: 'Tunai' },
+    { value: 'TRANSFER', label: 'Transfer Bank' },
+    { value: 'QRIS', label: 'QRIS' },
 ]
 
-const TingkatProgramPage = () => {
-    const [list, setList] = useState<ITingkatProgram[]>([])
+const PembayaranPage = () => {
+    const [list, setList] = useState<IPembayaran[]>([])
+    const [tagihanList, setTagihanList] = useState<ITagihan[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
 
     const [searchInput, setSearchInput] = useState('')
     const [search, setSearch] = useState('')
-    const [aktifFilter, setAktifFilter] = useState<'' | '1' | '0'>('')
+    const [metodeFilter, setMetodeFilter] = useState<'' | 'TUNAI' | 'TRANSFER' | 'QRIS'>('')
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
     const [total, setTotal] = useState(0)
 
     const [formOpen, setFormOpen] = useState(false)
-    const [editData, setEditData] = useState<ITingkatProgram | null>(null)
-    const [deleteTarget, setDeleteTarget] = useState<ITingkatProgram | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<IPembayaran | null>(null)
+
+    /* Load tagihan list for form dropdown (once) */
+    useEffect(() => {
+        TagihanService.getAll({ limit: 200 })
+            .then((res) => { if (res.success) setTagihanList(res.data) })
+            .catch(() => { })
+    }, [])
 
     const fetchData = useCallback(async () => {
         setLoading(true)
         try {
-            const res = await TingkatProgramService.getAll({
+            const res = await PembayaranService.getAll({
                 search: search || undefined,
-                aktif: aktifFilter !== '' ? Number(aktifFilter) : undefined,
                 page: currentPage,
                 limit: pageSize,
             })
@@ -61,17 +65,14 @@ const TingkatProgramPage = () => {
             }
         } catch (err) {
             toast.push(
-                <Notification
-                    type="danger"
-                    title={MESSAGES.ERROR.FETCH(ENTITY.TINGKAT_PROGRAM)}
-                >
+                <Notification type="danger" title={MESSAGES.ERROR.FETCH(ENTITY.PEMBAYARAN)}>
                     {parseApiError(err)}
                 </Notification>,
             )
         } finally {
             setLoading(false)
         }
-    }, [search, aktifFilter, currentPage, pageSize])
+    }, [search, currentPage, pageSize])
 
     useEffect(() => {
         fetchData()
@@ -88,53 +89,18 @@ const TingkatProgramPage = () => {
         setCurrentPage(1)
     }
 
-    const handleOpenAdd = () => {
-        setEditData(null)
-        setFormOpen(true)
-    }
-
-    const handleOpenEdit = (item: ITingkatProgram) => {
-        setEditData(item)
-        setFormOpen(true)
-    }
-
-    const handleFormClose = () => {
-        setFormOpen(false)
-        setEditData(null)
-    }
-
-    const handleSubmit = async (payload: ICreateTingkatProgram | IUpdateTingkatProgram) => {
+    const handleSubmit = async (payload: ICreatePembayaran) => {
         setSubmitting(true)
         try {
-            if (editData) {
-                await TingkatProgramService.update(editData.id_tingkat, payload as IUpdateTingkatProgram)
-                toast.push(
-                    <Notification
-                        type="success"
-                        title={MESSAGES.SUCCESS.UPDATED(ENTITY.TINGKAT_PROGRAM)}
-                    />,
-                )
-            } else {
-                await TingkatProgramService.create(payload as ICreateTingkatProgram)
-                toast.push(
-                    <Notification
-                        type="success"
-                        title={MESSAGES.SUCCESS.CREATED(ENTITY.TINGKAT_PROGRAM)}
-                    />,
-                )
-            }
-            handleFormClose()
+            await PembayaranService.create(payload)
+            toast.push(
+                <Notification type="success" title={MESSAGES.SUCCESS.CREATED(ENTITY.PEMBAYARAN)} />,
+            )
+            setFormOpen(false)
             fetchData()
         } catch (err) {
             toast.push(
-                <Notification
-                    type="danger"
-                    title={
-                        editData
-                            ? MESSAGES.ERROR.UPDATE(ENTITY.TINGKAT_PROGRAM)
-                            : MESSAGES.ERROR.CREATE(ENTITY.TINGKAT_PROGRAM)
-                    }
-                >
+                <Notification type="danger" title={MESSAGES.ERROR.CREATE(ENTITY.PEMBAYARAN)}>
                     {parseApiError(err)}
                 </Notification>,
             )
@@ -147,21 +113,15 @@ const TingkatProgramPage = () => {
         if (!deleteTarget) return
         setSubmitting(true)
         try {
-            await TingkatProgramService.remove(deleteTarget.id_tingkat)
+            await PembayaranService.remove(deleteTarget.id_pembayaran)
             toast.push(
-                <Notification
-                    type="success"
-                    title={MESSAGES.SUCCESS.DELETED(ENTITY.TINGKAT_PROGRAM)}
-                />,
+                <Notification type="success" title={MESSAGES.SUCCESS.DELETED(ENTITY.PEMBAYARAN)} />,
             )
             setDeleteTarget(null)
             fetchData()
         } catch (err) {
             toast.push(
-                <Notification
-                    type="danger"
-                    title={MESSAGES.ERROR.DELETE(ENTITY.TINGKAT_PROGRAM)}
-                >
+                <Notification type="danger" title={MESSAGES.ERROR.DELETE(ENTITY.PEMBAYARAN)}>
                     {parseApiError(err)}
                 </Notification>,
             )
@@ -170,19 +130,23 @@ const TingkatProgramPage = () => {
         }
     }
 
+    const filteredList = metodeFilter
+        ? list.filter((p) => p.metode === metodeFilter)
+        : list
+
     return (
         <div className="flex flex-col gap-4">
             <Card
                 header={{
-                    content: <h4>Manajemen Paket </h4>,
+                    content: <h4>Pembayaran</h4>,
                     extra: (
                         <Button
                             variant="solid"
                             size="sm"
                             icon={<HiPlusCircle />}
-                            onClick={handleOpenAdd}
+                            onClick={() => setFormOpen(true)}
                         >
-                            Tambah Paket
+                            Catat Pembayaran
                         </Button>
                     ),
                     bordered: false,
@@ -192,7 +156,7 @@ const TingkatProgramPage = () => {
                 <div className="flex items-center gap-3 px-4 pb-3">
                     <Input
                         className="flex-1"
-                        placeholder="Cari kode atau nama paket... (tekan Enter)"
+                        placeholder="Cari nama siswa... (tekan Enter)"
                         suffix={
                             searchInput ? (
                                 <HiOutlineX
@@ -208,51 +172,41 @@ const TingkatProgramPage = () => {
                         }
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSearchSubmit()
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit() }}
+                    />
+                    <Select
+                        className="w-48"
+                        options={METODE_OPTIONS}
+                        value={METODE_OPTIONS.find((o) => o.value === metodeFilter)}
+                        onChange={(opt) => {
+                            setMetodeFilter((opt as MetodeOption).value)
+                            setCurrentPage(1)
                         }}
                     />
-                    <div className="w-44 shrink-0">
-                        <Select<AktifOption>
-                            options={AKTIF_OPTIONS}
-                            value={
-                                AKTIF_OPTIONS.find((o) => o.value === aktifFilter) ??
-                                AKTIF_OPTIONS[0]
-                            }
-                            onChange={(opt) => {
-                                setAktifFilter((opt as AktifOption).value)
-                                setCurrentPage(1)
-                            }}
-                        />
-                    </div>
                 </div>
 
-                <TingkatProgramTable
-                    data={list}
+                <PembayaranTable
+                    data={filteredList}
                     loading={loading}
                     pagingData={{ total, pageIndex: currentPage, pageSize }}
                     onPaginationChange={setCurrentPage}
-                    onSelectChange={(size) => {
-                        setPageSize(size)
-                        setCurrentPage(1)
-                    }}
-                    onEdit={handleOpenEdit}
+                    onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
                     onDelete={setDeleteTarget}
                 />
             </Card>
 
-            <TingkatProgramForm
+            <PembayaranForm
                 open={formOpen}
-                editData={editData}
+                tagihanList={tagihanList}
                 submitting={submitting}
-                onClose={handleFormClose}
+                onClose={() => setFormOpen(false)}
                 onSubmit={handleSubmit}
             />
 
             <ConfirmDialog
                 isOpen={!!deleteTarget}
                 type="danger"
-                title="Hapus Tingkat Program?"
+                title="Hapus Pembayaran?"
                 confirmText="Ya, Hapus"
                 cancelText="Batal"
                 confirmButtonProps={{
@@ -265,16 +219,20 @@ const TingkatProgramPage = () => {
                 onConfirm={handleDelete}
             >
                 <p className="text-sm">
-                    Data tingkat program{' '}
-                    <span className="font-semibold">
-                        &ldquo;{deleteTarget?.nama_tingkat}&rdquo;
-                    </span>{' '}
-                    akan dihapus secara permanen. Tindakan ini tidak dapat
-                    dibatalkan.
+                    Data pembayaran{' '}
+                    {deleteTarget?.tagihan?.nama_siswa && (
+                        <>
+                            siswa{' '}
+                            <span className="font-semibold">
+                                &ldquo;{deleteTarget.tagihan.nama_siswa}&rdquo;
+                            </span>{' '}
+                        </>
+                    )}
+                    akan dihapus. Tindakan ini tidak dapat dibatalkan.
                 </p>
             </ConfirmDialog>
         </div>
     )
 }
 
-export default TingkatProgramPage
+export default PembayaranPage

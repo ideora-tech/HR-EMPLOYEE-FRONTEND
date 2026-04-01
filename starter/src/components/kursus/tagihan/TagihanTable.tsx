@@ -5,6 +5,7 @@ import { Tag, Tooltip } from '@/components/ui'
 import { HiOutlineEye, HiOutlineTrash } from 'react-icons/hi'
 import DataTable from '@/components/shared/DataTable'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
+import { formatRupiah } from '@/utils/formatNumber'
 import type { ITagihan } from '@/@types/kursus.types'
 
 /* ─── helpers ────────────────────────────────────────────── */
@@ -26,10 +27,6 @@ const STATUS_MAP: Record<number, { label: string; class: string }> = {
         label: 'Dibatalkan',
         class: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
     },
-}
-
-function formatRupiah(n: number) {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
 }
 
 /* ─── props ──────────────────────────────────────────────── */
@@ -68,23 +65,18 @@ const TagihanTable = ({
                 header: 'Siswa',
                 id: 'siswa',
                 cell: ({ row }: CellContext<ITagihan, unknown>) => (
-                    <div>
-                        <p className="font-semibold text-gray-800 dark:text-gray-100">
-                            {row.original.siswa.nama_siswa}
-                        </p>
-                        {row.original.siswa.telepon && (
-                            <p className="text-xs text-gray-400">{row.original.siswa.telepon}</p>
-                        )}
-                    </div>
+                    <span className="font-semibold text-gray-800 dark:text-gray-100">
+                        {row.original.nama_siswa}
+                    </span>
                 ),
             },
             {
-                header: 'Jenis',
-                accessorKey: 'jenis_tagihan',
-                size: 100,
+                header: 'Biaya',
+                accessorKey: 'nama_biaya',
+                size: 160,
                 cell: ({ row }: CellContext<ITagihan, unknown>) => (
                     <Tag className="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300 text-xs">
-                        {row.original.jenis_tagihan}
+                        {row.original.nama_biaya}
                     </Tag>
                 ),
             },
@@ -180,6 +172,7 @@ const TagihanTable = ({
             columns={columns}
             data={data}
             loading={loading}
+            noData={!loading && data.length === 0}
             pagingData={pagingData}
             onPaginationChange={onPaginationChange}
             onSelectChange={onSelectChange}

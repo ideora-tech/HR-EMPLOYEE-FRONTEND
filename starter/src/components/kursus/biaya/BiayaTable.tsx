@@ -1,23 +1,24 @@
 'use client'
 
 import { useMemo } from 'react'
-import DataTable from '@/components/shared/DataTable'
 import { Tag, Tooltip } from '@/components/ui'
 import { HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi'
+import DataTable from '@/components/shared/DataTable'
+import { formatRupiah } from '@/utils/formatNumber'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
-import type { ITingkatProgram } from '@/@types/kursus.types'
+import type { IBiaya } from '@/@types/kursus.types'
 
-interface TingkatProgramTableProps {
-    data: ITingkatProgram[]
+interface BiayaTableProps {
+    data: IBiaya[]
     loading?: boolean
     pagingData: { total: number; pageIndex: number; pageSize: number }
     onPaginationChange: (page: number) => void
-    onSelectChange: (pageSize: number) => void
-    onEdit: (item: ITingkatProgram) => void
-    onDelete: (item: ITingkatProgram) => void
+    onSelectChange: (size: number) => void
+    onEdit: (item: IBiaya) => void
+    onDelete: (item: IBiaya) => void
 }
 
-const TingkatProgramTable = ({
+const BiayaTable = ({
     data,
     loading = false,
     pagingData,
@@ -25,49 +26,60 @@ const TingkatProgramTable = ({
     onSelectChange,
     onEdit,
     onDelete,
-}: TingkatProgramTableProps) => {
-    const columns: ColumnDef<ITingkatProgram>[] = useMemo(
+}: BiayaTableProps) => {
+    const columns: ColumnDef<IBiaya>[] = useMemo(
         () => [
             {
                 header: 'No',
                 id: 'no',
                 size: 70,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) =>
-                    (pagingData.pageIndex - 1) * pagingData.pageSize +
-                    row.index +
-                    1,
+                cell: ({ row }: CellContext<IBiaya, unknown>) =>
+                    (pagingData.pageIndex - 1) * pagingData.pageSize + row.index + 1,
             },
             {
-                header: 'Kode',
-                accessorKey: 'kode_tingkat',
+                header: 'Nama Biaya',
+                accessorKey: 'nama_biaya',
+                cell: ({ row }: CellContext<IBiaya, unknown>) => (
+                    <span className="font-semibold">{row.original.nama_biaya}</span>
+                ),
+            },
+            {
+                header: 'Kelas',
+                accessorKey: 'nama_kelas',
                 size: 160,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
-                    <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-1 rounded">
-                        {row.original.kode_tingkat}
-                    </span>
+                cell: ({ row }: CellContext<IBiaya, unknown>) => (
+                    <span>{row.original.nama_kelas ?? '-'}</span>
                 ),
             },
             {
-                header: 'Nama Paket',
-                accessorKey: 'nama_tingkat',
-                size: 280,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
-                    <span className="font-semibold">{row.original.nama_tingkat}</span>
+                header: 'Paket',
+                accessorKey: 'nama_paket',
+                size: 160,
+                cell: ({ row }: CellContext<IBiaya, unknown>) => (
+                    <span>{row.original.nama_paket ?? '-'}</span>
                 ),
             },
-            // {
-            //     header: 'Urutan',
-            //     accessorKey: 'urutan',
-            //     size: 120,
-            //     cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
-            //         <span>{row.original.urutan}</span>
-            //     ),
-            // },
+            {
+                header: 'Kategori Umur',
+                accessorKey: 'nama_kategori_umur',
+                size: 160,
+                cell: ({ row }: CellContext<IBiaya, unknown>) => (
+                    <span>{row.original.nama_kategori_umur ?? '-'}</span>
+                ),
+            },
+            {
+                header: 'Harga',
+                accessorKey: 'harga_biaya',
+                size: 160,
+                cell: ({ row }: CellContext<IBiaya, unknown>) => (
+                    <span className="font-medium">{formatRupiah(row.original.harga_biaya)}</span>
+                ),
+            },
             {
                 header: 'Status',
                 accessorKey: 'aktif',
                 size: 120,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
+                cell: ({ row }: CellContext<IBiaya, unknown>) => (
                     <Tag
                         className={
                             row.original.aktif === 1
@@ -83,7 +95,7 @@ const TingkatProgramTable = ({
                 header: '',
                 id: 'action',
                 size: 100,
-                cell: ({ row }: CellContext<ITingkatProgram, unknown>) => (
+                cell: ({ row }: CellContext<IBiaya, unknown>) => (
                     <div className="flex items-center justify-end gap-2">
                         <Tooltip title="Edit">
                             <span
@@ -121,4 +133,5 @@ const TingkatProgramTable = ({
     )
 }
 
-export default TingkatProgramTable
+export default BiayaTable
+
