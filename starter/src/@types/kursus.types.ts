@@ -40,11 +40,13 @@ export interface IKursusQuery {
 }
 
 // ─── Kelas ────────────────────────────────────────────────────────────────────
-// Table: kursus_kelas | PK: id_kelas (UUID)
+// Table: kursus_kelas | PK: id_kelas (UUID) | FK: id_paket (opsional)
 
 export interface IKelas {
     id_kelas: string               // UUID
+    id_paket: string | null        // FK opsional ke kursus_paket
     nama_kelas: string
+    nama_paket: string | null      // auto-resolve dari id_paket
     deskripsi: string | null
     aktif: number                  // 1 = aktif, 0 = nonaktif
     dibuat_pada: string
@@ -53,6 +55,7 @@ export interface IKelas {
 
 export interface ICreateKelas {
     nama_kelas: string
+    id_paket?: string              // UUID paket — nama_paket auto-resolve
     deskripsi?: string
     aktif?: 0 | 1
 }
@@ -60,12 +63,10 @@ export interface ICreateKelas {
 export type IUpdateKelas = Partial<ICreateKelas>
 
 // ─── Paket ────────────────────────────────────────────────────────────────────
-// Table: kursus_paket | PK: id_paket (UUID) | FK: id_kelas
+// Table: kursus_paket | PK: id_paket (UUID)
 
 export interface IPaket {
     id_paket: string               // UUID
-    id_kelas: string
-    nama_kelas?: string            // joined dari kelas
     nama_paket: string
     deskripsi: string | null
     aktif: number
@@ -74,7 +75,6 @@ export interface IPaket {
 }
 
 export interface ICreatePaket {
-    id_kelas: string
     nama_paket: string
     deskripsi?: string
     aktif?: 0 | 1
@@ -88,10 +88,11 @@ export type IUpdatePaket = Partial<ICreatePaket>
 export interface IKategoriUmur {
     id_kategori_umur: string       // UUID
     id_kelas: string
-    id_paket: string
+    id_paket: string | null        // opsional — bisa null jika tidak terikat paket
     nama_kelas?: string            // joined
     nama_paket?: string            // joined
     nama_kategori_umur: string     // contoh: "3-6 Tahun", "7-12 Tahun"
+    sesi_pertemuan: number | null  // jumlah sesi pertemuan
     durasi: number | null          // durasi dalam bulan
     deskripsi: string | null
     aktif: number
@@ -101,8 +102,9 @@ export interface IKategoriUmur {
 
 export interface ICreateKategoriUmur {
     id_kelas: string
-    id_paket: string
+    id_paket?: string              // opsional
     nama_kategori_umur: string
+    sesi_pertemuan?: number
     durasi?: number
     deskripsi?: string
     aktif?: 0 | 1
@@ -113,7 +115,7 @@ export type IUpdateKategoriUmur = Partial<ICreateKategoriUmur>
 // ─── Biaya ────────────────────────────────────────────────────────────────────
 // Table: kursus_biaya | PK: id_biaya (UUID) | FK: id_kategori_umur, id_paket, id_kelas
 
-export type JenisBiaya = 'PENDAFTARAN' | 'BULANAN' | 'LAINNYA'
+export type JenisBiaya = 'PENDAFTARAN' | 'KELAS' | 'LAINNYA'
 
 export interface IBiaya {
     id_biaya: string               // UUID
@@ -128,6 +130,7 @@ export interface IBiaya {
     harga_biaya: number            // integer rupiah
     deskripsi: string | null
     aktif: number
+    periode?: string                // contoh: "2026-04"
     dibuat_pada: string
     diubah_pada: string | null
 }
@@ -140,6 +143,7 @@ export interface ICreateBiaya {
     nama_biaya: string
     harga_biaya: number
     deskripsi?: string
+    periode?: string
     aktif?: 0 | 1
 }
 
@@ -191,7 +195,7 @@ export interface IJadwalKelas {
     jam_selesai: string            // "HH:MM"
     tanggal_mulai: string          // "YYYY-MM-DD"
     tanggal_selesai: string        // "YYYY-MM-DD"
-    sesi_pertemuan: number
+    kuota: number
     deskripsi: string | null
     aktif: number
     dibuat_pada?: string
@@ -207,7 +211,7 @@ export interface ICreateJadwalKelas {
     jam_selesai: string            // "HH:MM"
     tanggal_mulai: string          // "YYYY-MM-DD" atau DATETIME
     tanggal_selesai: string        // "YYYY-MM-DD" atau DATETIME
-    sesi_pertemuan: number
+    kuota: number
     deskripsi?: string
     aktif?: 0 | 1
 }
@@ -251,6 +255,34 @@ export interface ICreateSiswa {
 
 export type IUpdateSiswa = Partial<ICreateSiswa> & { aktif?: 0 | 1 }
 
+// Pendaftaran one-shot: siswa + tagihan sekaligus
+export interface IDaftarSiswaItem {
+    id_biaya: string
+    id_jadwal_kelas?: string
+    periode?: string               // "YYYY-MM"
+}
+
+export interface IDaftarSiswa {
+    nama_siswa: string
+    email?: string
+    telepon?: string
+    tanggal_lahir?: string         // "YYYY-MM-DD"
+    alamat?: string
+    jenis_kelamin?: 1 | 2
+    foto_url?: string
+    tagihan: IDaftarSiswaItem[]
+    id_diskon?: string
+    kode_diskon?: string
+}
+
+export interface IDaftarSiswaResponse {
+    siswa: ISiswa
+    tagihan: ITagihan[]
+    diskon_diterapkan: boolean
+    total_sebelum_diskon: number
+    total_setelah_diskon: number
+}
+
 // ─── Tagihan ──────────────────────────────────────────────────────────────────
 // Table: kursus_tagihan | PK: id_tagihan (UUID)
 // Status: 1=MENUNGGU, 2=SEBAGIAN, 3=LUNAS, 4=DIBATALKAN
@@ -267,8 +299,11 @@ export interface ITagihan {
     nama_paket: string
     id_kelas: string
     nama_kelas: string
+    id_jadwal_kelas: string | null
+    hari_jadwal: string | null
+    jam_jadwal: string | null      // "HH:MM-HH:MM"
+    nama_instruktur: string | null
     periode: string | null         // "YYYY-MM"
-    sesi_pertemuan: number | null
     total_harga: number
     total_bayar: number
     status: 1 | 2 | 3 | 4
@@ -281,18 +316,15 @@ export interface ITagihan {
 export interface ICreateTagihan {
     id_siswa: string
     id_biaya: string
-    id_kategori_umur: string
-    id_paket: string
-    id_kelas: string
-    periode?: string               // "YYYY-MM"
-    sesi_pertemuan?: number
-    total_harga: number
+    id_jadwal_kelas?: string        // opsional — asosiasi jadwal dengan tagihan
+    periode?: string                // "YYYY-MM"
+    total_harga?: number            // opsional — override harga biaya
     deskripsi?: string
+    aktif?: 0 | 1
 }
 
 export interface IUpdateTagihan {
     periode?: string | null
-    sesi_pertemuan?: number | null
     total_harga?: number
     status?: 1 | 2 | 3 | 4
     deskripsi?: string | null
@@ -366,7 +398,7 @@ export interface IKursusDashboardJadwal {
     hari: string
     jam_mulai: string
     jam_selesai: string
-    sesi_pertemuan: number
+    kuota: number
 }
 
 export interface IKursusDashboardPembayaran {

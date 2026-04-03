@@ -1,259 +1,93 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import {
-    Button,
-    Card,
-    Input,
-    Select,
-    Notification,
-    toast,
-} from '@/components/ui'
-import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
-import KelasTable from '@/components/kursus/kelas/KelasTable'
-import KelasForm from '@/components/kursus/kelas/KelasForm'
-import KelasService from '@/services/kursus/kelas.service'
-import { parseApiError } from '@/utils/parseApiError'
-import { MESSAGES, ENTITY } from '@/constants/message.constant'
-import type { IKelas, ICreateKelas, IUpdateKelas } from '@/@types/kursus.types'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Button, Card } from '@/components/ui'
+import { HiPlusCircle } from 'react-icons/hi'
+import KelasTab from '@/components/kursus/kelas/KelasTab'
+import PaketKursusTab from '@/components/kursus/paket/PaketKursusTab'
+import KategoriUmurTab from '@/components/kursus/kategori-umur/KategoriUmurTab'
+import { ROUTES } from '@/constants/route.constant'
 
-type AktifOption = { value: '' | '1' | '0'; label: string }
+type ActiveTab = 'kelas' | 'paket' | 'kategori-umur'
 
-const AKTIF_OPTIONS: AktifOption[] = [
-    { value: '', label: 'Semua Status' },
-    { value: '1', label: 'Aktif' },
-    { value: '0', label: 'Nonaktif' },
+const TABS: { key: ActiveTab; label: string }[] = [
+    { key: 'paket', label: 'Paket' },
+    { key: 'kelas', label: 'Kelas' },
+    { key: 'kategori-umur', label: 'Kategori Umur' },
 ]
 
+const TAMBAH_LABEL: Record<ActiveTab, string> = {
+    paket: 'Tambah Paket',
+    kelas: 'Tambah Kelas',
+    'kategori-umur': 'Tambah Kategori',
+}
+
 const KelasPage = () => {
-    const [list, setList] = useState<IKelas[]>([])
-    const [loading, setLoading] = useState(false)
-    const [submitting, setSubmitting] = useState(false)
-
-    const [searchInput, setSearchInput] = useState('')
-    const [search, setSearch] = useState('')
-    const [aktifFilter, setAktifFilter] = useState<'' | '1' | '0'>('')
-    const [currentPage, setCurrentPage] = useState(1)
-    const [pageSize, setPageSize] = useState(10)
-    const [total, setTotal] = useState(0)
-
-    const [formOpen, setFormOpen] = useState(false)
-    const [editData, setEditData] = useState<IKelas | null>(null)
-    const [deleteTarget, setDeleteTarget] = useState<IKelas | null>(null)
-
-    const fetchData = useCallback(async () => {
-        setLoading(true)
-        try {
-            const res = await KelasService.getAll({
-                search: search || undefined,
-                aktif: aktifFilter !== '' ? Number(aktifFilter) : undefined,
-                page: currentPage,
-                limit: pageSize,
-            })
-            if (res.success) {
-                setList(res.data)
-                setTotal(res.meta?.total ?? 0)
-            }
-        } catch (err) {
-            toast.push(
-                <Notification type="danger" title={MESSAGES.ERROR.FETCH(ENTITY.KELAS)}>
-                    {parseApiError(err)}
-                </Notification>,
-            )
-        } finally {
-            setLoading(false)
-        }
-    }, [search, aktifFilter, currentPage, pageSize])
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+        const tab = searchParams.get('tab') as ActiveTab | null
+        return tab && ['kelas', 'paket', 'kategori-umur'].includes(tab) ? tab : 'paket'
+    })
+    const [pendingAdd, setPendingAdd] = useState(false)
 
     useEffect(() => {
-        fetchData()
-    }, [fetchData])
-
-    const handleSearchSubmit = () => {
-        setSearch(searchInput)
-        setCurrentPage(1)
-    }
-
-    const handleSearchClear = () => {
-        setSearchInput('')
-        setSearch('')
-        setCurrentPage(1)
-    }
-
-    const handleOpenAdd = () => {
-        setEditData(null)
-        setFormOpen(true)
-    }
-
-    const handleOpenEdit = (item: IKelas) => {
-        setEditData(item)
-        setFormOpen(true)
-    }
-
-    const handleFormClose = () => {
-        setFormOpen(false)
-        setEditData(null)
-    }
-
-    const handleSubmit = async (payload: ICreateKelas | IUpdateKelas) => {
-        setSubmitting(true)
-        try {
-            if (editData) {
-                await KelasService.update(editData.id_kelas, payload as IUpdateKelas)
-                toast.push(
-                    <Notification type="success" title={MESSAGES.SUCCESS.UPDATED(ENTITY.KELAS)} />,
-                )
-            } else {
-                await KelasService.create(payload as ICreateKelas)
-                toast.push(
-                    <Notification type="success" title={MESSAGES.SUCCESS.CREATED(ENTITY.KELAS)} />,
-                )
-            }
-            handleFormClose()
-            fetchData()
-        } catch (err) {
-            toast.push(
-                <Notification
-                    type="danger"
-                    title={
-                        editData
-                            ? MESSAGES.ERROR.UPDATE(ENTITY.KELAS)
-                            : MESSAGES.ERROR.CREATE(ENTITY.KELAS)
-                    }
-                >
-                    {parseApiError(err)}
-                </Notification>,
-            )
-        } finally {
-            setSubmitting(false)
+        const tab = searchParams.get('tab') as ActiveTab | null
+        if (tab && ['kelas', 'paket', 'kategori-umur'].includes(tab)) {
+            setActiveTab(tab)
         }
-    }
+    }, [searchParams])
 
-    const handleDelete = async () => {
-        if (!deleteTarget) return
-        setSubmitting(true)
-        try {
-            await KelasService.remove(deleteTarget.id_kelas)
-            toast.push(
-                <Notification type="success" title={MESSAGES.SUCCESS.DELETED(ENTITY.KELAS)} />,
-            )
-            setDeleteTarget(null)
-            fetchData()
-        } catch (err) {
-            toast.push(
-                <Notification type="danger" title={MESSAGES.ERROR.DELETE(ENTITY.KELAS)}>
-                    {parseApiError(err)}
-                </Notification>,
-            )
-        } finally {
-            setSubmitting(false)
+    const handleTambah = () => {
+        if (activeTab === 'kategori-umur') {
+            router.push(ROUTES.KURSUS_KATEGORI_UMUR_TAMBAH)
+        } else {
+            setPendingAdd(true)
         }
     }
 
     return (
         <div className="flex flex-col gap-4">
-            <Card
-                header={{
-                    content: <h4>Manajemen Kelas</h4>,
-                    extra: (
-                        <Button
-                            variant="solid"
-                            size="sm"
-                            icon={<HiPlusCircle />}
-                            onClick={handleOpenAdd}
-                        >
-                            Tambah Kelas
-                        </Button>
-                    ),
-                    bordered: false,
-                }}
-                bodyClass="p-0"
-            >
-                <div className="flex items-center gap-3 px-4 pb-3">
-                    <Input
-                        className="flex-1"
-                        placeholder="Cari nama kelas... (tekan Enter)"
-                        suffix={
-                            searchInput ? (
-                                <HiOutlineX
-                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
-                                    onClick={handleSearchClear}
-                                />
-                            ) : (
-                                <HiOutlineSearch
-                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
-                                    onClick={handleSearchSubmit}
-                                />
-                            )
-                        }
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSearchSubmit()
-                        }}
-                    />
-                    <div className="w-44 shrink-0">
-                        <Select<AktifOption>
-                            options={AKTIF_OPTIONS}
-                            value={
-                                AKTIF_OPTIONS.find((o) => o.value === aktifFilter) ??
-                                AKTIF_OPTIONS[0]
-                            }
-                            onChange={(opt) => {
-                                setAktifFilter((opt as AktifOption).value)
-                                setCurrentPage(1)
-                            }}
-                        />
+            <Card bodyClass="p-0">
+                <div className="flex items-center justify-between px-4 pt-4 pb-0">
+                    <h4>Pengaturan Kelas</h4>
+                    <Button
+                        variant="solid"
+                        size="sm"
+                        customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                        icon={<HiPlusCircle />}
+                        onClick={handleTambah}
+                    >
+                        {TAMBAH_LABEL[activeTab]}
+                    </Button>
+                </div>
+                <div className="px-4 pt-3 border-b border-gray-100 dark:border-gray-700">
+                    <div className="flex gap-0">
+                        {TABS.map((tab) => (
+                            <button
+                                key={tab.key}
+                                type="button"
+                                onClick={() => setActiveTab(tab.key)}
+                                className={[
+                                    'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                                    activeTab === tab.key
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
+                                ].join(' ')}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                <KelasTable
-                    data={list}
-                    loading={loading}
-                    pagingData={{ total, pageIndex: currentPage, pageSize }}
-                    onPaginationChange={setCurrentPage}
-                    onSelectChange={(size) => {
-                        setPageSize(size)
-                        setCurrentPage(1)
-                    }}
-                    onEdit={handleOpenEdit}
-                    onDelete={setDeleteTarget}
-                />
+                <div className="pt-3">
+                    {activeTab === 'kelas' && <KelasTab pendingAdd={pendingAdd} onPendingAddHandled={() => setPendingAdd(false)} />}
+                    {activeTab === 'paket' && <PaketKursusTab pendingAdd={pendingAdd} onPendingAddHandled={() => setPendingAdd(false)} />}
+                    {activeTab === 'kategori-umur' && <KategoriUmurTab />}
+                </div>
             </Card>
-
-            <KelasForm
-                open={formOpen}
-                editData={editData}
-                submitting={submitting}
-                onClose={handleFormClose}
-                onSubmit={handleSubmit}
-            />
-
-            <ConfirmDialog
-                isOpen={!!deleteTarget}
-                type="danger"
-                title="Hapus Kelas?"
-                confirmText="Ya, Hapus"
-                cancelText="Batal"
-                confirmButtonProps={{
-                    loading: submitting,
-                    customColorClass: () =>
-                        'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white border-red-500',
-                }}
-                onClose={() => setDeleteTarget(null)}
-                onCancel={() => setDeleteTarget(null)}
-                onConfirm={handleDelete}
-            >
-                <p className="text-sm">
-                    Kelas{' '}
-                    <span className="font-semibold">
-                        &ldquo;{deleteTarget?.nama_kelas}&rdquo;
-                    </span>{' '}
-                    akan dihapus secara permanen. Tindakan ini tidak dapat
-                    dibatalkan.
-                </p>
-            </ConfirmDialog>
         </div>
     )
 }

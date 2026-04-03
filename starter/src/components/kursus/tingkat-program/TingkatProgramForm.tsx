@@ -185,7 +185,7 @@ const TingkatProgramForm = ({
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
-                <Button variant="plain" onClick={onClose} disabled={submitting}>
+                <Button variant="default" onClick={onClose} disabled={submitting}>
                     Batal
                 </Button>
                 <Button

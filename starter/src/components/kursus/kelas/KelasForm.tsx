@@ -1,13 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-    Button,
-    Dialog,
-    FormItem,
-    Input,
-    Switcher,
-} from '@/components/ui'
+import { Button, Dialog, FormItem, Input, Switcher } from '@/components/ui'
 import type { IKelas, ICreateKelas, IUpdateKelas } from '@/@types/kursus.types'
 
 interface KelasFormProps {
@@ -43,6 +37,7 @@ const KelasForm = ({
     const isEdit = !!editData
 
     useEffect(() => {
+        if (!open) return
         if (editData) {
             setForm({
                 nama_kelas: editData.nama_kelas,
@@ -53,7 +48,7 @@ const KelasForm = ({
             setForm(INITIAL_STATE)
         }
         setErrors({})
-    }, [editData, open])
+    }, [open, editData])
 
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof FormState, string>> = {}
@@ -64,12 +59,10 @@ const KelasForm = ({
 
     const handleSubmit = () => {
         if (!validate()) return
-
         const base: ICreateKelas = {
             nama_kelas: form.nama_kelas.trim(),
             deskripsi: form.deskripsi.trim() || undefined,
         }
-
         if (isEdit) {
             onSubmit({ ...base, aktif: form.aktif ? 1 : 0 } as IUpdateKelas)
         } else {
@@ -123,7 +116,7 @@ const KelasForm = ({
                                 onChange={(val) => setForm((p) => ({ ...p, aktif: val }))}
                             />
                             <span className="text-sm text-gray-600">
-                                {form.aktif ? 'Aktif — kelas tersedia untuk digunakan' : 'Nonaktif'}
+                                {form.aktif ? 'Aktif - kelas tersedia untuk digunakan' : 'Nonaktif'}
                             </span>
                         </div>
                     </FormItem>
@@ -131,7 +124,7 @@ const KelasForm = ({
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
-                <Button variant="plain" onClick={onClose} disabled={submitting}>
+                <Button variant="default" onClick={onClose} disabled={submitting}>
                     Batal
                 </Button>
                 <Button variant="solid" loading={submitting} onClick={handleSubmit}>

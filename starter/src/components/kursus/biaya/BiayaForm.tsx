@@ -12,7 +12,7 @@ import {
 import KelasService from '@/services/kursus/kelas.service'
 import PaketService from '@/services/kursus/paket.service'
 import KategoriUmurService from '@/services/kursus/kategori-umur.service'
-import type { IBiaya, ICreateBiaya, IUpdateBiaya } from '@/@types/kursus.types'
+import type { IBiaya, ICreateBiaya, IUpdateBiaya, JenisBiaya } from '@/@types/kursus.types'
 
 type SelectOption = { value: string; label: string }
 
@@ -28,6 +28,7 @@ interface FormState {
     id_kelas: string
     id_paket: string
     id_kategori_umur: string
+    jenis_biaya: JenisBiaya
     nama_biaya: string
     harga_biaya: string
     deskripsi: string
@@ -38,6 +39,7 @@ const INITIAL_STATE: FormState = {
     id_kelas: '',
     id_paket: '',
     id_kategori_umur: '',
+    jenis_biaya: 'KELAS',
     nama_biaya: '',
     harga_biaya: '',
     deskripsi: '',
@@ -75,11 +77,10 @@ const BiayaForm = ({
         }
     }, [])
 
-    const loadPaket = useCallback(async (idKelas: string) => {
-        if (!idKelas) { setPaketOptions([]); return }
+    const loadPaket = useCallback(async () => {
         setLoadingPaket(true)
         try {
-            const res = await PaketService.getByKelas(idKelas)
+            const res = await PaketService.getAll({ aktif: 1, limit: 100 })
             if (res.success)
                 setPaketOptions(res.data.map((p) => ({ value: p.id_paket, label: p.nama_paket })))
         } catch {
@@ -106,17 +107,17 @@ const BiayaForm = ({
     }, [])
 
     useEffect(() => {
-        if (open) loadKelas()
-    }, [open, loadKelas])
+        if (open) { loadKelas(); loadPaket() }
+    }, [open, loadKelas, loadPaket])
 
     useEffect(() => {
         if (editData) {
-            loadPaket(editData.id_kelas)
             loadKategori(editData.id_paket)
             setForm({
                 id_kelas: editData.id_kelas,
                 id_paket: editData.id_paket,
                 id_kategori_umur: editData.id_kategori_umur,
+                jenis_biaya: editData.jenis_biaya,
                 nama_biaya: editData.nama_biaya,
                 harga_biaya: String(editData.harga_biaya),
                 deskripsi: editData.deskripsi ?? '',
@@ -128,13 +129,11 @@ const BiayaForm = ({
             setKategoriOptions([])
         }
         setErrors({})
-    }, [editData, open, loadPaket, loadKategori])
+    }, [editData, open, loadKategori])
 
     const handleKelasChange = (idKelas: string) => {
         setForm((p) => ({ ...p, id_kelas: idKelas, id_paket: '', id_kategori_umur: '' }))
-        setPaketOptions([])
         setKategoriOptions([])
-        loadPaket(idKelas)
     }
 
     const handlePaketChange = (idPaket: string) => {
@@ -161,6 +160,7 @@ const BiayaForm = ({
             id_kelas: form.id_kelas,
             id_paket: form.id_paket,
             id_kategori_umur: form.id_kategori_umur,
+            jenis_biaya: form.jenis_biaya,
             nama_biaya: form.nama_biaya.trim(),
             harga_biaya: Number(form.harga_biaya),
             deskripsi: form.deskripsi.trim() || undefined,
@@ -238,7 +238,7 @@ const BiayaForm = ({
                     errorMessage={errors.nama_biaya}
                 >
                     <Input
-                        placeholder="contoh: Biaya Bulanan, Biaya Pendaftaran"
+                        placeholder="contoh: Biaya Kelas, Biaya Pendaftaran"
                         value={form.nama_biaya}
                         invalid={!!errors.nama_biaya}
                         onChange={(e) => setForm((p) => ({ ...p, nama_biaya: e.target.value }))}
@@ -287,7 +287,7 @@ const BiayaForm = ({
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
-                <Button variant="plain" onClick={onClose} disabled={submitting}>
+                <Button variant="default" onClick={onClose} disabled={submitting}>
                     Batal
                 </Button>
                 <Button variant="solid" loading={submitting} onClick={handleSubmit}>

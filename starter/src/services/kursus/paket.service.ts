@@ -28,14 +28,6 @@ const PaketService = {
         })
     },
 
-    /** Dropdown: daftar paket dalam satu kelas (tanpa pagination) */
-    async getByKelas(idKelas: string): Promise<ApiResponse<IPaket[]>> {
-        return ApiService.fetchDataWithAxios<ApiResponse<IPaket[]>>({
-            url: API_ENDPOINTS.KURSUS.PAKET.BY_KELAS(idKelas),
-            method: 'GET',
-        })
-    },
-
     async getById(id: string): Promise<ApiResponse<IPaket>> {
         return ApiService.fetchDataWithAxios<ApiResponse<IPaket>>({
             url: API_ENDPOINTS.KURSUS.PAKET.BY_ID(id),

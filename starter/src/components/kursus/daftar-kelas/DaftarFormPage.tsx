@@ -470,7 +470,7 @@ const DaftarFormPage = ({
                     <div className="flex items-center justify-end gap-4 mt-6">
                         <Button
                             type="button"
-                            variant="plain"
+                            variant="default"
                             onClick={onCancel}
                             disabled={submitting}
                         >

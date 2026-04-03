@@ -1805,58 +1805,76 @@ Soft delete record exit.
 
 ---
 
-## Kursus � Kelas
 
-> Table: `kursus_kelas` | PK: `id_kelas` (UUID)
+## Kursus — Kelas
+
+> Table: `kursus_kelas` | PK: `id_kelas` (UUID) | FK: `id_paket` (opsional)
+
+`nama_paket` **diisi otomatis** dari `id_paket` — tidak perlu dikirim.
 
 ### `GET /kursus/kelas`
 
 Daftar kelas dengan pagination.
 
-**Query Params:** `page`, `limit`, `search`
+**Query Params:** `page`, `limit`, `search`, `aktif`
 
 **Response `200`:**
 ```json
 {
   "message": "Berhasil mengambil daftar kelas",
-  "data": [
-    {
-      "id_kelas": "uuid",
-      "nama_kelas": "Ballet",
-      "deskripsi": "Kelas Ballet untuk pemula",
-      "aktif": 1,
-      "dibuat_pada": "2026-03-01T00:00:00.000Z",
-      "diubah_pada": null
-    }
-  ],
-  "meta": { "page": 1, "limit": 10, "total": 5, "totalPages": 1 }
+  "data": {
+    "data": [
+      {
+        "id_kelas": "uuid",
+        "id_paket": "uuid-paket",
+        "nama_kelas": "Ballet",
+        "nama_paket": "Paket Reguler",
+        "deskripsi": "Kelas Ballet untuk pemula",
+        "aktif": 1,
+        "dibuat_pada": "2026-03-01T00:00:00.000Z",
+        "diubah_pada": null
+      }
+    ],
+    "meta": { "page": 1, "limit": 10, "total": 5, "totalPages": 1 }
+  }
 }
 ```
+
+### `GET /kursus/kelas/:id`
+
+Detail satu kelas.
 
 ### `POST /kursus/kelas`
 
 **Request Body:**
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
-| `nama_kelas` | ? | String, unik |
-| `deskripsi` | ? | Teks bebas |
-| `aktif` | ? | Default `1` |
+| `nama_kelas` | YES | String |
+| `id_paket` | NO | UUID paket — jika diisi, `nama_paket` auto-resolve |
+| `deskripsi` | NO | Teks bebas |
+
+### `PATCH /kursus/kelas/:id`
+
+Partial update — semua field opsional. Jika `id_paket` dikirim, `nama_paket` otomatis diperbarui.
+
+### `DELETE /kursus/kelas/:id`
+
+Soft delete — set `aktif=0`, isi `dihapus_pada` dan `dihapus_oleh`.
 
 ---
 
-## Kursus � Paket
+## Kursus — Paket
 
-> Table: `kursus_paket` | PK: `id_paket` (UUID) | FK: `id_kelas`
+> Table: `kursus_paket` | PK: `id_paket` (UUID)
 
-Paket tiap kelas (misal: Reguler, Intensif, Private).
+Paket kursus yang tersedia (misal: Reguler, Intensif, Private). Berdiri sendiri — tidak terikat kelas.
+Kelas yang merujuk paket ini melalui `kursus_kelas.id_paket`.
 
 ### `GET /kursus/paket`
 
 Daftar paket dengan pagination.
 
-### `GET /kursus/paket/kelas/:id_kelas`
-
-Daftar paket dalam satu kelas � **tanpa pagination** (untuk dropdown).
+**Query Params:** `page`, `limit`, `search`, `aktif`
 
 ### `GET /kursus/paket/:id`
 
@@ -1867,54 +1885,128 @@ Detail satu paket.
 **Request Body:**
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
-| `id_kelas` | ? | UUID kelas |
-| `nama_paket` | ? | String maks 50 karakter |
-| `deskripsi` | ? | Teks bebas |
-| `aktif` | ? | Default `1` |
+| `nama_paket` | YES | String maks 50 karakter |
+| `deskripsi` | NO | Teks bebas |
+
+### `PATCH /kursus/paket/:id`
+
+Partial update — semua field opsional.
+
+### `DELETE /kursus/paket/:id`
+
+Soft delete.
 
 ---
 
-## Kursus � Kategori Umur
+## Kursus — Kategori Umur
 
-> Table: `kursus_kategori_umur` | PK: `id_kategori_umur` (UUID) | FK: `id_paket`, `id_kelas`
+> Table: `kursus_kategori_umur` | PK: `id_kategori_umur` (UUID) | FK: `id_kelas` (wajib), `id_paket` (opsional)
 
-Segmentasi usia per paket (misal: 3-6 tahun, 7-12 tahun, Dewasa).
+Segmentasi usia per kelas, dengan opsi menautkan ke paket tertentu (misal: 3-6 Tahun, 7-12 Tahun, Dewasa).
+`nama_kelas` dan `nama_paket` **diisi otomatis** dari ID — tidak perlu dikirim manual.
+
+**Kolom tabel:**
+| Kolom | Tipe | Keterangan |
+|-------|------|------------|
+| `id_kategori_umur` | UUID PK | Auto-generate |
+| `nama_kategori_umur` | VARCHAR | Contoh: "3-6 Tahun" |
+| `id_kelas` | UUID FK | Wajib — referensi `kursus_kelas` |
+| `nama_kelas` | VARCHAR | Auto-resolve dari `id_kelas` |
+| `id_paket` | UUID FK | Opsional — referensi `kursus_paket` |
+| `nama_paket` | VARCHAR | Auto-resolve dari `id_paket` |
+| `kuota` | INT | Kuota maksimal peserta (opsional) |
+| `durasi` | INT | Durasi dalam bulan (opsional) |
+| `deskripsi` | TEXT | Keterangan bebas (opsional) |
+| `aktif` | TINYINT | `1` = aktif, `0` = nonaktif |
 
 ### `GET /kursus/kategori-umur`
 
 Daftar kategori umur dengan pagination.
 
+**Query Params:** `page`, `limit`, `search`, `aktif`
+
+> `search` mencari di `nama_kategori_umur`, `nama_kelas`, dan `nama_paket`.
+
 ### `GET /kursus/kategori-umur/kelas/:id_kelas`
 
-Dropdown kategori umur berdasarkan kelas.
+Dropdown kategori umur berdasarkan kelas (tanpa pagination, hanya aktif).
 
 ### `GET /kursus/kategori-umur/paket/:id_paket`
 
-Dropdown kategori umur berdasarkan paket.
+Dropdown kategori umur berdasarkan paket (tanpa pagination, hanya aktif).
+
+### `GET /kursus/kategori-umur/:id`
+
+Detail satu kategori umur.
 
 ### `POST /kursus/kategori-umur`
 
 **Request Body:**
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
-| `id_kelas` | ? | UUID kelas |
-| `id_paket` | ? | UUID paket |
-| `nama_kategori_umur` | ? | Contoh: "3-6 Tahun" |
-| `durasi` | ? | Durasi dalam bulan |
-| `deskripsi` | ? | Teks bebas |
-| `aktif` | ? | Default `1` |
+| `nama_kategori_umur` | YES | Contoh: "3-6 Tahun" |
+| `id_kelas` | YES | UUID kelas — `nama_kelas` auto-resolve |
+| `id_paket` | NO | UUID paket — `nama_paket` auto-resolve jika diisi |
+| `kuota` | NO | Kuota maksimal peserta (integer > 0) |
+| `durasi` | NO | Durasi dalam bulan (integer > 0) |
+| `deskripsi` | NO | Teks bebas |
+| `aktif` | NO | Default `1` |
+
+**Contoh Request:**
+```json
+{
+  "nama_kategori_umur": "3-6 Tahun",
+  "id_kelas": "uuid-kelas",
+  "id_paket": "uuid-paket",
+  "kuota": 20,
+  "durasi": 3
+}
+```
+
+**Contoh Response:**
+```json
+{
+  "message": "Kategori umur berhasil ditambahkan",
+  "data": {
+    "id_kategori_umur": "uuid-kategori-umur",
+    "nama_kategori_umur": "3-6 Tahun",
+    "id_kelas": "uuid-kelas",
+    "nama_kelas": "Kelas Piano",
+    "id_paket": "uuid-paket",
+    "nama_paket": "Paket Reguler",
+    "kuota": 20,
+    "durasi": 3,
+    "deskripsi": null,
+    "aktif": 1,
+    "dibuat_pada": "2026-04-02T10:00:00.000Z",
+    "dibuat_oleh": "uuid-user"
+  }
+}
+```
+
+### `PATCH /kursus/kategori-umur/:id`
+
+Partial update — semua field opsional. Jika `id_paket` dikirim `null`, kolom `id_paket` dan `nama_paket` dikosongkan.
+Jika `id_kelas` atau `id_paket` berubah, `nama_kelas`/`nama_paket` otomatis diperbarui.
+
+### `DELETE /kursus/kategori-umur/:id`
+
+Soft delete.
 
 ---
 
-## Kursus � Biaya
+## Kursus — Biaya
 
-> Table: `kursus_biaya` | PK: `id_biaya` (UUID) | FK: `id_kategori_umur`, `id_paket`, `id_kelas`
+> Table: `kursus_biaya` | PK: `id_biaya` (UUID)
 
-Daftar biaya/harga per kategori umur.
+Daftar biaya/harga. Mendukung dua jenis: **biaya pendaftaran** (hanya perlu `id_kelas`) dan **biaya bulanan** (perlu `id_paket` + `id_kategori_umur`).
+`nama_kelas`, `nama_paket`, `nama_kategori_umur` **diisi otomatis** dari ID.
 
 ### `GET /kursus/biaya`
 
 Daftar biaya dengan pagination.
+
+**Query Params:** `page`, `limit`, `search`, `aktif`
 
 ### `GET /kursus/biaya/kelas/:id_kelas`
 
@@ -1928,23 +2020,77 @@ Dropdown biaya berdasarkan paket.
 
 Dropdown biaya berdasarkan kategori umur.
 
+### `GET /kursus/biaya/:id`
+
+Detail satu biaya.
+
 ### `POST /kursus/biaya`
 
 **Request Body:**
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
-| `id_kelas` | ✅ | UUID kelas |
-| `id_paket` | ? | UUID paket |
-| `id_kategori_umur` | ? | UUID kategori umur |
-| `jenis_biaya` | ✅ | Enum: `PENDAFTARAN`, `BULANAN`, `LAINNYA` |
-| `nama_biaya` | ✅ | Contoh: "Biaya Bulanan" |
-| `harga_biaya` | ? | Integer (rupiah) |
-| `deskripsi` | ? | Teks bebas |
-| `aktif` | ? | Default `1` |
+| `nama_biaya` | YES | Contoh: "Biaya Bulanan", "Biaya Pendaftaran" |
+| `jenis_biaya` | YES | `PENDAFTARAN` / `BULANAN` / `LAINNYA` |
+| `harga_biaya` | YES | Integer (Rupiah) |
+| `id_kelas` | NO | UUID kelas. Wajib untuk `PENDAFTARAN` |
+| `id_paket` | NO | UUID paket. Wajib untuk `BULANAN`/`LAINNYA` |
+| `id_kategori_umur` | NO | UUID kategori umur. Wajib untuk `BULANAN`/`LAINNYA` |
+| `deskripsi` | NO | Teks bebas |
+| `aktif` | NO | Default `1` |
+
+**Contoh — Biaya Pendaftaran:**
+```json
+{
+  "nama_biaya": "Biaya Pendaftaran",
+  "jenis_biaya": "PENDAFTARAN",
+  "harga_biaya": 150000,
+  "id_kelas": "uuid-kelas"
+}
+```
+
+**Contoh — Biaya Bulanan:**
+```json
+{
+  "nama_biaya": "Biaya Bulanan Anak 3-6 Tahun",
+  "jenis_biaya": "BULANAN",
+  "harga_biaya": 500000,
+  "id_kelas": "uuid-kelas",
+  "id_paket": "uuid-paket",
+  "id_kategori_umur": "uuid-kategori-umur"
+}
+```
+
+**Response `201`:**
+```json
+{
+  "data": {
+    "id_biaya": "uuid",
+    "nama_biaya": "Biaya Bulanan Anak 3-6 Tahun",
+    "jenis_biaya": "BULANAN",
+    "harga_biaya": 500000,
+    "id_kelas": "uuid-kelas",
+    "nama_kelas": "Ballet",
+    "id_paket": "uuid-paket",
+    "nama_paket": "Reguler",
+    "id_kategori_umur": "uuid-kategori-umur",
+    "nama_kategori_umur": "3-6 Tahun",
+    "deskripsi": null,
+    "aktif": 1
+  }
+}
+```
+
+### `PATCH /kursus/biaya/:id`
+
+Partial update — jika `id_kelas`, `id_paket`, atau `id_kategori_umur` berubah, `nama_*` otomatis diperbarui.
+
+### `DELETE /kursus/biaya/:id`
+
+Soft delete.
 
 ---
 
-## Kursus � Diskon
+## Kursus — Diskon
 
 > Table: `kursus_diskon` | PK: `id_diskon` (UUID)
 
@@ -1952,112 +2098,157 @@ Dropdown biaya berdasarkan kategori umur.
 
 Daftar diskon dengan pagination.
 
+**Query Params:** `page`, `limit`, `search`, `aktif`
+
 ### `GET /kursus/diskon/aktif`
 
-Daftar diskon yang **berlaku sekarang** (tanpa pagination).
+Daftar diskon yang **berlaku sekarang** berdasarkan tanggal hari ini (tanpa pagination).
+
+### `GET /kursus/diskon/:id`
+
+Detail satu diskon.
 
 ### `POST /kursus/diskon`
 
 **Request Body:**
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
-| `kode_diskon` | ? | String maks 20, unik |
-| `nama_diskon` | ? | String |
-| `persentase` | ? | Decimal 0-100 |
-| `harga` | ? | Integer (diskon nominal) |
-| `berlaku_mulai` | ? | Date YYYY-MM-DD |
-| `berlaku_sampai` | ? | Date YYYY-MM-DD |
-| `deskripsi` | ? | Teks bebas |
-| `aktif` | ? | Default `1` |
+| `kode_diskon` | YES | String unik maks 20 karakter |
+| `nama_diskon` | YES | String maks 50 karakter |
+| `persentase` | YES | Decimal 0.01–100 |
+| `harga` | NO | Nominal diskon dalam Rupiah |
+| `berlaku_mulai` | YES | YYYY-MM-DD |
+| `berlaku_sampai` | YES | YYYY-MM-DD |
+| `deskripsi` | NO | Teks bebas |
+
+### `PATCH /kursus/diskon/:id`
+
+Partial update.
+
+### `DELETE /kursus/diskon/:id`
+
+Soft delete.
 
 ---
 
-## Kursus � Jadwal Kelas
+## Kursus — Jadwal Kelas
 
 > Table: `kursus_jadwal_kelas` | PK: `id_jadwal_kelas` (UUID)
+
+Jadwal mingguan instruktur per kelas.
+`nama_kelas`, `nama_karyawan`, `nama_kategori_umur` **diisi otomatis** dari ID — tidak perlu dikirim.
 
 ### `GET /kursus/jadwal-kelas`
 
 Daftar jadwal kelas dengan pagination.
 
-**Query Params:** `page`, `limit`, `search`
+**Query Params:** `page`, `limit`, `search`, `aktif`
 
 **Response `200`:**
 ```json
 {
-  "data": [
-    {
-      "id_jadwal_kelas": "uuid",
-      "id_kelas": "uuid",
-      "nama_kelas": "Ballet",
-      "id_karyawan": "uuid",
-      "nama_karyawan": "Sari Dewi",
-      "id_kategori_umur": "uuid",
-      "nama_kategori_umur": "3-6 Tahun",
-      "hari": "Senin",
-      "jam_mulai": "09:00",
-      "jam_selesai": "10:00",
-      "tanggal_mulai": "2026-04-01",
-      "tanggal_selesai": "2026-06-30",
-      "sesi_pertemuan": 24,
-      "deskripsi": null,
-      "aktif": 1
-    }
-  ],
-  "meta": { "page": 1, "limit": 10, "total": 3, "totalPages": 1 }
+  "data": {
+    "data": [
+      {
+        "id_jadwal_kelas": "uuid",
+        "id_kelas": "uuid",
+        "nama_kelas": "Ballet",
+        "id_karyawan": "uuid",
+        "nama_karyawan": "Sari Dewi",
+        "id_kategori_umur": "uuid",
+        "nama_kategori_umur": "3-6 Tahun",
+        "hari": "Senin",
+        "jam_mulai": "09:00",
+        "jam_selesai": "10:00",
+        "tanggal_mulai": "2026-04-01",
+        "tanggal_selesai": "2026-06-30",
+        "sesi_pertemuan": 24,
+        "deskripsi": null,
+        "aktif": 1
+      }
+    ],
+    "meta": { "page": 1, "limit": 10, "total": 3, "totalPages": 1 }
+  }
 }
 ```
 
 ### `GET /kursus/jadwal-kelas/kelas/:id_kelas`
 
-Dropdown jadwal berdasarkan kelas.
+Dropdown jadwal berdasarkan kelas (tanpa pagination).
+
+### `GET /kursus/jadwal-kelas/export/excel`
+
+Download jadwal kelas dalam format Excel.
+
+**Format:** Instruktur sebagai baris, hari (Senin–Minggu) sebagai kolom.
+Setiap cell berisi: jam_mulai - jam_selesai, nama_kelas, nama_kategori_umur.
+
+**Query Params:** `aktif` (opsional)
+
+**Response:** Binary `.xlsx` — `Content-Disposition: attachment; filename=jadwal-kelas.xlsx`
+
+### `GET /kursus/jadwal-kelas/:id`
+
+Detail satu jadwal.
 
 ### `POST /kursus/jadwal-kelas`
+
+`nama_kelas`, `nama_karyawan`, `nama_kategori_umur` otomatis diambil dari database.
 
 **Request Body:**
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
-| `id_kelas` | ? | UUID kelas |
-| `id_karyawan` | ? | UUID instruktur |
-| `id_kategori_umur` | ? | UUID kategori umur |
-| `hari` | ? | Senin/Selasa/dst |
-| `jam_mulai` | ? | Format HH:MM |
-| `jam_selesai` | ? | Format HH:MM |
-| `tanggal_mulai` | ? | DATETIME |
-| `tanggal_selesai` | ? | DATETIME |
-| `sesi_pertemuan` | ? | Integer |
-| `deskripsi` | ? | Teks bebas |
-| `aktif` | ? | Default `1` |
+| `id_kelas` | YES | UUID kelas |
+| `id_karyawan` | YES | UUID karyawan/instruktur |
+| `id_kategori_umur` | YES | UUID kategori umur |
+| `hari` | YES | Senin / Selasa / Rabu / Kamis / Jumat / Sabtu / Minggu |
+| `tanggal_mulai` | YES | YYYY-MM-DD |
+| `tanggal_selesai` | YES | YYYY-MM-DD |
+| `jam_mulai` | NO | HH:MM |
+| `jam_selesai` | NO | HH:MM |
+| `sesi_pertemuan` | NO | Integer |
+| `deskripsi` | NO | Teks bebas |
+| `aktif` | NO | Default `1` |
+
+### `PATCH /kursus/jadwal-kelas/:id`
+
+Partial update — jika `id_kelas`, `id_karyawan`, atau `id_kategori_umur` berubah, `nama_*` otomatis diperbarui.
+
+### `DELETE /kursus/jadwal-kelas/:id`
+
+Soft delete.
 
 ---
 
-## Kursus � Siswa
+## Kursus — Siswa
 
 > Table: `siswa` | PK: `id_siswa` (UUID)
 
 ### `GET /kursus/siswa`
 
-Daftar siswa dengan pagination & search.
+Daftar siswa dengan pagination dan search.
+
+**Query Params:** `page`, `limit`, `search` (nama/email/telepon), `aktif`
 
 **Response `200`:**
 ```json
 {
-  "data": [
-    {
-      "id_siswa": "uuid",
-      "nama_siswa": "Andi Wijaya",
-      "email": "andi@email.com",
-      "telepon": "081234567890",
-      "tanggal_lahir": "2000-01-15",
-      "alamat": "Jl. Sudirman No. 1",
-      "jenis_kelamin": 1,
-      "foto_url": null,
-      "aktif": 1,
-      "dibuat_pada": "2026-03-01T00:00:00.000Z",
-      "diubah_pada": null
-    }
-  ],
-  "meta": { "page": 1, "limit": 10, "total": 50, "totalPages": 5 }
+  "data": {
+    "data": [
+      {
+        "id_siswa": "uuid",
+        "nama_siswa": "Andi Wijaya",
+        "email": "andi@email.com",
+        "telepon": "081234567890",
+        "tanggal_lahir": "2000-01-15",
+        "alamat": "Jl. Sudirman No. 1",
+        "jenis_kelamin": 1,
+        "foto_url": null,
+        "aktif": 1
+      }
+    ],
+    "meta": { "page": 1, "limit": 10, "total": 50, "totalPages": 5 }
+  }
 }
 ```
 
@@ -2068,7 +2259,6 @@ Daftar siswa yang memiliki tagihan belum lunas (status MENUNGGU atau SEBAGIAN).
 **Response `200`:**
 ```json
 {
-  "message": "Berhasil mengambil data tunggakan siswa",
   "data": [
     {
       "id_siswa": "uuid",
@@ -2084,43 +2274,127 @@ Daftar siswa yang memiliki tagihan belum lunas (status MENUNGGU atau SEBAGIAN).
 
 ### `GET /kursus/siswa/template/excel`
 
-Download template Excel untuk import siswa (response: binary `.xlsx`).
+Download template Excel untuk import siswa.
+
+**Response:** Binary `.xlsx` — `Content-Disposition: attachment; filename=template-siswa.xlsx`
 
 ### `POST /kursus/siswa/upload/excel`
 
-Upload file Excel untuk import data siswa secara bulk.
+Import data siswa secara bulk dari file Excel.
 
-**Content-Type:** `multipart/form-data`
+**Content-Type:** `multipart/form-data` | **Form Field:** `file` (binary `.xlsx`)
 
-**Form Field:** `file` (binary .xlsx)
+### `GET /kursus/siswa/:id`
+
+Detail satu siswa.
 
 ### `POST /kursus/siswa`
 
 **Request Body:**
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
-| `nama_siswa` | ? | |
-| `email` | ? | |
-| `telepon` | ? | |
-| `tanggal_lahir` | ? | YYYY-MM-DD |
-| `alamat` | ? | |
-| `jenis_kelamin` | ? | `1`=Laki-laki, `2`=Perempuan |
-| `foto_url` | ? | URL foto |
+| `nama_siswa` | YES | String maks 100 karakter |
+| `email` | NO | Format email valid |
+| `telepon` | NO | String maks 20 karakter |
+| `tanggal_lahir` | NO | YYYY-MM-DD |
+| `alamat` | NO | Teks bebas |
+| `jenis_kelamin` | NO | `1`=Laki-laki, `2`=Perempuan |
+| `foto_url` | NO | URL foto maks 255 karakter |
 
 ---
 
-## Kursus � Tagihan
+### `POST /kursus/siswa/daftar`
+
+> Endpoint **one-shot** untuk mendaftarkan siswa baru sekaligus membuat tagihan & menerapkan diskon.
+> Gunakan endpoint ini di halaman formulir pendaftaran — bukan gabungan `POST /kursus/siswa` + `POST /kursus/tagihan`.
+
+**Request Body:**
+
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `nama_siswa` | YES | Nama siswa, maks 100 karakter |
+| `email` | NO | Format email valid |
+| `telepon` | NO | String maks 20 karakter |
+| `tanggal_lahir` | NO | YYYY-MM-DD |
+| `alamat` | NO | Teks bebas |
+| `jenis_kelamin` | NO | `1`=Laki-laki, `2`=Perempuan |
+| `foto_url` | NO | URL foto maks 255 karakter |
+| `tagihan` | YES | Array min 1 item (lihat sub-tabel di bawah) |
+| `id_diskon` | NO | UUID diskon dari master — kirim UUID yang dipilih di dropdown |
+| `kode_diskon` | NO | Kode promo (string) — alternatif dari `id_diskon`, **tidak boleh keduanya** |
+
+**Sub-tabel `tagihan[]`:**
+
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `id_biaya` | YES | UUID biaya — menentukan jenis & nominal tagihan |
+| `id_jadwal_kelas` | NO | UUID jadwal kelas yang dipilih |
+| `periode` | NO | Label periode, cth: `2026-04` |
+| `sesi_pertemuan` | NO | Override jumlah sesi |
+
+> **Aturan diskon:**
+> - Pilih dari dropdown → kirim `id_diskon`
+> - Input kode promo manual → kirim `kode_diskon`
+> - Tidak boleh mengirim keduanya sekaligus
+> - Backend memvalidasi: diskon harus `aktif = 1` dan tanggal hari ini berada dalam `berlaku_mulai` s.d. `berlaku_sampai`
+> - Diskon diterapkan ke **semua tagihan** dalam request ini
+
+**Cara mendapatkan daftar diskon untuk dropdown:** `GET /kursus/diskon/aktif` — sudah difilter otomatis berdasarkan tanggal hari ini.
+
+**Response `201`:**
+```json
+{
+  "success": true,
+  "message": "Pendaftaran siswa berhasil",
+  "data": {
+    "siswa": { /* ISiswa object */ },
+    "tagihan": [ /* ITagihan[] */ ],
+    "diskon_diterapkan": true,
+    "total_sebelum_diskon": 500000,
+    "total_setelah_diskon": 425000
+  }
+}
+```
+
+**Error Responses:**
+| Status | Kondisi |
+|--------|---------|
+| `400` | `id_diskon` dan `kode_diskon` dikirim bersamaan |
+| `400` | Diskon tidak aktif atau sudah kedaluwarsa |
+| `404` | `id_biaya`, `id_jadwal_kelas`, `id_diskon`, atau `kode_diskon` tidak ditemukan |
+| `409` | (future) kuota kelas penuh |
+
+### `PATCH /kursus/siswa/:id`
+
+Partial update.
+
+### `DELETE /kursus/siswa/:id`
+
+Soft delete.
+
+---
+
+## Kursus — Tagihan
 
 > Table: `kursus_tagihan` | PK: `id_tagihan` (UUID)
 > Status: `1`=MENUNGGU, `2`=SEBAGIAN, `3`=LUNAS, `4`=DIBATALKAN
+
+Cukup kirim `id_siswa` + `id_biaya`. Semua `nama_*`, `id_kelas`, `id_paket`, `id_kategori_umur`, dan `total_harga` **diambil otomatis** dari data biaya.
 
 ### `GET /kursus/tagihan`
 
 Daftar tagihan dengan pagination.
 
+**Query Params:** `page`, `limit`, `search`, `aktif`
+
 ### `GET /kursus/tagihan/siswa/:id_siswa`
 
 Semua tagihan satu siswa (tanpa pagination).
+
+### `GET /kursus/tagihan/jadwal-kelas/:id_jadwal_kelas`
+
+Semua tagihan yang terdaftar di satu jadwal kelas (tanpa pagination).
+Berguna untuk melihat daftar siswa aktif di suatu jadwal.
 
 ### `GET /kursus/tagihan/:id`
 
@@ -2134,18 +2408,22 @@ Detail satu tagihan.
     "id_siswa": "uuid",
     "nama_siswa": "Andi Wijaya",
     "id_biaya": "uuid",
-    "nama_biaya": "Biaya Bulanan",
+    "nama_biaya": "Biaya Bulanan Anak 3-6 Tahun",
     "id_kategori_umur": "uuid",
     "nama_kategori_umur": "3-6 Tahun",
     "id_paket": "uuid",
     "nama_paket": "Reguler",
     "id_kelas": "uuid",
     "nama_kelas": "Ballet",
+    "id_jadwal_kelas": "uuid",
+    "hari_jadwal": "Senin",
+    "jam_jadwal": "08:00-09:00",
+    "nama_instruktur": "Sari Dewi",
     "periode": "2026-04",
     "sesi_pertemuan": 8,
-    "total_harga": 750000,
-    "total_bayar": 0,
-    "status": 1,
+    "total_harga": 500000,
+    "total_bayar": 250000,
+    "status": 2,
     "deskripsi": null,
     "aktif": 1
   }
@@ -2157,53 +2435,114 @@ Detail satu tagihan.
 **Request Body:**
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
-| `id_siswa` | ? | UUID siswa |
-| `id_biaya` | ? | UUID biaya |
-| `id_kategori_umur` | ? | UUID kategori umur |
-| `id_paket` | ? | UUID paket |
-| `id_kelas` | ? | UUID kelas |
-| `periode` | ? | Format YYYY-MM |
-| `sesi_pertemuan` | ? | Integer |
-| `total_harga` | ? | Decimal |
-| `deskripsi` | ? | Teks bebas |
+| `id_siswa` | YES | UUID siswa |
+| `id_biaya` | YES | UUID biaya — semua data kelas/paket/kategori/harga diambil otomatis |
+| `id_jadwal_kelas` | NO | UUID jadwal kelas — asosiasi jadwal dengan tagihan |
+| `periode` | NO | Format YYYY-MM (opsional untuk biaya pendaftaran) |
+| `sesi_pertemuan` | NO | Integer |
+| `total_harga` | NO | Override harga (default: `harga_biaya` dari tabel biaya) |
+| `deskripsi` | NO | Teks bebas |
+| `aktif` | NO | Default `1` |
+
+**Contoh — Biaya Pendaftaran:**
+```json
+{
+  "id_siswa": "uuid-siswa",
+  "id_biaya": "uuid-biaya-pendaftaran"
+}
+```
+
+**Contoh — Biaya Bulanan dengan jadwal:**
+```json
+{
+  "id_siswa": "uuid-siswa",
+  "id_biaya": "uuid-biaya-bulanan",
+  "id_jadwal_kelas": "uuid-jadwal",
+  "periode": "2026-04",
+  "sesi_pertemuan": 8
+}
+```
+
+### `PATCH /kursus/tagihan/:id`
+
+Partial update. Jika `id_biaya` berubah, semua `nama_*` dan `total_harga` default diperbarui otomatis.
+
+**Field tambahan di PATCH:**
+| Field | Keterangan |
+|-------|------------|
+| `status` | `1`-`4` — set manual (misal `4` untuk DIBATALKAN) |
+
+### `DELETE /kursus/tagihan/:id`
+
+Soft delete.
 
 ---
 
-## Kursus � Pembayaran
+## Kursus — Pembayaran
 
 > Table: `kursus_pembayaran` | PK: `id_pembayaran` (UUID)
 > Metode: `TUNAI` / `TRANSFER` / `QRIS`
+
+Setelah create/delete pembayaran, **status tagihan otomatis di-recalculate**:
+- `total_bayar = 0` maka status `1` (MENUNGGU)
+- `0 < total_bayar < total_harga` maka status `2` (SEBAGIAN)
+- `total_bayar >= total_harga` maka status `3` (LUNAS)
 
 ### `GET /kursus/pembayaran`
 
 Daftar pembayaran dengan pagination.
 
+**Query Params:** `page`, `limit`, `search`, `aktif`
+
 ### `GET /kursus/pembayaran/tagihan/:id_tagihan`
 
-Semua pembayaran untuk satu tagihan.
+Semua pembayaran untuk satu tagihan (tanpa pagination).
+
+### `GET /kursus/pembayaran/:id`
+
+Detail satu pembayaran.
 
 ### `POST /kursus/pembayaran`
-
-Setelah berhasil membuat pembayaran, sistem otomatis *recalculate* status tagihan.
 
 **Request Body:**
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
-| `id_tagihan` | ? | UUID tagihan |
-| `jumlah` | ? | Decimal |
-| `tanggal_bayar` | ? | YYYY-MM-DD |
-| `metode` | ? | TUNAI / TRANSFER / QRIS |
-| `referensi` | ? | No. referensi / nota |
-| `deskripsi` | ? | Keterangan tambahan |
-| `aktif` | ? | Default `1` |
+| `id_tagihan` | YES | UUID tagihan |
+| `jumlah` | YES | Decimal (Rupiah), min `1` |
+| `tanggal_bayar` | YES | YYYY-MM-DD |
+| `metode` | YES | `TUNAI` / `TRANSFER` / `QRIS` |
+| `referensi` | NO | No. referensi / nota transfer |
+| `deskripsi` | NO | Keterangan tambahan |
+| `aktif` | NO | Default `1` |
+
+**Response `201`:**
+```json
+{
+  "data": {
+    "id_pembayaran": "uuid",
+    "id_tagihan": "uuid",
+    "jumlah": 250000,
+    "tanggal_bayar": "2026-04-01",
+    "metode": "TRANSFER",
+    "referensi": "TRF-20260401-001",
+    "deskripsi": "DP pertama",
+    "aktif": 1,
+    "dibuat_pada": "2026-04-01T00:00:00.000Z"
+  }
+}
+```
+
+### `PATCH /kursus/pembayaran/:id`
+
+Partial update.
 
 ### `DELETE /kursus/pembayaran/:id`
 
-Soft delete pembayaran. Status tagihan otomatis di-recalculate.
+Soft delete — status tagihan otomatis di-recalculate setelah hapus.
 
 ---
 
-## Kursus � Dashboard
+## Kursus — Dashboard
 
 > Endpoint: `GET /kursus/dashboard`
 
@@ -2212,7 +2551,6 @@ Ringkasan statistik kursus.
 **Response `200`:**
 ```json
 {
-  "message": "Berhasil mengambil ringkasan dashboard",
   "data": {
     "siswa_aktif": 120,
     "kelas_hari_ini": 5,
@@ -2220,7 +2558,11 @@ Ringkasan statistik kursus.
     "tagihan_belum_lunas": 12,
     "pendapatan_6_bulan": [
       { "bulan": "2025-11", "total": 14000000 },
-      { "bulan": "2025-12", "total": 16000000 }
+      { "bulan": "2025-12", "total": 16000000 },
+      { "bulan": "2026-01", "total": 17500000 },
+      { "bulan": "2026-02", "total": 15000000 },
+      { "bulan": "2026-03", "total": 19000000 },
+      { "bulan": "2026-04", "total": 18000000 }
     ],
     "siswa_per_kelas": [
       { "nama_kelas": "Ballet", "jumlah": 45 },
@@ -2229,7 +2571,6 @@ Ringkasan statistik kursus.
     "jadwal_hari_ini": [
       {
         "id_jadwal_kelas": "uuid",
-        "id_kelas": "uuid",
         "nama_kelas": "Ballet",
         "nama_karyawan": "Sari Dewi",
         "hari": "Senin",

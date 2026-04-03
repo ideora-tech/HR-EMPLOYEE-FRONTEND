@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
     Button,
-    DatePicker,
     Dialog,
     FormItem,
     Input,
@@ -70,9 +69,7 @@ interface FormState {
     hari: string
     jam_mulai: string
     jam_selesai: string
-    tanggal_mulai: Date | null
-    tanggal_selesai: Date | null
-    sesi_pertemuan: string
+    kuota: string
     deskripsi: string
     aktif: boolean
 }
@@ -84,9 +81,7 @@ const INITIAL_STATE: FormState = {
     hari: '',
     jam_mulai: '08:00',
     jam_selesai: '09:00',
-    tanggal_mulai: null,
-    tanggal_selesai: null,
-    sesi_pertemuan: '1',
+    kuota: '1',
     deskripsi: '',
     aktif: true,
 }
@@ -156,9 +151,7 @@ const JadwalForm = ({
                 hari: editData.hari,
                 jam_mulai: editData.jam_mulai,
                 jam_selesai: editData.jam_selesai,
-                tanggal_mulai: ymdToDate(editData.tanggal_mulai),
-                tanggal_selesai: ymdToDate(editData.tanggal_selesai),
-                sesi_pertemuan: String(editData.sesi_pertemuan),
+                kuota: String(editData.kuota),
                 deskripsi: editData.deskripsi ?? '',
                 aktif: editData.aktif === 1,
             })
@@ -184,10 +177,8 @@ const JadwalForm = ({
         if (!form.hari) e.hari = 'Hari wajib dipilih'
         if (!form.jam_mulai) e.jam_mulai = 'Jam mulai wajib diisi'
         if (!form.jam_selesai) e.jam_selesai = 'Jam selesai wajib diisi'
-        if (!form.tanggal_mulai) e.tanggal_mulai = 'Tanggal mulai wajib diisi'
-        if (!form.tanggal_selesai) e.tanggal_selesai = 'Tanggal selesai wajib diisi'
-        if (!form.sesi_pertemuan || Number(form.sesi_pertemuan) < 1)
-            e.sesi_pertemuan = 'Sesi pertemuan minimal 1'
+        if (!form.kuota || Number(form.kuota) < 1)
+            e.kuota = 'Kuota minimal 1'
         setErrors(e)
         return Object.keys(e).length === 0
     }
@@ -202,9 +193,7 @@ const JadwalForm = ({
             hari: form.hari,
             jam_mulai: form.jam_mulai,
             jam_selesai: form.jam_selesai,
-            tanggal_mulai: dateToYMD(form.tanggal_mulai!),
-            tanggal_selesai: dateToYMD(form.tanggal_selesai!),
-            sesi_pertemuan: Number(form.sesi_pertemuan),
+            kuota: Number(form.kuota),
             deskripsi: form.deskripsi.trim() || undefined,
         }
         if (isEdit) {
@@ -317,60 +306,21 @@ const JadwalForm = ({
                     </FormItem>
                 </div>
 
-                {/* Tanggal mulai & selesai */}
-                <div className="grid grid-cols-2 gap-3">
-                    <FormItem
-                        label="Tanggal Mulai"
-                        asterisk
-                        invalid={!!errors.tanggal_mulai}
-                        errorMessage={errors.tanggal_mulai}
-                    >
-                        <DatePicker
-                            value={form.tanggal_mulai}
-                            inputFormat="DD MMM YYYY"
-                            placeholder="Pilih tanggal"
-                            clearable
-                            onChange={(d) =>
-                                setForm((p) => ({
-                                    ...p,
-                                    tanggal_mulai: d,
-                                    tanggal_selesai: p.tanggal_selesai ?? d,
-                                }))
-                            }
-                        />
-                    </FormItem>
-                    <FormItem
-                        label="Tanggal Selesai"
-                        asterisk
-                        invalid={!!errors.tanggal_selesai}
-                        errorMessage={errors.tanggal_selesai}
-                    >
-                        <DatePicker
-                            value={form.tanggal_selesai}
-                            inputFormat="DD MMM YYYY"
-                            placeholder="Pilih tanggal"
-                            clearable
-                            minDate={form.tanggal_mulai ?? undefined}
-                            onChange={(d) => setForm((p) => ({ ...p, tanggal_selesai: d }))}
-                        />
-                    </FormItem>
-                </div>
-
-                {/* Sesi pertemuan */}
+                {/* Kuota */}
                 <FormItem
-                    label="Sesi Pertemuan"
+                    label="Kuota"
                     asterisk
-                    invalid={!!errors.sesi_pertemuan}
-                    errorMessage={errors.sesi_pertemuan}
-                    extra={<span className="text-xs text-gray-400">Jumlah pertemuan dalam satu periode</span>}
+                    invalid={!!errors.kuota}
+                    errorMessage={errors.kuota}
+                    extra={<span className="text-xs text-gray-400">Kuota peserta dalam satu jadwal</span>}
                 >
                     <Input
                         type="number"
                         min={1}
                         placeholder="contoh: 8"
-                        value={form.sesi_pertemuan}
-                        invalid={!!errors.sesi_pertemuan}
-                        onChange={(e) => setForm((p) => ({ ...p, sesi_pertemuan: e.target.value }))}
+                        value={form.kuota}
+                        invalid={!!errors.kuota}
+                        onChange={(e) => setForm((p) => ({ ...p, kuota: e.target.value }))}
                     />
                 </FormItem>
 

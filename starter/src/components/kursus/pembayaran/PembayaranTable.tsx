@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { Tag } from '@/components/ui'
-import { HiOutlineTrash } from 'react-icons/hi'
+import { HiOutlineEye, HiOutlineTrash } from 'react-icons/hi'
 import DataTable from '@/components/shared/DataTable'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
 import type { IPembayaran } from '@/@types/kursus.types'
@@ -13,6 +13,7 @@ interface PembayaranTableProps {
     pagingData: { total: number; pageIndex: number; pageSize: number }
     onPaginationChange: (page: number) => void
     onSelectChange: (size: number) => void
+    onDetail: (item: IPembayaran) => void
     onDelete: (item: IPembayaran) => void
 }
 
@@ -36,6 +37,7 @@ const PembayaranTable = ({
     pagingData,
     onPaginationChange,
     onSelectChange,
+    onDetail,
     onDelete,
 }: PembayaranTableProps) => {
     const columns: ColumnDef<IPembayaran>[] = useMemo(
@@ -99,8 +101,8 @@ const PembayaranTable = ({
                 cell: ({ row }: CellContext<IPembayaran, unknown>) => (
                     <Tag
                         className={`${row.original.aktif === 1
-                                ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-100'
-                                : 'bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-100'
+                            ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-100'
+                            : 'bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-100'
                             } border-0`}
                     >
                         {row.original.aktif === 1 ? 'Aktif' : 'Nonaktif'}
@@ -110,9 +112,15 @@ const PembayaranTable = ({
             {
                 header: '',
                 id: 'action',
-                size: 80,
+                size: 100,
                 cell: ({ row }: CellContext<IPembayaran, unknown>) => (
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-end gap-1">
+                        <span
+                            className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
+                            onClick={() => onDetail(row.original)}
+                        >
+                            <HiOutlineEye className="text-lg" />
+                        </span>
                         <span
                             className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
                             onClick={() => onDelete(row.original)}
@@ -135,6 +143,7 @@ const PembayaranTable = ({
             pagingData={pagingData}
             onPaginationChange={onPaginationChange}
             onSelectChange={onSelectChange}
+            noData={!loading && data.length === 0}
         />
     )
 }

@@ -119,16 +119,7 @@ const JadwalKelasPage = () => {
                     content: <h4>Jadwal Kelas</h4>,
                     extra: (
                         <div className="flex items-center gap-2">
-                            {/* Toggle list/kalender */}
-                            <Button
-                                variant="default"
-                                size="sm"
-                                icon={<HiDownload />}
-                                loading={exporting}
-                                onClick={handleExportExcel}
-                            >
-                                Export Excel
-                            </Button>
+
                             <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
                                 <button
                                     type="button"
@@ -153,9 +144,20 @@ const JadwalKelasPage = () => {
                                     <span>Kalender</span>
                                 </button>
                             </div>
+                            {/* Toggle list/kalender */}
+                            <Button
+                                variant="default"
+                                size="sm"
+                                icon={<HiDownload />}
+                                loading={exporting}
+                                onClick={handleExportExcel}
+                            >
+                                Export Excel
+                            </Button>
                             <Button
                                 variant="solid"
                                 size="sm"
+                                customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                                 icon={<HiPlusCircle />}
                                 onClick={() => router.push(ROUTES.KURSUS_JADWAL_TAMBAH)}
                             >

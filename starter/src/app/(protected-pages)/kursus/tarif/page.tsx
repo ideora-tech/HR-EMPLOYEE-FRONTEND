@@ -145,6 +145,7 @@ const TarifPage = () => {
                         <Button
                             variant="solid"
                             size="sm"
+                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                             icon={<HiPlusCircle />}
                             onClick={() => { setEditTarget(null); setFormOpen(true) }}
                         >

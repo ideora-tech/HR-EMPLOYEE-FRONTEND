@@ -5,6 +5,8 @@ import type {
     ISiswaTunggakan,
     ICreateSiswa,
     IUpdateSiswa,
+    IDaftarSiswa,
+    IDaftarSiswaResponse,
     IKursusQuery,
     IImportResult,
     ApiResponse,
@@ -74,6 +76,14 @@ const SiswaService = {
             url: API_ENDPOINTS.KURSUS.SISWA.IMPORT,
             method: 'POST',
             data: formData,
+        })
+    },
+
+    async daftar(payload: IDaftarSiswa): Promise<ApiResponse<IDaftarSiswaResponse>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<IDaftarSiswaResponse>, IDaftarSiswa>({
+            url: API_ENDPOINTS.KURSUS.SISWA.DAFTAR,
+            method: 'POST',
+            data: payload,
         })
     },
 

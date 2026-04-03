@@ -73,11 +73,11 @@ const JadwalTable = ({
                     `${row.original.jam_mulai} – ${row.original.jam_selesai}`,
             },
             {
-                header: 'Sesi',
-                accessorKey: 'sesi_pertemuan',
+                header: 'Kuota',
+                accessorKey: 'kuota',
                 size: 80,
                 cell: ({ row }: CellContext<IJadwalKelas, unknown>) => (
-                    <span className="font-medium">{row.original.sesi_pertemuan}x</span>
+                    <span className="font-medium">{row.original.kuota}</span>
                 ),
             },
             {

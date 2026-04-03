@@ -8,7 +8,6 @@ import {
     Input,
     Select,
     Notification,
-    Tabs,
     toast,
 } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
@@ -16,12 +15,22 @@ import { HiPlusCircle, HiOutlineSearch, HiOutlineX, HiOutlineUpload, HiOutlineDo
 import SiswaTable from '@/components/kursus/siswa/SiswaTable'
 import SiswaImportModal from '@/components/kursus/siswa/SiswaImportModal'
 import SiswaMonitoring from '@/components/kursus/siswa/SiswaMonitoring'
+import PendaftaranSiswaTab from '@/components/kursus/siswa/PendaftaranSiswaTab'
 import SiswaService from '@/services/kursus/siswa.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { ISiswa } from '@/@types/kursus.types'
+import { ROUTES } from '@/constants/route.constant'
+
+type ActiveTab = 'pendaftaran' | 'siswa' | 'monitoring'
 
 type AktifOption = { value: '' | '1' | '0'; label: string }
+
+const TABS: { key: ActiveTab; label: string }[] = [
+    { key: 'pendaftaran', label: 'Pendaftaran Siswa' },
+    { key: 'siswa', label: 'Siswa' },
+    { key: 'monitoring', label: 'Monitoring' },
+]
 
 const AKTIF_OPTIONS: AktifOption[] = [
     { value: '', label: 'Semua Status' },
@@ -31,6 +40,10 @@ const AKTIF_OPTIONS: AktifOption[] = [
 
 const SiswaPage = () => {
     const router = useRouter()
+
+    const [activeTab, setActiveTab] = useState<ActiveTab>('pendaftaran')
+    const [pendingAdd, setPendingAdd] = useState(false)
+
     const [list, setList] = useState<ISiswa[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -101,20 +114,12 @@ const SiswaPage = () => {
         setSubmitting(true)
         try {
             await SiswaService.remove(deleteTarget.id_siswa)
-            toast.push(
-                <Notification
-                    type="success"
-                    title={MESSAGES.SUCCESS.DELETED(ENTITY.SISWA)}
-                />,
-            )
+            toast.push(<Notification type="success" title={MESSAGES.SUCCESS.DELETED(ENTITY.SISWA)} />)
             setDeleteTarget(null)
             fetchData()
         } catch (err) {
             toast.push(
-                <Notification
-                    type="danger"
-                    title={MESSAGES.ERROR.DELETE(ENTITY.SISWA)}
-                >
+                <Notification type="danger" title={MESSAGES.ERROR.DELETE(ENTITY.SISWA)}>
                     {parseApiError(err)}
                 </Notification>,
             )
@@ -123,106 +128,131 @@ const SiswaPage = () => {
         }
     }
 
+    const handleTabChange = (tab: ActiveTab) => {
+        setActiveTab(tab)
+        setPendingAdd(false)
+    }
+
+    const handleAddClick = () => {
+        if (activeTab === 'siswa') {
+            router.push('/kursus/siswa/tambah')
+        } else if (activeTab === 'pendaftaran') {
+            router.push(ROUTES.KURSUS_SISWA_DAFTAR)
+        }
+    }
+
     return (
         <div className="flex flex-col gap-4">
             <Card bodyClass="p-0">
-                <Tabs defaultValue="daftar">
-                    <div className="flex items-center justify-between px-4 pt-4 pb-0">
-                        <h4>Manajemen Siswa</h4>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                size="sm"
-                                variant="default"
-                                icon={<HiOutlineDownload />}
-                                loading={downloading}
-                                onClick={handleDownloadTemplate}
-                            >
-                                Template Excel
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="default"
-                                icon={<HiOutlineUpload />}
-                                onClick={() => setImportOpen(true)}
-                            >
-                                Import Excel
-                            </Button>
-                            <Button
-                                variant="solid"
-                                size="sm"
-                                icon={<HiPlusCircle />}
-                                onClick={() => router.push('/kursus/siswa/tambah')}
-                            >
-                                Tambah Siswa
-                            </Button>
-                        </div>
-                    </div>
-                    <div className="px-4 pt-3">
-                        <Tabs.TabList>
-                            <Tabs.TabNav value="daftar">Daftar Siswa</Tabs.TabNav>
-                            <Tabs.TabNav value="monitoring">Monitoring</Tabs.TabNav>
-                        </Tabs.TabList>
-                    </div>
+                <div className="flex items-center justify-between px-4 pt-4 pb-0">
+                    <h4>Manajemen Siswa</h4>
+                    {activeTab !== 'monitoring' && (
+                        <Button
+                            variant="solid"
+                            size="sm"
+                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                            icon={<HiPlusCircle />}
+                            onClick={handleAddClick}
+                        >
+                            {activeTab === 'pendaftaran' ? 'Daftarkan Siswa' : 'Tambah Siswa'}
+                        </Button>
+                    )}
+                </div>
 
-                    <Tabs.TabContent value="daftar">
-                        <div className="flex items-center gap-3 px-4 pb-3 pt-3">
-                            <Input
-                                className="flex-1"
-                                placeholder="Cari nama, email, telepon... (tekan Enter)"
-                                suffix={
-                                    searchInput ? (
-                                        <HiOutlineX
-                                            className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
-                                            onClick={handleSearchClear}
-                                        />
-                                    ) : (
-                                        <HiOutlineSearch
-                                            className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
-                                            onClick={handleSearchSubmit}
-                                        />
-                                    )
-                                }
-                                value={searchInput}
-                                onChange={(e) => setSearchInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleSearchSubmit()
-                                }}
-                            />
-                            <div className="w-44 shrink-0">
-                                <Select<AktifOption>
-                                    options={AKTIF_OPTIONS}
-                                    value={
-                                        AKTIF_OPTIONS.find((o) => o.value === aktifFilter) ??
-                                        AKTIF_OPTIONS[0]
-                                    }
-                                    onChange={(opt) => {
-                                        setAktifFilter((opt as AktifOption).value)
-                                        setCurrentPage(1)
-                                    }}
-                                />
-                            </div>
-                        </div>
+                <div className="px-4 pt-3 border-b border-gray-100 dark:border-gray-700">
+                    <div className="flex gap-0">
+                        {TABS.map((tab) => (
+                            <button
+                                key={tab.key}
+                                type="button"
+                                onClick={() => handleTabChange(tab.key)}
+                                className={[
+                                    'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                                    activeTab === tab.key
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
+                                ].join(' ')}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
-                        <SiswaTable
-                            data={list}
-                            loading={loading}
-                            pagingData={{ total, pageIndex: currentPage, pageSize }}
-                            onPaginationChange={setCurrentPage}
-                            onSelectChange={(size) => {
-                                setPageSize(size)
-                                setCurrentPage(1)
-                            }}
-                            onEdit={(item) =>
-                                router.push(`/kursus/siswa/${item.id_siswa}/edit`)
-                            }
-                            onDelete={setDeleteTarget}
+                <div className="pt-3">
+                    {activeTab === 'pendaftaran' && (
+                        <PendaftaranSiswaTab
+                            pendingAdd={pendingAdd}
+                            onPendingAddHandled={() => setPendingAdd(false)}
                         />
-                    </Tabs.TabContent>
+                    )}
 
-                    <Tabs.TabContent value="monitoring">
-                        <SiswaMonitoring />
-                    </Tabs.TabContent>
-                </Tabs>
+                    {activeTab === 'siswa' && (
+                        <>
+                            <div className="flex items-center gap-3 px-4 pb-3">
+                                <Input
+                                    className="flex-1"
+                                    placeholder="Cari nama, email, telepon... (tekan Enter)"
+                                    suffix={
+                                        searchInput ? (
+                                            <HiOutlineX
+                                                className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                                onClick={handleSearchClear}
+                                            />
+                                        ) : (
+                                            <HiOutlineSearch
+                                                className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                                onClick={handleSearchSubmit}
+                                            />
+                                        )
+                                    }
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit() }}
+                                />
+                                <div className="w-44 shrink-0">
+                                    <Select<AktifOption>
+                                        options={AKTIF_OPTIONS}
+                                        value={AKTIF_OPTIONS.find((o) => o.value === aktifFilter) ?? AKTIF_OPTIONS[0]}
+                                        onChange={(opt) => {
+                                            setAktifFilter((opt as AktifOption).value)
+                                            setCurrentPage(1)
+                                        }}
+                                    />
+                                </div>
+                                <Button
+                                    size="sm"
+                                    variant="default"
+                                    icon={<HiOutlineDownload />}
+                                    loading={downloading}
+                                    onClick={handleDownloadTemplate}
+                                >
+                                    Template
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="default"
+                                    icon={<HiOutlineUpload />}
+                                    onClick={() => setImportOpen(true)}
+                                >
+                                    Import
+                                </Button>
+                            </div>
+
+                            <SiswaTable
+                                data={list}
+                                loading={loading}
+                                pagingData={{ total, pageIndex: currentPage, pageSize }}
+                                onPaginationChange={setCurrentPage}
+                                onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
+                                onEdit={(item) => router.push(`/kursus/siswa/${item.id_siswa}/edit`)}
+                                onDelete={setDeleteTarget}
+                            />
+                        </>
+                    )}
+
+                    {activeTab === 'monitoring' && <SiswaMonitoring />}
+                </div>
             </Card>
 
             <SiswaImportModal
@@ -248,11 +278,8 @@ const SiswaPage = () => {
             >
                 <p className="text-sm">
                     Data siswa{' '}
-                    <span className="font-semibold">
-                        &ldquo;{deleteTarget?.nama_siswa}&rdquo;
-                    </span>{' '}
-                    akan dihapus secara permanen. Tindakan ini tidak dapat
-                    dibatalkan.
+                    <span className="font-semibold">&ldquo;{deleteTarget?.nama_siswa}&rdquo;</span>{' '}
+                    akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
                 </p>
             </ConfirmDialog>
         </div>

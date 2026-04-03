@@ -1,24 +1,17 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import {
-    Button,
-    Card,
-    Input,
-    Select,
-    Notification,
-    toast,
-} from '@/components/ui'
+import { useState, useCallback, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button, Input, Notification, Select, toast } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import PembayaranTable from '@/components/kursus/pembayaran/PembayaranTable'
-import PembayaranForm from '@/components/kursus/pembayaran/PembayaranForm'
 import PembayaranDetailDrawer from '@/components/kursus/pembayaran/PembayaranDetailDrawer'
 import PembayaranService from '@/services/kursus/pembayaran.service'
-import TagihanService from '@/services/kursus/tagihan.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
-import type { IPembayaran, ICreatePembayaran, ITagihan } from '@/@types/kursus.types'
+import { ROUTES } from '@/constants/route.constant'
+import type { IPembayaran } from '@/@types/kursus.types'
 
 type MetodeOption = { value: '' | 'TUNAI' | 'TRANSFER' | 'QRIS'; label: string }
 
@@ -29,9 +22,9 @@ const METODE_OPTIONS: MetodeOption[] = [
     { value: 'QRIS', label: 'QRIS' },
 ]
 
-const PembayaranPage = () => {
+const PembayaranTab = () => {
+    const router = useRouter()
     const [list, setList] = useState<IPembayaran[]>([])
-    const [tagihanList, setTagihanList] = useState<ITagihan[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
 
@@ -42,16 +35,8 @@ const PembayaranPage = () => {
     const [pageSize, setPageSize] = useState(10)
     const [total, setTotal] = useState(0)
 
-    const [formOpen, setFormOpen] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<IPembayaran | null>(null)
     const [detailTarget, setDetailTarget] = useState<IPembayaran | null>(null)
-
-    /* Load tagihan list for form dropdown (once) */
-    useEffect(() => {
-        TagihanService.getAll({ limit: 200 })
-            .then((res) => { if (res.success) setTagihanList(res.data) })
-            .catch(() => { })
-    }, [])
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -91,26 +76,6 @@ const PembayaranPage = () => {
         setCurrentPage(1)
     }
 
-    const handleSubmit = async (payload: ICreatePembayaran) => {
-        setSubmitting(true)
-        try {
-            await PembayaranService.create(payload)
-            toast.push(
-                <Notification type="success" title={MESSAGES.SUCCESS.CREATED(ENTITY.PEMBAYARAN)} />,
-            )
-            setFormOpen(false)
-            fetchData()
-        } catch (err) {
-            toast.push(
-                <Notification type="danger" title={MESSAGES.ERROR.CREATE(ENTITY.PEMBAYARAN)}>
-                    {parseApiError(err)}
-                </Notification>,
-            )
-        } finally {
-            setSubmitting(false)
-        }
-    }
-
     const handleDelete = async () => {
         if (!deleteTarget) return
         setSubmitting(true)
@@ -137,74 +102,55 @@ const PembayaranPage = () => {
         : list
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card
-                header={{
-                    content: <h4>Pembayaran</h4>,
-                    extra: (
-                        <Button
-                            variant="solid"
-                            size="sm"
-                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
-                            icon={<HiPlusCircle />}
-                            onClick={() => setFormOpen(true)}
-                        >
-                            Catat Pembayaran
-                        </Button>
-                    ),
-                    bordered: false,
-                }}
-                bodyClass="p-0"
-            >
-                <div className="flex items-center gap-3 px-4 pb-3">
-                    <Input
-                        className="flex-1"
-                        placeholder="Cari nama siswa... (tekan Enter)"
-                        suffix={
-                            searchInput ? (
-                                <HiOutlineX
-                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
-                                    onClick={handleSearchClear}
-                                />
-                            ) : (
-                                <HiOutlineSearch
-                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
-                                    onClick={handleSearchSubmit}
-                                />
-                            )
-                        }
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit() }}
-                    />
-                    <Select
-                        className="w-48"
-                        options={METODE_OPTIONS}
-                        value={METODE_OPTIONS.find((o) => o.value === metodeFilter)}
-                        onChange={(opt) => {
-                            setMetodeFilter((opt as MetodeOption).value)
-                            setCurrentPage(1)
-                        }}
-                    />
-                </div>
-
-                <PembayaranTable
-                    data={filteredList}
-                    loading={loading}
-                    pagingData={{ total, pageIndex: currentPage, pageSize }}
-                    onPaginationChange={setCurrentPage}
-                    onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
-                    onDetail={setDetailTarget}
-                    onDelete={setDeleteTarget}
+        <>
+            <div className="flex items-center gap-3 px-4 pb-3">
+                <Input
+                    className="flex-1"
+                    placeholder="Cari nama siswa... (tekan Enter)"
+                    suffix={
+                        searchInput ? (
+                            <HiOutlineX
+                                className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                onClick={handleSearchClear}
+                            />
+                        ) : (
+                            <HiOutlineSearch
+                                className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                onClick={handleSearchSubmit}
+                            />
+                        )
+                    }
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit() }}
                 />
-            </Card>
+                <Select
+                    className="w-48"
+                    options={METODE_OPTIONS}
+                    value={METODE_OPTIONS.find((o) => o.value === metodeFilter)}
+                    onChange={(opt) => {
+                        setMetodeFilter((opt as MetodeOption).value)
+                        setCurrentPage(1)
+                    }}
+                />
+                <Button
+                    variant="solid"
+                    size="sm"
+                    icon={<HiPlusCircle />}
+                    onClick={() => router.push(ROUTES.KURSUS_TAGIHAN_CATAT_PEMBAYARAN)}
+                >
+                    Catat Pembayaran
+                </Button>
+            </div>
 
-            <PembayaranForm
-                open={formOpen}
-                tagihanList={tagihanList}
-                submitting={submitting}
-                onClose={() => setFormOpen(false)}
-                onSubmit={handleSubmit}
+            <PembayaranTable
+                data={filteredList}
+                loading={loading}
+                pagingData={{ total, pageIndex: currentPage, pageSize }}
+                onPaginationChange={setCurrentPage}
+                onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
+                onDetail={setDetailTarget}
+                onDelete={setDeleteTarget}
             />
 
             <PembayaranDetailDrawer
@@ -241,8 +187,8 @@ const PembayaranPage = () => {
                     akan dihapus. Tindakan ini tidak dapat dibatalkan.
                 </p>
             </ConfirmDialog>
-        </div>
+        </>
     )
 }
 
-export default PembayaranPage
+export default PembayaranTab

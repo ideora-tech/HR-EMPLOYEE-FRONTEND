@@ -76,14 +76,9 @@ const JadwalDetailDrawer = ({ open, jadwal, onClose }: JadwalDetailDrawerProps) 
                         value={`${jadwal.jam_mulai} – ${jadwal.jam_selesai}`}
                     />
                     <DetailRow
-                        icon={<HiOutlineCalendar />}
-                        label="Periode"
-                        value={`${jadwal.tanggal_mulai} s/d ${jadwal.tanggal_selesai}`}
-                    />
-                    <DetailRow
                         icon={<HiOutlineBookOpen />}
-                        label="Sesi Pertemuan"
-                        value={`${jadwal.sesi_pertemuan}x`}
+                        label="Kuota"
+                        value={String(jadwal.kuota)}
                     />
                     <DetailRow
                         icon={<HiOutlineTag />}

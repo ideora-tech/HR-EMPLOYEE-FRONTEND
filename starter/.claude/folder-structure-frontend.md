@@ -926,253 +926,8 @@ karyawan: {
   templateExcel:   '/karyawan/template/excel',
   uploadExcel:     '/karyawan/upload/excel',
   getLokasi:       (id: string) => `/karyawan/${id}/lokasi`,
-  setLokasi:       (id:tree/sidebar — response nested parent → children
-  getTree: () =>
-    apiClient.get<ApiResponse<IDepartemenTree[]>>(API_ENDPOINTS.organisasi.departemen.tree),
-
-  getById: (id: string) =>
-    apiClient.get<ApiResponse<IDepartemen>>(API_ENDPOINTS.organisasi.departemen.detail(id)),
-
-  create: (data: ICreateDepartemen) =>
-    apiClient.post<ApiResponse<IDepartemen>>(API_ENDPOINTS.organisasi.departemen.create, data),
-
-  update: (id: string, data: IUpdateDepartemen) =>
-    apiClient.patch<ApiResponse<IDepartemen>>(API_ENDPOINTS.organisasi.departemen.update(id), data),
-
-  delete: (id: string) =>
-    apiClient.delete<ApiResponse<null>>(API_ENDPOINTS.organisasi.departemen.delete(id)),
-}
-```
-
-**`src/services/jabatan.service.ts`**
-```typescript
-import apiClient from './api-client'
-import { API_ENDPOINTS } from '@/constants/api.constant'
-import type { IJabatan, ICreateJabatan, IUpdateJabatan } from '@/@types/organisasi.types'
-import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
-
-export const jabatanService = {
-  getAll: (params?: { page?: number; limit?: number; search?: string; id_departemen?: string }) =>
-    apiClient.get<ApiResponse<PaginatedResult<IJabatan>>>(API_ENDPOINTS.organisasi.jabatan.list, { params }),
-
-  // Untuk dropdown — tanpa pagination
-  getByDepartemen: (idDepartemen: string) =>
-    apiClient.get<ApiResponse<IJabatan[]>>(API_ENDPOINTS.organisasi.jabatan.byDepartemen(idDepartemen)),
-
-  getById: (id: string) =>
-    apiClient.get<ApiResponse<IJabatan>>(API_ENDPOINTS.organisasi.jabatan.detail(id)),
-
-  create: (data: ICreateJabatan) =>
-    apiClient.post<ApiResponse<IJabatan>>(API_ENDPOINTS.organisasi.jabatan.create, data),
-
-  update: (id: string, data: IUpdateJabatan) =>
-    apiClient.patch<ApiResponse<IJabatan>>(API_ENDPOINTS.organisasi.jabatan.update(id), data),
-
-  delete: (id: string) =>
-    apiClient.delete<ApiResponse<null>>(API_ENDPOINTS.organisasi.jabatan.delete(id)),
-}
-```
-
-**`src/services/lokasi-kantor.service.ts`**
-```typescript
-import apiClient from './api-client'
-import { API_ENDPOINTS } from '@/constants/api.constant'
-import type { ILokasiKantor, ICreateLokasiKantor, IUpdateLokasiKantor } from '@/@types/organisasi.types'
-import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
-
-export const lokasiKantorService = {
-  getAll: (params?: { page?: number; limit?: number; search?: string }) =>
-    apiClient.get<ApiResponse<PaginatedResult<ILokasiKantor>>>(API_ENDPOINTS.organisasi.lokasiKantor.list, { params }),
-
-  getById: (id: string) =>
-    apiClient.get<ApiResponse<ILokasiKantor>>(API_ENDPOINTS.organisasi.lokasiKantor.detail(id)),
-
-  create: (data: ICreateLokasiKantor) =>
-    apiClient.post<ApiResponse<ILokasiKantor>>(API_ENDPOINTS.organisasi.lokasiKantor.create, data),
-
-  update: (id: string, data: IUpdateLokasiKantor) =>
-    apiClient.patch<ApiResponse<ILokasiKantor>>(API_ENDPOINTS.organisasi.lokasiKantor.update(id), data),
-
-  delete: (id: string) =>
-    apiClient.delete<ApiResponse<null>>(API_ENDPOINTS.organisasi.lokasiKantor.delete(id)),
-}
-```
-
----
-
-### Struktur Halaman
-
-```
-src/app/(protected-pages)/
-└── organisasi/
-    ├── departemen/
-    │   ├── page.tsx          ← List departemen (tabel + search + pagination)
-    │   ├── create/
-    │   │   └── page.tsx      ← Form tambah departemen
-    │   └── [id]/
-    │       └── page.tsx      ← Detail / edit departemen
-    │
-    ├── jabatan/
-    │   ├── page.tsx          ← List jabatan (search, filter by departemen)
-    │   ├── create/
-    │   │   └── page.tsx      ← Form tambah jabatan (termasuk select departemen)
-    │   └── [id]/
-    │       └── page.tsx      ← Detail / edit jabatan
-    │
-    └── lokasi-kantor/
-        ├── page.tsx          ← List lokasi kantor
-        ├── create/
-        │   └── page.tsx      ← Form tambah lokasi kantor
-        └── [id]/
-            └── page.tsx      ← Detail / edit lokasi kantor
-```
-
-### Komponen
-
-```
-src/components/
-├── departemen/
-│   ├── DepartemenTable.tsx    ← Tabel list + aksi edit/hapus
-│   ├── DepartemenForm.tsx     ← Form create/edit
-│   └── DepartemenFilterBar.tsx
-│
-├── jabatan/
-│   ├── JabatanTable.tsx       ← Tampilkan kolom departemen dari nested object
-│   ├── JabatanForm.tsx        ← Select departemen via getByDepartemen
-│   └── JabatanFilterBar.tsx   ← Filter dropdown departemen
-│
-└── lokasi-kantor/
-    ├── LokasiKantorTable.tsx
-    ├── LokasiKantorForm.tsx
-    └── LokasiKantorFilterBar.tsx
-```
-
-> **Catatan Jabatan**: Field `departemen` di response adalah object `{ id_departemen, nama }` atau `null`.
-> Gunakan `jabatan.departemen?.nama ?? '-'` saat render di tabel.
-> Untuk form select departemen, panggil `jabatanService.getByDepartemen` tidak perlu — gunakan `departemenService.getAll({ limit: 100 })` untuk mengisi dropdown.
-
----
-
-## Modul HR — Karyawan
-
-### Types — `src/@types/karyawan.types.ts`
-
-```typescript
-import type { IDepartemen } from './organisasi.types'
-
-// ============================================================
-// KARYAWAN
-// ============================================================
-export interface IKaryawan {
-  id_karyawan: string
-  id_perusahaan: string
-  id_jabatan: string | null
-  id_departemen: string | null
-  id_lokasi_kantor: string | null
-
-  // Data pribadi
-  nik: string | null
-  nama: string
-  email: string | null
-  telepon: string | null
-  tanggal_lahir: string | null      // "YYYY-MM-DD"
-  jenis_kelamin: number | null      // 1=L, 2=P
-  alamat: string | null
-  foto_url: string | null
-
-  // Informasi pekerjaan
-  tanggal_masuk: string | null
-  tanggal_keluar: string | null
-  tanggal_mulai_kontrak: string | null
-  tanggal_akhir_kontrak: string | null
-  gaji_pokok: number | null
-  status_kepegawaian: string | null  // TETAP | KONTRAK | PROBASI | MAGANG
-
-  // Informasi bank
-  nama_bank: string | null
-  no_rekening: string | null
-  nama_pemilik_rekening: string | null
-
-  // Informasi pajak & BPJS
-  npwp: string | null
-  status_pajak: string | null        // TK/0, K/1, K/I/0, dll
-  no_bpjs_kesehatan: string | null
-  no_bpjs_ketenagakerjaan: string | null
-
-  aktif: number
-  dibuat_pada: string
-  diubah_pada: string | null
-
-  // Nested objects (null jika belum di-assign)
-  jabatan: { id_jabatan: string; nama: string; level: number | null } | null
-  departemen: { id_departemen: string; nama: string } | null
-  lokasi_kantor: { id_lokasi: string; nama: string } | null
-}
-
-export interface ICreateKaryawan {
-  nik?: string
-  nama: string
-  email?: string
-  telepon?: string
-  tanggal_lahir?: string
-  jenis_kelamin?: 1 | 2
-  alamat?: string
-  foto_url?: string
-  // Pekerjaan
-  id_jabatan?: string
-  id_departemen?: string
-  tanggal_masuk?: string
-  tanggal_keluar?: string
-  status_kepegawaian?: 'TETAP' | 'KONTRAK' | 'PROBASI' | 'MAGANG'
-  tanggal_mulai_kontrak?: string
-  tanggal_akhir_kontrak?: string
-  gaji_pokok?: number
-  // Bank
-  nama_bank?: string
-  no_rekening?: string
-  nama_pemilik_rekening?: string
-  // Pajak & BPJS
-  npwp?: string
-  status_pajak?: string
-  no_bpjs_kesehatan?: string
-  no_bpjs_ketenagakerjaan?: string
-}
-
-export type IUpdateKaryawan = Partial<ICreateKaryawan> & {
-  id_jabatan?: string | null        // null = hapus assignment
-  id_departemen?: string | null
-  aktif?: 0 | 1
-}
-
-export interface ILokasiKaryawan {
-  id_lokasi: string
-  kode: string
-  nama: string
-  alamat: string | null
-  kota: string | null
-  provinsi: string | null
-  radius: number | null             // Radius geofencing dalam meter
-  aktif: number
-}
-```
-
----
-
-### API Endpoints — `src/constants/api.constant.ts`
-
-Tambahkan ke `API_ENDPOINTS`:
-
-```typescript
-karyawan: {
-  list:            '/karyawan',
-  detail:          (id: string) => `/karyawan/${id}`,
-  create:          '/karyawan',
-  update:          (id: string) => `/karyawan/${id}`,
-  delete:          (id: string) => `/karyawan/${id}`,
-  templateExcel:   '/karyawan/template/excel',
-  uploadExcel:     '/karyawan/upload/excel',
-  getLokasi:       (id: string) => `/karyawan/${id}/lokasi`,
   setLokasi:       (id: string) => `/karyawan/${id}/lokasi`,
+  uploadFoto:      (id: string) => `/karyawan/${id}/foto`,
 },
 ```
 
@@ -1194,7 +949,7 @@ karyawanEdit:     (id: string) => `/karyawan/${id}/edit`,
 ```typescript
 import apiClient from './api-client'
 import { API_ENDPOINTS } from '@/constants/api.constant'
-import type { IKaryawan, ICreateKaryawan, IUpdateKaryawan, ILokasiKaryawan } from '@/@types/karyawan.types'
+import type { IKaryawan, ICreateKaryawan, IUpdateKaryawan, ILokasiKaryawan, IKaryawanCreateResponse } from '@/@types/karyawan.types'
 import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
 
 export const karyawanService = {
@@ -1207,8 +962,9 @@ export const karyawanService = {
   getById: (id: string) =>
     apiClient.get<ApiResponse<IKaryawan>>(API_ENDPOINTS.karyawan.detail(id)),
 
+  // ⚠️ Response berisi { karyawan, pengguna, default_password } — bukan IKaryawan langsung!
   create: (data: ICreateKaryawan) =>
-    apiClient.post<ApiResponse<IKaryawan>>(API_ENDPOINTS.karyawan.create, data),
+    apiClient.post<ApiResponse<IKaryawanCreateResponse>>(API_ENDPOINTS.karyawan.create, data),
 
   update: (id: string, data: IUpdateKaryawan) =>
     apiClient.patch<ApiResponse<IKaryawan>>(API_ENDPOINTS.karyawan.update(id), data),
@@ -1254,6 +1010,129 @@ export const karyawanService = {
 > **Jabatan & Departemen** — di-assign via `id_jabatan` dan `id_departemen` saat create/update.
 > Response selalu include nested object `jabatan` dan `departemen` (atau `null`).
 > Untuk dropdown Jabatan per Departemen gunakan: `GET /organisasi/jabatan/departemen/:id_departemen`
+
+---
+
+## Modul HR — Pengguna (Akun User)
+
+### Types — `src/@types/pengguna.types.ts`
+
+```typescript
+// ============================================================
+// PENGGUNA (user account)
+// ============================================================
+export interface IPengguna {
+  id_pengguna: string
+  id_perusahaan: string | null
+  id_karyawan: string | null       // FK ke karyawan — null jika belum di-link
+  username: string | null
+  nama_pengguna: string
+  email: string
+  peran: string                    // 'SUPERADMIN' | 'ADMIN' | 'HR' | 'MANAGER' | 'EMPLOYEE'
+  aktif: number                    // 1=aktif, 0=nonaktif
+  harus_ganti_password: number     // 1=harus ganti saat login berikutnya, 0=normal
+  dibuat_pada: string
+  diubah_pada: string | null
+}
+
+export interface ICreatePengguna {
+  nama_pengguna: string
+  email: string
+  kata_sandi: string
+  peran: string
+  id_karyawan?: string | null
+  username?: string
+  aktif?: 0 | 1
+}
+
+export type IUpdatePengguna = Partial<ICreatePengguna> & {
+  id_karyawan?: string | null      // null = unlink dari karyawan
+  kata_sandi?: string              // Jika diisi, harus_ganti_password otomatis di-reset ke 0
+}
+```
+
+---
+
+## Alur Wajib Ganti Password (`harus_ganti_password`)
+
+> Setiap karyawan yang dibuat via `POST /karyawan` akan otomatis memiliki akun pengguna dengan password default `Karyawan@123` dan flag `harus_ganti_password = 1`.
+> Frontend **wajib** menangani flag ini setelah login.
+
+### Flow:
+1. `POST /auth/login` → cek `data.user.harus_ganti_password`
+2. Jika `=== 1` → **redirect ke `/ganti-password`** sebelum bisa akses halaman lain
+3. Di halaman `/ganti-password`: panggil `PATCH /pengguna/:id` dengan `kata_sandi` baru
+4. Backend otomatis reset flag ke `0` setelah password berhasil diubah
+5. Redirect ke dashboard
+
+### Auth Types — `src/@types/auth.types.ts`
+
+```typescript
+export interface IAuthUser {
+  id: string
+  name: string
+  email: string
+  role: string
+  company_id: string | null
+  harus_ganti_password: number     // ← WAJIB dicek setelah login!
+}
+```
+
+### Middleware — `src/middleware.ts`
+
+Tambahkan guard setelah validasi session:
+
+```typescript
+// Setelah cek session/token valid:
+const mustChangePassword = session?.user?.harus_ganti_password === 1
+const isPasswordChangePage = pathname.startsWith('/ganti-password')
+
+if (mustChangePassword && !isPasswordChangePage) {
+  return NextResponse.redirect(new URL('/ganti-password', request.url))
+}
+if (!mustChangePassword && isPasswordChangePage) {
+  return NextResponse.redirect(new URL('/dashboard', request.url))
+}
+```
+
+### Route & Halaman
+
+```typescript
+// constants/route.constant.ts
+gantiPassword: '/ganti-password',
+```
+
+```
+src/app/(protected-pages)/ganti-password/
+└── page.tsx    ← Form ganti password (hanya bisa diakses jika harus_ganti_password === 1)
+```
+
+### Service — `src/services/pengguna.service.ts`
+
+```typescript
+import apiClient from './api-client'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import type { IPengguna, ICreatePengguna, IUpdatePengguna } from '@/@types/pengguna.types'
+import type { ApiResponse, PaginatedResult } from '@/@types/api.types'
+
+export const penggunaService = {
+  getAll: (params?: { page?: number; limit?: number; search?: string; aktif?: 0 | 1 }) =>
+    apiClient.get<ApiResponse<PaginatedResult<IPengguna>>>(API_ENDPOINTS.pengguna.list, { params }),
+
+  getById: (id: string) =>
+    apiClient.get<ApiResponse<IPengguna>>(API_ENDPOINTS.pengguna.detail(id)),
+
+  create: (data: ICreatePengguna) =>
+    apiClient.post<ApiResponse<IPengguna>>(API_ENDPOINTS.pengguna.create, data),
+
+  // Jika data.kata_sandi diisi, backend otomatis reset harus_ganti_password ke 0
+  update: (id: string, data: IUpdatePengguna) =>
+    apiClient.patch<ApiResponse<IPengguna>>(API_ENDPOINTS.pengguna.update(id), data),
+
+  delete: (id: string) =>
+    apiClient.delete<ApiResponse<null>>(API_ENDPOINTS.pengguna.delete(id)),
+}
+```
 
 ---
 
@@ -1347,3 +1226,456 @@ export function UserTable() {
 | Komponen baru untuk satu feature dibuat di `components/shared/` | LOW | Feature-specific component masuk `components/[feature]/` |
 | File `.env` di-commit ke git | CRITICAL | Tambahkan ke `.gitignore`, hanya commit `.env.example` |
 | Tidak ada file di `@types/api.types.ts` — type duplikat di banyak tempat | MEDIUM | Centralize ke `@types/` |
+
+---
+
+## Kursus Module — Frontend Structure
+
+Semua halaman kursus masuk ke `src/app/(protected-pages)/kursus/`.
+Setiap sub-modul punya folder sendiri dengan `page.tsx` dan komponen di `src/components/kursus/[sub]/`.
+
+### Hierarki Domain Kursus
+
+```
+Paket (master global)
+  ↓ (satu kelas punya satu paket, satu paket bisa dipakai banyak kelas)
+Kelas (memiliki id_paket langsung)
+  └── KategoriUmur (id_kelas wajib)
+        └── Biaya (jenis: PENDAFTARAN / BULANAN / LAINNYA)
+JadwalKelas (per kelas + instruktur)
+Siswa → Tagihan (dari biaya + jadwal) → Pembayaran
+```
+
+---
+
+### Routes — `src/constants/route.constant.ts`
+
+```typescript
+kursus: {
+  kelas:          '/kursus/kelas',
+  paket:          '/kursus/paket',
+  kategoriUmur:   '/kursus/kategori-umur',
+  biaya:          '/kursus/biaya',
+  diskon:         '/kursus/diskon',
+  jadwalKelas:    '/kursus/jadwal-kelas',
+  siswa:          '/kursus/siswa',
+  tagihan:        '/kursus/tagihan',
+  pembayaran:     '/kursus/pembayaran',
+  dashboard:      '/kursus/dashboard',
+},
+```
+
+---
+
+### API Endpoints — `src/constants/api.constant.ts`
+
+```typescript
+kursus: {
+  // Kelas (berisi id_paket langsung)
+  kelas:                    '/kursus/kelas',
+  kelasDetail:              (id: string) => `/kursus/kelas/${id}`,
+
+  // Paket (global master)
+  paket:                    '/kursus/paket',
+  paketDetail:              (id: string) => `/kursus/paket/${id}`,
+
+  // Kategori Umur (hanya butuh id_kelas)
+  kategoriUmur:             '/kursus/kategori-umur',
+  kategoriUmurDetail:       (id: string) => `/kursus/kategori-umur/${id}`,
+  kategoriUmurByKelas:      (idKelas: string) => `/kursus/kategori-umur/kelas/${idKelas}`,
+  kategoriUmurByPaket:      (idPaket: string) => `/kursus/kategori-umur/paket/${idPaket}`,
+
+  // Biaya
+  biaya:                    '/kursus/biaya',
+  biayaDetail:              (id: string) => `/kursus/biaya/${id}`,
+  biayaByKategoriUmur:      (id: string) => `/kursus/biaya/kategori-umur/${id}`,
+
+  // Diskon
+  diskon:                   '/kursus/diskon',
+  diskonDetail:             (id: string) => `/kursus/diskon/${id}`,
+  diskonAktif:              '/kursus/diskon/aktif',
+
+  // Jadwal Kelas
+  jadwalKelas:              '/kursus/jadwal-kelas',
+  jadwalKelasDetail:        (id: string) => `/kursus/jadwal-kelas/${id}`,
+  jadwalKelasByKelas:       (idKelas: string) => `/kursus/jadwal-kelas/kelas/${idKelas}`,
+  jadwalKelasExportExcel:   '/kursus/jadwal-kelas/export/excel',
+
+  // Siswa
+  siswa:                    '/kursus/siswa',
+  siswaDetail:              (id: string) => `/kursus/siswa/${id}`,
+  siswaTunggakan:           '/kursus/siswa/tunggakan',
+  siswaTemplateExcel:       '/kursus/siswa/template/excel',
+  siswaUploadExcel:         '/kursus/siswa/upload/excel',
+
+  // Tagihan
+  tagihan:                  '/kursus/tagihan',
+  tagihanDetail:            (id: string) => `/kursus/tagihan/${id}`,
+  tagihanBySiswa:           (idSiswa: string) => `/kursus/tagihan/siswa/${idSiswa}`,
+  tagihanByJadwalKelas:     (idJadwal: string) => `/kursus/tagihan/jadwal-kelas/${idJadwal}`,
+
+  // Pembayaran
+  pembayaran:               '/kursus/pembayaran',
+  pembayaranDetail:         (id: string) => `/kursus/pembayaran/${id}`,
+  pembayaranByTagihan:      (idTagihan: string) => `/kursus/pembayaran/tagihan/${idTagihan}`,
+
+  // Dashboard
+  dashboard:                '/kursus/dashboard',
+},
+```
+
+---
+
+### Types — `src/@types/kursus.types.ts`
+
+```typescript
+// ============================================================
+// KELAS (memiliki id_paket langsung — satu kelas, satu paket)
+// ============================================================
+export interface IKelas {
+  id_kelas: string
+  nama_kelas: string
+  deskripsi: string | null
+  id_paket: string | null       // satu kelas punya satu paket
+  nama_paket: string | null     // di-resolve otomatis backend
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+}
+
+export interface ICreateKelas {
+  nama_kelas: string
+  deskripsi?: string
+  id_paket?: string             // opsional saat create
+}
+
+export type IUpdateKelas = Partial<ICreateKelas> & {
+  id_paket?: string | null      // null = hapus relasi paket
+  aktif?: 0 | 1
+}
+
+// ============================================================
+// PAKET (global master — bisa dipakai banyak kelas)
+// ============================================================
+export interface IPaket {
+  id_paket: string
+  nama_paket: string
+  deskripsi: string | null
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+}
+
+export interface ICreatePaket {
+  nama_paket: string
+  deskripsi?: string
+}
+
+export type IUpdatePaket = Partial<ICreatePaket> & { aktif?: 0 | 1 }
+
+// ============================================================
+// KATEGORI UMUR (id_kelas wajib, id_paket opsional)
+// nama_kelas & nama_paket di-resolve otomatis backend
+// ============================================================
+export interface IKategoriUmur {
+  id_kategori_umur: string
+  id_kelas: string
+  nama_kelas: string | null     // di-resolve otomatis backend
+  id_paket: string | null       // opsional — menautkan ke paket tertentu
+  nama_paket: string | null     // di-resolve otomatis backend
+  nama_kategori_umur: string
+  kuota: number | null          // kuota maksimal peserta
+  durasi: number | null
+  deskripsi: string | null
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+}
+
+export interface ICreateKategoriUmur {
+  id_kelas: string              // wajib
+  nama_kategori_umur: string
+  id_paket?: string             // opsional — nama_paket auto-resolve
+  kuota?: number
+  durasi?: number
+  deskripsi?: string
+}
+
+export type IUpdateKategoriUmur = Partial<ICreateKategoriUmur> & {
+  id_paket?: string | null      // null = hapus relasi paket
+  aktif?: 0 | 1
+}
+
+// ============================================================
+// BIAYA
+// jenis_biaya: PENDAFTARAN / BULANAN / LAINNYA
+// ============================================================
+export type JenisBiaya = 'PENDAFTARAN' | 'BULANAN' | 'LAINNYA'
+
+export interface IBiaya {
+  id_biaya: string
+  id_kelas: string
+  nama_kelas: string | null
+  id_kategori_umur: string | null
+  nama_kategori_umur: string | null
+  id_paket: string | null
+  nama_paket: string | null
+  nama_biaya: string
+  harga_biaya: number
+  jenis_biaya: JenisBiaya
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+}
+
+export interface ICreateBiaya {
+  id_kelas: string
+  id_kategori_umur?: string
+  id_paket?: string
+  nama_biaya: string
+  harga_biaya: number
+  jenis_biaya: JenisBiaya
+}
+
+export type IUpdateBiaya = Partial<ICreateBiaya> & { aktif?: 0 | 1 }
+
+// ============================================================
+// DISKON
+// ============================================================
+export interface IDiskon {
+  id_diskon: string
+  kode_diskon: string
+  nama_diskon: string
+  persentase: number | null
+  harga: number | null
+  berlaku_mulai: string
+  berlaku_sampai: string
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+}
+
+export interface ICreateDiskon {
+  kode_diskon: string
+  nama_diskon: string
+  persentase?: number
+  harga?: number
+  berlaku_mulai: string
+  berlaku_sampai: string
+}
+
+export type IUpdateDiskon = Partial<ICreateDiskon> & { aktif?: 0 | 1 }
+
+// ============================================================
+// JADWAL KELAS
+// ============================================================
+export interface IJadwalKelas {
+  id_jadwal_kelas: string
+  id_kelas: string
+  nama_kelas: string | null
+  id_karyawan: string
+  nama_karyawan: string | null
+  id_kategori_umur: string
+  nama_kategori_umur: string | null
+  hari: string
+  jam_mulai: string | null
+  jam_selesai: string | null
+  tanggal_mulai: string
+  tanggal_selesai: string
+  sesi_pertemuan: number | null
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+}
+
+export interface ICreateJadwalKelas {
+  id_kelas: string
+  id_karyawan: string
+  id_kategori_umur: string
+  hari: string
+  jam_mulai?: string
+  jam_selesai?: string
+  tanggal_mulai: string
+  tanggal_selesai: string
+  sesi_pertemuan?: number
+}
+
+export type IUpdateJadwalKelas = Partial<ICreateJadwalKelas> & { aktif?: 0 | 1 }
+
+// ============================================================
+// SISWA
+// ============================================================
+export interface ISiswa {
+  id_siswa: string
+  nama_siswa: string
+  email: string | null
+  telepon: string | null
+  tanggal_lahir: string | null
+  alamat: string | null
+  jenis_kelamin: number | null    // 1=L, 2=P
+  foto_url: string | null
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+}
+
+export interface ISiswaTunggakanItem {
+  id_siswa: string
+  nama_siswa: string
+  email: string | null
+  telepon: string | null
+  jumlah_tagihan_belum_lunas: number
+  total_tunggakan: number
+}
+
+export interface ICreateSiswa {
+  nama_siswa: string
+  email?: string
+  telepon?: string
+  tanggal_lahir?: string
+  alamat?: string
+  jenis_kelamin?: 1 | 2
+  foto_url?: string
+}
+
+export type IUpdateSiswa = Partial<ICreateSiswa> & { aktif?: 0 | 1 }
+
+// ============================================================
+// TAGIHAN
+// status: 1=MENUNGGU, 2=SEBAGIAN, 3=LUNAS, 4=DIBATALKAN
+// ============================================================
+export interface ITagihan {
+  id_tagihan: string
+  id_siswa: string
+  nama_siswa: string | null
+  id_biaya: string
+  nama_biaya: string | null
+  harga_biaya: number | null
+  id_kelas: string | null
+  nama_kelas: string | null
+  id_paket: string | null
+  nama_paket: string | null
+  id_kategori_umur: string | null
+  nama_kategori_umur: string | null
+  id_jadwal_kelas: string | null
+  hari_jadwal: string | null
+  jam_jadwal: string | null
+  nama_instruktur: string | null
+  periode: string | null
+  sesi_pertemuan: number | null
+  total_harga: number
+  total_bayar: number
+  status: 1 | 2 | 3 | 4
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+}
+
+export interface ICreateTagihan {
+  id_siswa: string           // wajib
+  id_biaya: string           // wajib — semua field lain di-resolve otomatis backend
+  id_jadwal_kelas?: string
+  periode?: string
+}
+
+export interface IUpdateTagihan {
+  status?: 1 | 2 | 3 | 4
+  aktif?: 0 | 1
+}
+
+// ============================================================
+// PEMBAYARAN
+// ============================================================
+export interface IPembayaran {
+  id_pembayaran: string
+  id_tagihan: string
+  id_siswa: string | null
+  nama_siswa: string | null
+  jumlah: number
+  tanggal_bayar: string
+  metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
+  referensi: string | null
+  deskripsi: string | null
+  aktif: number
+  dibuat_pada: string
+  diubah_pada: string | null
+}
+
+export interface ICreatePembayaran {
+  id_tagihan: string
+  jumlah: number
+  tanggal_bayar: string
+  metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
+  referensi?: string
+  deskripsi?: string
+}
+
+export type IUpdatePembayaran = Partial<ICreatePembayaran> & { aktif?: 0 | 1 }
+```
+
+---
+
+### Catatan Penting Kursus
+
+- `aktif` dari MySQL selalu berupa int (0/1) — handling di komponen: `item.aktif === 1`
+- Status tagihan: `1=MENUNGGU`, `2=SEBAGIAN`, `3=LUNAS`, `4=DIBATALKAN`
+- Semua PK kursus adalah UUID string (bukan integer)
+- **Kelas** punya `id_paket` langsung — satu kelas hanya satu paket. `nama_paket` di-resolve otomatis backend
+- **KategoriUmur**: `id_kelas` wajib. `id_paket` opsional — jika diisi, `nama_paket` di-resolve otomatis. `kuota` opsional (max peserta)
+- **Tagihan**: cukup kirim `id_siswa` + `id_biaya`. Semua field lain di-resolve otomatis backend
+- **Pembayaran**: `id_siswa` dan `nama_siswa` di-resolve otomatis dari tagihan
+- **Jadwal Kelas Excel**: `GET /kursus/jadwal-kelas/export/excel` — response `blob`
+
+---
+
+### Flow Frontend saat Buat Tagihan
+
+```
+1. Pilih Kelas → GET /kursus/kelas (tampilkan nama_kelas + nama_paket)
+2. Pilih KategoriUmur → GET /kursus/kategori-umur/kelas/:id_kelas
+3. Pilih Biaya → GET /kursus/biaya/kategori-umur/:id_kategori_umur
+4. Pilih Siswa → GET /kursus/siswa
+5. POST /kursus/tagihan dengan { id_siswa, id_biaya, id_jadwal_kelas? }
+```
+
+---
+
+### Struktur Halaman
+
+```
+src/app/(protected-pages)/kursus/
+├── kelas/
+│   ├── page.tsx              ← List kelas (tampilkan kolom nama_paket)
+│   ├── create/page.tsx
+│   └── [id]/page.tsx
+├── paket/
+│   ├── page.tsx
+│   ├── create/page.tsx
+│   └── [id]/page.tsx
+├── kategori-umur/
+│   ├── page.tsx
+│   ├── create/page.tsx
+│   └── [id]/page.tsx
+├── biaya/
+│   ├── page.tsx
+│   ├── create/page.tsx
+│   └── [id]/page.tsx
+├── diskon/
+│   ├── page.tsx
+│   └── create/page.tsx
+├── jadwal-kelas/
+│   ├── page.tsx              ← Termasuk tombol Export Excel
+│   ├── create/page.tsx
+│   └── [id]/page.tsx
+├── siswa/
+│   ├── page.tsx
+│   ├── create/page.tsx
+│   └── [id]/page.tsx
+├── tagihan/
+│   ├── page.tsx
+│   ├── create/page.tsx
+│   └── [id]/page.tsx
+└── pembayaran/
+    ├── page.tsx
+    └── create/page.tsx
+```

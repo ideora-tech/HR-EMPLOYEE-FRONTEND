@@ -43,13 +43,6 @@ const PaketTable = ({
                 ),
             },
             {
-                header: 'Kelas',
-                accessorKey: 'nama_kelas',
-                size: 160,
-                cell: ({ row }: CellContext<IPaket, unknown>) =>
-                    row.original.nama_kelas ?? '-',
-            },
-            {
                 header: 'Deskripsi',
                 accessorKey: 'deskripsi',
                 cell: ({ row }: CellContext<IPaket, unknown>) => (

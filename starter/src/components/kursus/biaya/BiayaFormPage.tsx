@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
     Button,
     Card,
+    DatePicker,
     FormItem,
     Input,
     Select,
@@ -20,7 +21,7 @@ type SelectOption = { value: string; label: string }
 type JenisBiayaOption = { value: JenisBiaya; label: string }
 
 const JENIS_BIAYA_OPTIONS: JenisBiayaOption[] = [
-    { value: 'BULANAN', label: 'Bulanan' },
+    { value: 'KELAS', label: 'Kelas' },
     { value: 'PENDAFTARAN', label: 'Pendaftaran' },
     { value: 'LAINNYA', label: 'Lainnya' },
 ]
@@ -54,6 +55,12 @@ const INITIAL_STATE: FormState = {
     aktif: true,
 }
 
+const dateToMonth = (date: Date): string => {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    return `${y}-${m}`
+}
+
 const formatRupiahInput = (raw: string): string => {
     const digits = raw.replace(/\D/g, '')
     if (!digits) return ''
@@ -71,6 +78,7 @@ const BiayaFormPage = ({
 }: BiayaFormPageProps) => {
     const [form, setForm] = useState<FormState>(INITIAL_STATE)
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+    const [periodeDate, setPeriodeDate] = useState<Date | null>(null)
     const [kelasOptions, setKelasOptions] = useState<SelectOption[]>([])
     const [paketOptions, setPaketOptions] = useState<SelectOption[]>([])
     const [kategoriOptions, setKategoriOptions] = useState<SelectOption[]>([])
@@ -93,11 +101,10 @@ const BiayaFormPage = ({
         }
     }, [])
 
-    const loadPaket = useCallback(async (idKelas: string) => {
-        if (!idKelas) { setPaketOptions([]); return }
+    const loadPaket = useCallback(async () => {
         setLoadingPaket(true)
         try {
-            const res = await PaketService.getByKelas(idKelas)
+            const res = await PaketService.getAll({ aktif: 1, limit: 100 })
             if (res.success)
                 setPaketOptions(res.data.map((p) => ({ value: p.id_paket, label: p.nama_paket })))
         } catch {
@@ -123,11 +130,10 @@ const BiayaFormPage = ({
         }
     }, [])
 
-    useEffect(() => { loadKelas() }, [loadKelas])
+    useEffect(() => { loadKelas(); loadPaket() }, [loadKelas, loadPaket])
 
     useEffect(() => {
         if (editData) {
-            loadPaket(editData.id_kelas)
             loadKategori(editData.id_paket)
             setForm({
                 id_kelas: editData.id_kelas,
@@ -139,19 +145,24 @@ const BiayaFormPage = ({
                 deskripsi: editData.deskripsi ?? '',
                 aktif: editData.aktif === 1,
             })
+            if (editData.periode) {
+                const [y, m] = editData.periode.split('-').map(Number)
+                setPeriodeDate(new Date(y, m - 1, 1))
+            } else {
+                setPeriodeDate(null)
+            }
         } else {
             setForm(INITIAL_STATE)
+            setPeriodeDate(null)
             setPaketOptions([])
             setKategoriOptions([])
         }
         setErrors({})
-    }, [editData, loadPaket, loadKategori])
+    }, [editData, loadKategori])
 
     const handleKelasChange = (idKelas: string) => {
         setForm((p) => ({ ...p, id_kelas: idKelas, id_paket: '', id_kategori_umur: '' }))
-        setPaketOptions([])
         setKategoriOptions([])
-        loadPaket(idKelas)
     }
 
     const handlePaketChange = (idPaket: string) => {
@@ -180,6 +191,7 @@ const BiayaFormPage = ({
             nama_biaya: form.nama_biaya.trim(),
             harga_biaya: parseRupiah(form.harga_biaya),
             deskripsi: form.deskripsi.trim() || undefined,
+            ...(periodeDate && { periode: dateToMonth(periodeDate) }),
         }
         if (isEdit) {
             onSubmit({ ...base, aktif: form.aktif ? 1 : 0 } as IUpdateBiaya)
@@ -224,7 +236,7 @@ const BiayaFormPage = ({
                         <div className="mb-3">
                             <h5 className="font-semibold">Relasi Kelas</h5>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
                             <FormItem
                                 label="Kelas"
                             >
@@ -232,8 +244,9 @@ const BiayaFormPage = ({
                                     placeholder="— Pilih Kelas —"
                                     options={kelasOptions}
                                     isLoading={loadingKelas}
+                                    isClearable
                                     value={kelasOptions.find((o) => o.value === form.id_kelas) ?? null}
-                                    onChange={(opt) => handleKelasChange((opt as SelectOption).value)}
+                                    onChange={(opt) => opt ? handleKelasChange((opt as SelectOption).value) : handleKelasChange('')}
                                 />
                             </FormItem>
 
@@ -245,8 +258,9 @@ const BiayaFormPage = ({
                                     options={paketOptions}
                                     isLoading={loadingPaket}
                                     isDisabled={!form.id_kelas}
+                                    isClearable
                                     value={paketOptions.find((o) => o.value === form.id_paket) ?? null}
-                                    onChange={(opt) => handlePaketChange((opt as SelectOption).value)}
+                                    onChange={(opt) => opt ? handlePaketChange((opt as SelectOption).value) : handlePaketChange('')}
                                 />
                             </FormItem>
 
@@ -258,9 +272,10 @@ const BiayaFormPage = ({
                                     options={kategoriOptions}
                                     isLoading={loadingKategori}
                                     isDisabled={!form.id_paket}
+                                    isClearable
                                     value={kategoriOptions.find((o) => o.value === form.id_kategori_umur) ?? null}
                                     onChange={(opt) =>
-                                        setForm((p) => ({ ...p, id_kategori_umur: (opt as SelectOption).value }))
+                                        setForm((p) => ({ ...p, id_kategori_umur: opt ? (opt as SelectOption).value : '' }))
                                     }
                                 />
                             </FormItem>
@@ -274,7 +289,7 @@ const BiayaFormPage = ({
                         <div className="mb-3">
                             <h5 className="font-semibold">Detail Biaya</h5>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
                             <FormItem
                                 label="Jenis Biaya"
                                 asterisk
@@ -298,7 +313,7 @@ const BiayaFormPage = ({
                                 errorMessage={errors.nama_biaya}
                             >
                                 <Input
-                                    placeholder="contoh: Biaya Bulanan, Biaya Pendaftaran"
+                                    placeholder="contoh: Biaya Kelas, Biaya Pendaftaran"
                                     value={form.nama_biaya}
                                     invalid={!!errors.nama_biaya}
                                     onChange={(e) => setForm((p) => ({ ...p, nama_biaya: e.target.value }))}
@@ -319,6 +334,16 @@ const BiayaFormPage = ({
                                     onChange={(e) =>
                                         setForm((p) => ({ ...p, harga_biaya: formatRupiahInput(e.target.value) }))
                                     }
+                                />
+                            </FormItem>
+
+                            <FormItem label="Periode (opsional)">
+                                <DatePicker
+                                    placeholder="Pilih bulan & tahun"
+                                    inputFormat="MMMM YYYY"
+                                    clearable
+                                    value={periodeDate}
+                                    onChange={(date) => setPeriodeDate(date as Date | null)}
                                 />
                             </FormItem>
                         </div>
@@ -378,7 +403,7 @@ const BiayaFormPage = ({
                     <div className="flex items-center justify-end gap-4 mt-6">
                         <Button
                             type="button"
-                            variant="plain"
+                            variant="default"
                             onClick={onCancel}
                             disabled={submitting}
                         >

@@ -138,28 +138,25 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged }: TagihanDetai
                                 <HiOutlineUser className="mt-0.5 shrink-0 text-gray-400" />
                                 <div>
                                     <p className="font-semibold text-gray-800 dark:text-gray-100">
-                                        {tagihan.siswa.nama_siswa}
+                                        {tagihan.nama_siswa}
                                     </p>
-                                    {tagihan.siswa.telepon && (
-                                        <p className="text-xs text-gray-400">{tagihan.siswa.telepon}</p>
-                                    )}
                                 </div>
                             </div>
 
                             {/* Jenis + periode */}
                             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                                 <HiOutlineTag className="shrink-0" />
-                                <span>{tagihan.jenis_tagihan}</span>
+                                <span>{tagihan.nama_biaya}</span>
                                 {tagihan.periode && (
                                     <>
                                         <span className="text-gray-300">·</span>
                                         <span>{tagihan.periode}</span>
                                     </>
                                 )}
-                                {tagihan.jumlah_sesi && (
+                                {tagihan.sesi_pertemuan && (
                                     <>
                                         <span className="text-gray-300">·</span>
-                                        <span>{tagihan.jumlah_sesi} sesi</span>
+                                        <span>{tagihan.sesi_pertemuan} sesi</span>
                                     </>
                                 )}
                             </div>
@@ -195,8 +192,8 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged }: TagihanDetai
                                 </div>
                             </div>
 
-                            {tagihan.catatan && (
-                                <p className="text-sm text-gray-400 italic">&quot;{tagihan.catatan}&quot;</p>
+                            {tagihan.deskripsi && (
+                                <p className="text-sm text-gray-400 italic">&quot;{tagihan.deskripsi}&quot;</p>
                             )}
                         </div>
                     )}
@@ -246,8 +243,8 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged }: TagihanDetai
                                                 {formatTanggal(p.tanggal_bayar)}
                                                 {p.referensi && ` · ${p.referensi}`}
                                             </p>
-                                            {p.catatan && (
-                                                <p className="text-xs text-gray-400 italic">{p.catatan}</p>
+                                            {p.deskripsi && (
+                                                <p className="text-xs text-gray-400 italic">{p.deskripsi}</p>
                                             )}
                                         </div>
                                         <button

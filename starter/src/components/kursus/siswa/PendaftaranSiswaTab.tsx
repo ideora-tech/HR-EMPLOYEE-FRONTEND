@@ -1,16 +1,10 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-    Button,
-    Card,
-    Notification,
-    toast,
-    Input,
-} from '@/components/ui'
+import { Input, Notification, toast } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
+import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import TagihanTable from '@/components/kursus/tagihan/TagihanTable'
 import TagihanForm from '@/components/kursus/tagihan/TagihanForm'
 import TagihanDetailDrawer from '@/components/kursus/tagihan/TagihanDetailDrawer'
@@ -21,7 +15,12 @@ import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import { ROUTES } from '@/constants/route.constant'
 import type { ITagihan, ICreateTagihan, IUpdateTagihan, ISiswa } from '@/@types/kursus.types'
 
-const TagihanPage = () => {
+interface PendaftaranSiswaTabProps {
+    pendingAdd?: boolean
+    onPendingAddHandled?: () => void
+}
+
+const PendaftaranSiswaTab = ({ pendingAdd, onPendingAddHandled }: PendaftaranSiswaTabProps) => {
     const router = useRouter()
 
     const [list, setList] = useState<ITagihan[]>([])
@@ -40,11 +39,18 @@ const TagihanPage = () => {
     const [deleteTarget, setDeleteTarget] = useState<ITagihan | null>(null)
     const [drawerTarget, setDrawerTarget] = useState<ITagihan | null>(null)
 
-    /* Load siswa list for form dropdown (once) */
+    useEffect(() => {
+        if (pendingAdd) {
+            setEditTarget(null)
+            setFormOpen(true)
+            onPendingAddHandled?.()
+        }
+    }, [pendingAdd, onPendingAddHandled])
+
     useEffect(() => {
         SiswaService.getAll({ aktif: 1, limit: 200 })
             .then((res) => { if (res.success) setSiswaList(res.data) })
-            .catch(() => { })
+            .catch(() => {})
     }, [])
 
     const fetchData = useCallback(async () => {
@@ -131,74 +137,53 @@ const TagihanPage = () => {
         }
     }
 
-    /* When a payment is recorded/deleted inside the drawer, refresh both list and drawer data */
     const handleDrawerChanged = () => {
         fetchData()
         if (drawerTarget) {
             TagihanService.getById(drawerTarget.id_tagihan)
                 .then((res) => { if (res.success) setDrawerTarget(res.data) })
-                .catch(() => { })
+                .catch(() => {})
         }
     }
 
     return (
-        <div className="flex flex-col gap-4">
-            <Card
-                header={{
-                    content: <h4>Tagihan</h4>,
-                    extra: (
-                        <Button
-                            variant="solid"
-                            size="sm"
-                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
-                            icon={<HiPlusCircle />}
-                            onClick={() => { setEditTarget(null); setFormOpen(true) }}
-                        >
-                            Buat Tagihan
-                        </Button>
-                    ),
-                    bordered: false,
-                }}
-                bodyClass="p-0"
-            >
-                <div className="flex items-center gap-3 px-4 pb-3">
-                    <Input
-                        className="flex-1"
-                        placeholder="Cari nama siswa... (tekan Enter)"
-                        suffix={
-                            searchInput ? (
-                                <HiOutlineX
-                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
-                                    onClick={handleSearchClear}
-                                />
-                            ) : (
-                                <HiOutlineSearch
-                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
-                                    onClick={handleSearchSubmit}
-                                />
-                            )
-                        }
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit() }}
-                    />
-                </div>
-
-                <TagihanTable
-                    data={list}
-                    loading={loading}
-                    pagingData={{ total, pageIndex: currentPage, pageSize }}
-                    onPaginationChange={setCurrentPage}
-                    onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
-                    onDetail={(item) => setDrawerTarget(item)}
-                    onBayar={(item) =>
-                        router.push(`${ROUTES.KURSUS_TAGIHAN_CATAT_PEMBAYARAN}?id=${item.id_tagihan}`)
+        <>
+            <div className="flex items-center gap-3 px-4 pb-3 pt-3">
+                <Input
+                    className="flex-1"
+                    placeholder="Cari nama siswa... (tekan Enter)"
+                    suffix={
+                        searchInput ? (
+                            <HiOutlineX
+                                className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                onClick={handleSearchClear}
+                            />
+                        ) : (
+                            <HiOutlineSearch
+                                className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                onClick={handleSearchSubmit}
+                            />
+                        )
                     }
-                    onDelete={setDeleteTarget}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit() }}
                 />
-            </Card>
+            </div>
 
-            {/* Create / Edit form */}
+            <TagihanTable
+                data={list}
+                loading={loading}
+                pagingData={{ total, pageIndex: currentPage, pageSize }}
+                onPaginationChange={setCurrentPage}
+                onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
+                onDetail={(item) => setDrawerTarget(item)}
+                onBayar={(item) =>
+                    router.push(`${ROUTES.KURSUS_TAGIHAN_CATAT_PEMBAYARAN}?id=${item.id_tagihan}`)
+                }
+                onDelete={setDeleteTarget}
+            />
+
             <TagihanForm
                 open={formOpen}
                 editData={editTarget}
@@ -208,7 +193,6 @@ const TagihanPage = () => {
                 onSubmit={handleSubmit}
             />
 
-            {/* Detail & payment drawer */}
             {drawerTarget && (
                 <TagihanDetailDrawer
                     open={!!drawerTarget}
@@ -218,7 +202,6 @@ const TagihanPage = () => {
                 />
             )}
 
-            {/* Delete confirmation */}
             <ConfirmDialog
                 isOpen={!!deleteTarget}
                 type="danger"
@@ -240,9 +223,8 @@ const TagihanPage = () => {
                     akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
                 </p>
             </ConfirmDialog>
-        </div>
+        </>
     )
 }
 
-export default TagihanPage
-
+export default PendaftaranSiswaTab

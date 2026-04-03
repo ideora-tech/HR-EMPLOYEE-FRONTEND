@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import {
     Button,
     Card,
-    DatePicker,
     FormItem,
     Input,
     Select,
@@ -14,6 +13,7 @@ import { HiArrowLeft } from 'react-icons/hi'
 import KaryawanService from '@/services/karyawan.service'
 import KelasService from '@/services/kursus/kelas.service'
 import KategoriUmurService from '@/services/kursus/kategori-umur.service'
+import PaketService from '@/services/kursus/paket.service'
 import type {
     IJadwalKelas,
     ICreateJadwalKelas,
@@ -22,7 +22,8 @@ import type {
 
 /* ─── option types ─────────────────────────────────────── */
 
-type KelasOption = { value: string; label: string }
+type PaketOption = { value: string; label: string }
+type KelasOption = { value: string; label: string; idPaket: string | null }
 type KaryawanOption = { value: string; label: string }
 type KategoriOption = { value: string; label: string }
 type HariOption = { value: string; label: string }
@@ -64,29 +65,27 @@ export interface JadwalFormPageProps {
 }
 
 interface FormState {
+    id_paket: string
     id_kelas: string
     id_karyawan: string
     id_kategori_umur: string
     hari: string
     jam_mulai: string
     jam_selesai: string
-    tanggal_mulai: Date | null
-    tanggal_selesai: Date | null
-    sesi_pertemuan: string
+    kuota: string
     deskripsi: string
     aktif: boolean
 }
 
 const INITIAL_STATE: FormState = {
+    id_paket: '',
     id_kelas: '',
     id_karyawan: '',
     id_kategori_umur: '',
     hari: '',
     jam_mulai: '08:00',
     jam_selesai: '09:00',
-    tanggal_mulai: null,
-    tanggal_selesai: null,
-    sesi_pertemuan: '1',
+    kuota: '1',
     deskripsi: '',
     aktif: true,
 }
@@ -102,25 +101,34 @@ const JadwalFormPage = ({
     const [form, setForm] = useState<FormState>(INITIAL_STATE)
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
 
-    const [kelasOptions, setKelasOptions] = useState<KelasOption[]>([])
+    const [allKelasOptions, setAllKelasOptions] = useState<KelasOption[]>([])
+    const [paketOptions, setPaketOptions] = useState<PaketOption[]>([])
     const [karyawanOptions, setKaryawanOptions] = useState<KaryawanOption[]>([])
     const [kategoriOptions, setKategoriOptions] = useState<KategoriOption[]>([])
     const [loadingDropdowns, setLoadingDropdowns] = useState(false)
 
     const isEdit = !!editData
 
-    /* ─── load kelas & karyawan on mount ─────────────── */
+    // kelas filtered by selected paket
+    const kelasOptions = form.id_paket
+        ? allKelasOptions.filter((k) => k.idPaket === form.id_paket)
+        : allKelasOptions
+
+    /* ─── load all dropdowns on mount ─────────────── */
     const loadDropdowns = useCallback(async () => {
         setLoadingDropdowns(true)
         try {
-            const [kelasRes, karyawanRes] = await Promise.all([
+            const [kelasRes, karyawanRes, paketRes] = await Promise.all([
                 KelasService.getAll({ aktif: 1, limit: 200 }),
                 KaryawanService.getAll({ aktif: 1, limit: 200 }),
+                PaketService.getAll({ aktif: 1, limit: 200 }),
             ])
             if (kelasRes.success)
-                setKelasOptions(kelasRes.data.map((k) => ({ value: k.id_kelas, label: k.nama_kelas })))
+                setAllKelasOptions(kelasRes.data.map((k) => ({ value: k.id_kelas, label: k.nama_kelas, idPaket: k.id_paket })))
             if (karyawanRes.success)
                 setKaryawanOptions(karyawanRes.data.map((k) => ({ value: k.id_karyawan, label: k.nama_karyawan })))
+            if (paketRes.success)
+                setPaketOptions(paketRes.data.map((p) => ({ value: p.id_paket, label: p.nama_paket })))
         } catch {
             // silently ignore
         } finally {
@@ -146,16 +154,17 @@ const JadwalFormPage = ({
     useEffect(() => {
         if (editData) {
             loadKategori(editData.id_kelas)
+            // resolve paket from kelas after allKelasOptions loads
+            const kelasPaket = allKelasOptions.find((k) => k.value === editData.id_kelas)?.idPaket ?? ''
             setForm({
+                id_paket: kelasPaket,
                 id_kelas: editData.id_kelas,
                 id_karyawan: editData.id_karyawan,
                 id_kategori_umur: editData.id_kategori_umur,
                 hari: editData.hari,
                 jam_mulai: editData.jam_mulai,
                 jam_selesai: editData.jam_selesai,
-                tanggal_mulai: ymdToDate(editData.tanggal_mulai),
-                tanggal_selesai: ymdToDate(editData.tanggal_selesai),
-                sesi_pertemuan: String(editData.sesi_pertemuan),
+                kuota: String(editData.kuota),
                 deskripsi: editData.deskripsi ?? '',
                 aktif: editData.aktif === 1,
             })
@@ -164,7 +173,12 @@ const JadwalFormPage = ({
             setKategoriOptions([])
         }
         setErrors({})
-    }, [editData, loadKategori])
+    }, [editData, loadKategori, allKelasOptions])
+
+    const handlePaketChange = (idPaket: string) => {
+        setForm((p) => ({ ...p, id_paket: idPaket, id_kelas: '', id_kategori_umur: '' }))
+        setKategoriOptions([])
+    }
 
     const handleKelasChange = (idKelas: string) => {
         setForm((p) => ({ ...p, id_kelas: idKelas, id_kategori_umur: '' }))
@@ -180,10 +194,8 @@ const JadwalFormPage = ({
         if (!form.hari) e.hari = 'Hari wajib dipilih'
         if (!form.jam_mulai) e.jam_mulai = 'Jam mulai wajib diisi'
         if (!form.jam_selesai) e.jam_selesai = 'Jam selesai wajib diisi'
-        if (!form.tanggal_mulai) e.tanggal_mulai = 'Tanggal mulai wajib diisi'
-        if (!form.tanggal_selesai) e.tanggal_selesai = 'Tanggal selesai wajib diisi'
-        if (!form.sesi_pertemuan || Number(form.sesi_pertemuan) < 1)
-            e.sesi_pertemuan = 'Sesi pertemuan minimal 1'
+        if (!form.kuota || Number(form.kuota) < 1)
+            e.kuota = 'Kuota minimal 1'
         setErrors(e)
         return Object.keys(e).length === 0
     }
@@ -198,9 +210,7 @@ const JadwalFormPage = ({
             hari: form.hari,
             jam_mulai: form.jam_mulai,
             jam_selesai: form.jam_selesai,
-            tanggal_mulai: dateToYMD(form.tanggal_mulai!),
-            tanggal_selesai: dateToYMD(form.tanggal_selesai!),
-            sesi_pertemuan: Number(form.sesi_pertemuan),
+            kuota: Number(form.kuota),
             deskripsi: form.deskripsi.trim() || undefined,
         }
         if (isEdit) {
@@ -247,6 +257,17 @@ const JadwalFormPage = ({
                             <h5 className="font-semibold">Info Kelas</h5>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                            <FormItem label="Paket">
+                                <Select<PaketOption>
+                                    placeholder="— Semua Paket —"
+                                    options={paketOptions}
+                                    isLoading={loadingDropdowns}
+                                    isClearable
+                                    value={paketOptions.find((o) => o.value === form.id_paket) ?? null}
+                                    onChange={(opt) => handlePaketChange(opt ? (opt as PaketOption).value : '')}
+                                />
+                            </FormItem>
+
                             <FormItem
                                 label="Kelas"
                                 asterisk
@@ -317,18 +338,18 @@ const JadwalFormPage = ({
                             </FormItem>
 
                             <FormItem
-                                label="Sesi Pertemuan"
+                                label="Kuota"
                                 asterisk
-                                invalid={!!errors.sesi_pertemuan}
-                                errorMessage={errors.sesi_pertemuan}
+                                invalid={!!errors.kuota}
+                                errorMessage={errors.kuota}
                             >
                                 <Input
                                     type="number"
                                     min={1}
                                     placeholder="contoh: 8"
-                                    value={form.sesi_pertemuan}
-                                    invalid={!!errors.sesi_pertemuan}
-                                    onChange={(e) => setForm((p) => ({ ...p, sesi_pertemuan: e.target.value }))}
+                                    value={form.kuota}
+                                    invalid={!!errors.kuota}
+                                    onChange={(e) => setForm((p) => ({ ...p, kuota: e.target.value }))}
                                 />
                             </FormItem>
 
@@ -360,42 +381,6 @@ const JadwalFormPage = ({
                                 />
                             </FormItem>
 
-                            <FormItem
-                                label="Tanggal Mulai"
-                                asterisk
-                                invalid={!!errors.tanggal_mulai}
-                                errorMessage={errors.tanggal_mulai}
-                            >
-                                <DatePicker
-                                    value={form.tanggal_mulai}
-                                    inputFormat="DD MMM YYYY"
-                                    placeholder="Pilih tanggal"
-                                    clearable
-                                    onChange={(d) =>
-                                        setForm((p) => ({
-                                            ...p,
-                                            tanggal_mulai: d,
-                                            tanggal_selesai: p.tanggal_selesai ?? d,
-                                        }))
-                                    }
-                                />
-                            </FormItem>
-
-                            <FormItem
-                                label="Tanggal Selesai"
-                                asterisk
-                                invalid={!!errors.tanggal_selesai}
-                                errorMessage={errors.tanggal_selesai}
-                            >
-                                <DatePicker
-                                    value={form.tanggal_selesai}
-                                    inputFormat="DD MMM YYYY"
-                                    placeholder="Pilih tanggal"
-                                    clearable
-                                    minDate={form.tanggal_mulai ?? undefined}
-                                    onChange={(d) => setForm((p) => ({ ...p, tanggal_selesai: d }))}
-                                />
-                            </FormItem>
                         </div>
                     </div>
 
@@ -453,7 +438,7 @@ const JadwalFormPage = ({
                     <div className="flex items-center justify-end gap-4 mt-6">
                         <Button
                             type="button"
-                            variant="plain"
+                            variant="default"
                             onClick={onCancel}
                             disabled={submitting}
                         >

@@ -59,9 +59,16 @@ const KategoriUmurTable = ({
             {
                 header: 'Durasi (bulan)',
                 accessorKey: 'durasi',
-                size: 130,
+                size: 120,
                 cell: ({ row }: CellContext<IKategoriUmur, unknown>) =>
                     row.original.durasi != null ? `${row.original.durasi} bulan` : '-',
+            },
+            {
+                header: 'Sesi Pertemuan',
+                accessorKey: 'sesi_pertemuan',
+                size: 120,
+                cell: ({ row }: CellContext<IKategoriUmur, unknown>) =>
+                    row.original.sesi_pertemuan != null ? `${row.original.sesi_pertemuan}x` : '-',
             },
             {
                 header: 'Status',

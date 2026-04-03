@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { Tag, Tooltip } from '@/components/ui'
-import { HiOutlineEye, HiOutlineTrash } from 'react-icons/hi'
+import { HiOutlineEye, HiOutlineTrash, HiOutlineCash } from 'react-icons/hi'
 import DataTable from '@/components/shared/DataTable'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
 import { formatRupiah } from '@/utils/formatNumber'
@@ -38,6 +38,7 @@ interface TagihanTableProps {
     onPaginationChange: (page: number) => void
     onSelectChange: (pageSize: number) => void
     onDetail: (item: ITagihan) => void
+    onBayar: (item: ITagihan) => void
     onDelete: (item: ITagihan) => void
 }
 
@@ -50,6 +51,7 @@ const TagihanTable = ({
     onPaginationChange,
     onSelectChange,
     onDetail,
+    onBayar,
     onDelete,
 }: TagihanTableProps) => {
     const columns: ColumnDef<ITagihan>[] = useMemo(
@@ -140,27 +142,40 @@ const TagihanTable = ({
             {
                 header: '',
                 id: 'action',
-                size: 80,
-                cell: ({ row }: CellContext<ITagihan, unknown>) => (
-                    <div className="flex items-center justify-end gap-2">
-                        <Tooltip title="Detail">
-                            <span
-                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
-                                onClick={() => onDetail(row.original)}
-                            >
-                                <HiOutlineEye className="text-lg" />
-                            </span>
-                        </Tooltip>
-                        <Tooltip title="Hapus">
-                            <span
-                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
-                                onClick={() => onDelete(row.original)}
-                            >
-                                <HiOutlineTrash className="text-lg" />
-                            </span>
-                        </Tooltip>
-                    </div>
-                ),
+                size: 110,
+                cell: ({ row }: CellContext<ITagihan, unknown>) => {
+                    const belumLunas = row.original.status !== 3 && row.original.status !== 4
+                    return (
+                        <div className="flex items-center justify-end gap-1">
+                            {belumLunas && (
+                                <Tooltip title="Catat Pembayaran">
+                                    <span
+                                        className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/20 dark:text-emerald-300 dark:hover:bg-emerald-500/30 transition-colors"
+                                        onClick={() => onBayar(row.original)}
+                                    >
+                                        <HiOutlineCash className="text-lg" />
+                                    </span>
+                                </Tooltip>
+                            )}
+                            <Tooltip title="Detail">
+                                <span
+                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
+                                    onClick={() => onDetail(row.original)}
+                                >
+                                    <HiOutlineEye className="text-lg" />
+                                </span>
+                            </Tooltip>
+                            <Tooltip title="Hapus">
+                                <span
+                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
+                                    onClick={() => onDelete(row.original)}
+                                >
+                                    <HiOutlineTrash className="text-lg" />
+                                </span>
+                            </Tooltip>
+                        </div>
+                    )
+                },
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps

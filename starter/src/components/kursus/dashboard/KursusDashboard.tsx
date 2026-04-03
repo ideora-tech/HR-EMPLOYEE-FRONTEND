@@ -212,7 +212,7 @@ const KursusDashboard = () => {
                                     </div>
                                     <div className="shrink-0 text-right">
                                         <p className="text-xs text-gray-500">
-                                            {j.sesi_pertemuan} sesi
+                                            {j.kuota} kuota
                                         </p>
                                     </div>
                                 </div>

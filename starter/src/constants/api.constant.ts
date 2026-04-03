@@ -111,7 +111,6 @@ export const API_ENDPOINTS = {
         PAKET: {
             BASE: `${PROXY}/kursus/paket`,
             BY_ID: (id: string) => `${PROXY}/kursus/paket/${id}`,
-            BY_KELAS: (idKelas: string) => `${PROXY}/kursus/paket/kelas/${idKelas}`,
         },
         KATEGORI_UMUR: {
             BASE: `${PROXY}/kursus/kategori-umur`,
@@ -141,6 +140,7 @@ export const API_ENDPOINTS = {
         SISWA: {
             BASE: `${PROXY}/kursus/siswa`,
             BY_ID: (id: string) => `${PROXY}/kursus/siswa/${id}`,
+            DAFTAR: `${PROXY}/kursus/siswa/daftar`,
             TUNGGAKAN: `${PROXY}/kursus/siswa/tunggakan`,
             IMPORT: `${PROXY}/kursus/siswa/upload/excel`,
             TEMPLATE: `${PROXY}/kursus/siswa/template/excel`,
