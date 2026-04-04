@@ -2514,6 +2514,104 @@ Partial update header tagihan.
 
 Soft delete.
 
+### `POST /kursus/tagihan/:id/detail`
+
+Tambah satu baris detail ke tagihan yang sudah ada. Info kelas, paket, kategori umur, dan harga dasar diambil otomatis dari master biaya (`id_biaya`). `total_harga` header otomatis di-recalculate.
+
+> **Constraint:** Tagihan dengan status `4` (DIBATALKAN) tidak bisa dimodifikasi.
+
+**Request Body:**
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `id_biaya` | YES | UUID biaya — info kelas/paket/kategori/harga dasar diambil otomatis |
+| `id_jadwal_kelas` | NO | UUID jadwal kelas (opsional) |
+| `periode` | NO | Format `YYYY-MM` (opsional) |
+| `harga_akhir` | NO | Override harga; default = `harga_biaya` dari master biaya |
+
+**Response `200`** — tagihan lengkap dengan detail terbaru:
+```json
+{
+  "data": {
+    "id_tagihan": "uuid",
+    "id_siswa": "uuid",
+    "nama_siswa": "Andi Wijaya",
+    "id_diskon": null,
+    "nama_diskon": null,
+    "persen_diskon": null,
+    "nominal_diskon": 0,
+    "total_harga": 850000,
+    "total_bayar": 250000,
+    "status": 2,
+    "deskripsi": null,
+    "aktif": 1,
+    "dibuat_pada": "2026-04-01T00:00:00.000Z",
+    "detail": [
+      {
+        "id_detail": "uuid-lama",
+        "id_tagihan": "uuid",
+        "id_biaya": "uuid-biaya-lama",
+        "nama_biaya": "Biaya Pendaftaran",
+        "id_kelas": "uuid",
+        "nama_kelas": "Ballet",
+        "id_paket": null,
+        "nama_paket": null,
+        "id_kategori_umur": null,
+        "nama_kategori_umur": null,
+        "id_jadwal_kelas": null,
+        "hari_jadwal": null,
+        "jam_jadwal": null,
+        "nama_instruktur": null,
+        "periode": null,
+        "harga_dasar": 150000,
+        "harga_akhir": 150000
+      },
+      {
+        "id_detail": "uuid-baru",
+        "id_tagihan": "uuid",
+        "id_biaya": "uuid-biaya-baru",
+        "nama_biaya": "Biaya Kelas Anak 3-6 Tahun",
+        "id_kelas": "uuid",
+        "nama_kelas": "Ballet",
+        "id_paket": "uuid",
+        "nama_paket": "Reguler",
+        "id_kategori_umur": "uuid",
+        "nama_kategori_umur": "3-6 Tahun",
+        "id_jadwal_kelas": "uuid-jadwal",
+        "hari_jadwal": "Senin",
+        "jam_jadwal": "09:00-10:00",
+        "nama_instruktur": "Sari Dewi",
+        "periode": "2026-04",
+        "harga_dasar": 700000,
+        "harga_akhir": 700000
+      }
+    ]
+  }
+}
+```
+
+**Error responses:**
+| Code | Kondisi |
+|------|---------|
+| `400` | Tagihan berstatus DIBATALKAN (`status = 4`) |
+| `404` | Tagihan atau biaya tidak ditemukan |
+
+### `DELETE /kursus/tagihan/:id/detail/:id_detail`
+
+Hapus satu baris detail dari tagihan. `total_harga` header otomatis di-recalculate setelah penghapusan.
+
+> **Constraint:** Tagihan dengan status `4` (DIBATALKAN) tidak bisa dimodifikasi.
+> Minimal harus tersisa **1 baris detail** — tidak bisa hapus semua detail.
+
+**Response `200`** — tagihan lengkap dengan detail yang tersisa (format sama dengan `GET /:id`).
+
+**Error responses:**
+| Code | Kondisi |
+|------|---------|
+| `400` | Tagihan berstatus DIBATALKAN (`status = 4`) |
+| `400` | Ini adalah satu-satunya detail yang tersisa (min 1 wajib ada) |
+| `404` | Tagihan tidak ditemukan |
+| `404` | `id_detail` tidak ditemukan atau bukan milik tagihan ini |
+
 ---
 
 ## Kursus — Pembayaran

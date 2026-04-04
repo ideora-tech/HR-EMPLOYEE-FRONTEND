@@ -298,13 +298,30 @@ export interface IDaftarSiswaResponse {
 // Status: 1=MENUNGGU, 2=SEBAGIAN, 3=LUNAS, 4=DIBATALKAN
 
 export interface ITagihanDetailItem {
+    id_detail: string
+    id_tagihan: string
     id_biaya: string
     nama_biaya: string
+    id_kelas: string | null
     nama_kelas: string | null
-    nama_kategori_umur: string | null
+    id_paket: string | null
     nama_paket: string | null
-    harga_akhir: number
+    id_kategori_umur: string | null
+    nama_kategori_umur: string | null
+    id_jadwal_kelas: string | null
+    hari_jadwal: string | null
+    jam_jadwal: string | null
+    nama_instruktur: string | null
     periode: string | null
+    harga_dasar: number
+    harga_akhir: number
+}
+
+export interface IAddDetailTagihan {
+    id_biaya: string
+    id_jadwal_kelas?: string
+    periode?: string
+    harga_akhir?: number
 }
 
 export interface ITagihan {
@@ -354,6 +371,8 @@ export interface IUpdateTagihan {
     status?: 1 | 2 | 3 | 4
     deskripsi?: string | null
     aktif?: number
+    id_diskon?: string | null
+    kode_diskon?: string | null
 }
 
 export interface ITagihanQuery {

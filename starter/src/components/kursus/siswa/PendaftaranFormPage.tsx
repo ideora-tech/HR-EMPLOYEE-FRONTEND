@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import {
@@ -11,7 +11,7 @@ import {
     Select,
     toast,
 } from '@/components/ui'
-import { HiArrowLeft, HiOutlinePlus, HiOutlineTrash } from 'react-icons/hi'
+import { HiArrowLeft, HiOutlinePlus, HiOutlineTrash, HiOutlineDocumentText, HiOutlineCalendar, HiOutlineCollection } from 'react-icons/hi'
 import BiayaService from '@/services/kursus/biaya.service'
 import DiskonService from '@/services/kursus/diskon.service'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
@@ -95,17 +95,14 @@ const PendaftaranFormPage = ({
     const [form, setForm] = useState<FormState>(INITIAL_FORM)
     const [errors, setErrors] = useState<Record<string, string>>({})
 
-    // Tagihan rows
     const [tagihanRows, setTagihanRows] = useState<TagihanItem[]>([newTagihanItem()])
 
-    // Diskon
     const [diskonMode, setDiskonMode] = useState<'none' | 'dropdown' | 'kode'>('none')
     const [selectedDiskon, setSelectedDiskon] = useState<SelectOption | null>(null)
     const [kodeDiskon, setKodeDiskon] = useState('')
     const [diskonOptions, setDiskonOptions] = useState<SelectOption[]>([])
     const [loadingDiskon, setLoadingDiskon] = useState(false)
 
-    // Master data
     const [biayaOptions, setBiayaOptions] = useState<SelectOption[]>([])
     const [biayaMap, setBiayaMap] = useState<Record<string, IBiaya>>({})
     const [jadwalOptions, setJadwalOptions] = useState<SelectOption[]>([])
@@ -178,8 +175,6 @@ const PendaftaranFormPage = ({
         loadDiskon()
     }, [loadBiaya, loadJadwal, loadDiskon])
 
-    // â”€â”€ Tagihan CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
     const handleAddTagihan = () => {
         setTagihanRows((prev) => [...prev, newTagihanItem()])
     }
@@ -204,8 +199,6 @@ const PendaftaranFormPage = ({
         )
     }
 
-    // â”€â”€ Validasi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
     const validate = (): boolean => {
         const e: Record<string, string> = {}
 
@@ -227,8 +220,6 @@ const PendaftaranFormPage = ({
         setErrors(e)
         return Object.keys(e).length === 0
     }
-
-    // â”€â”€ Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     const handleSubmit = () => {
         if (!validate()) {
@@ -257,7 +248,10 @@ const PendaftaranFormPage = ({
         onSubmit(payload)
     }
 
-    // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    const estimasiTotal = tagihanRows.reduce(
+        (acc, r) => acc + (r.id_biaya && biayaMap[r.id_biaya] ? biayaMap[r.id_biaya].harga_biaya : 0),
+        0,
+    )
 
     return (
         <form
@@ -287,7 +281,7 @@ const PendaftaranFormPage = ({
             <Card>
                 <div className="flex flex-col gap-1">
 
-                    {/* â”€â”€ Section: Identitas Siswa â”€â”€ */}
+                    {/* Section: Identitas Siswa */}
                     <div>
                         <div className="mb-3">
                             <h5 className="font-semibold">Identitas Siswa</h5>
@@ -321,7 +315,7 @@ const PendaftaranFormPage = ({
 
                     <div className="border-t border-gray-100 dark:border-gray-700" />
 
-                    {/* â”€â”€ Section: Kontak & Data Pribadi â”€â”€ */}
+                    {/* Section: Kontak & Data Pribadi */}
                     <div>
                         <div className="mb-3">
                             <h5 className="font-semibold">Kontak & Data Pribadi</h5>
@@ -360,7 +354,7 @@ const PendaftaranFormPage = ({
 
                     <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
 
-                    {/* â”€â”€ Section: Alamat â”€â”€ */}
+                    {/* Section: Alamat */}
                     <div>
                         <div className="mb-3">
                             <h5 className="font-semibold">Alamat</h5>
@@ -378,50 +372,54 @@ const PendaftaranFormPage = ({
 
                     <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
 
-                    {/* â”€â”€ Section: Tagihan â”€â”€ */}
+                    {/* Section: Tagihan */}
                     <div>
-                        <div className="flex items-center justify-between mb-3">
-                            <h5 className="font-semibold">Tagihan</h5>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="solid"
-                                customColorClass={() =>
-                                    'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'
-                                }
-                                icon={<HiOutlinePlus />}
-                                onClick={handleAddTagihan}
-                                disabled={submitting}
-                            >
-                                Tambah Tagihan
-                            </Button>
-                        </div>
-
                         {errors.tagihan_global && (
                             <p className="text-red-500 text-sm mb-3">{errors.tagihan_global}</p>
                         )}
 
-                        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase">
-                                        <th className="px-3 py-2.5 text-left font-medium w-8">#</th>
-                                        <th className="px-3 py-2.5 text-left font-medium min-w-[260px]">
-                                            Biaya <span className="text-red-500">*</span>
-                                        </th>
-                                        <th className="px-3 py-2.5 text-left font-medium min-w-[220px]">Jadwal Kelas</th>
-                                        <th className="px-3 py-2.5 text-left font-medium min-w-[180px]">Periode</th>
-                                        <th className="px-3 py-2.5 w-10"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                    {tagihanRows.map((row, idx) => {
-                                        const biaya = row.id_biaya ? biayaMap[row.id_biaya] : null
-                                        return (
-                                            <tr key={row._key} className="bg-white dark:bg-gray-900 align-top">
-                                                <td className="px-3 pt-3 text-gray-400 text-xs">{idx + 1}</td>
+                        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+                            {/* Header */}
+                            <div className="flex items-center justify-between px-5 py-3 bg-[#E9F3FF] dark:bg-[#E9F3FF]/10 border-b border-[#d0e6ff] dark:border-[#E9F3FF]/20">
+                                <div className="flex items-center gap-2">
+                                    <HiOutlineDocumentText className="text-[#2a85ff] text-base shrink-0" />
+                                    <span className="text-xs font-semibold text-[#2a85ff] dark:text-[#7BB8FF] uppercase tracking-wide">Tagihan</span>
+                                    <span className="text-xs font-semibold text-[#2a85ff] dark:text-[#7BB8FF] bg-white dark:bg-[#E9F3FF]/10 border border-[#d0e6ff] dark:border-[#E9F3FF]/20 px-2 py-0.5 rounded-full">
+                                        {tagihanRows.length} item
+                                    </span>
+                                </div>
+                                <Button
+                                    type="button"
+                                    size="xs"
+                                    variant="solid"
+                                    className="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500"
+                                    icon={<HiOutlinePlus />}
+                                    onClick={handleAddTagihan}
+                                    disabled={submitting}
+                                >
+                                    Tambah Tagihan
+                                </Button>
+                            </div>
 
-                                                <td className="px-3 py-2">
+                            {/* Rows */}
+                            <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                                {tagihanRows.map((row, idx) => {
+                                    const biaya = row.id_biaya ? biayaMap[row.id_biaya] : null
+                                    return (
+                                        <div key={row._key} className="flex items-start gap-3 px-5 py-4 bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors">
+                                            {/* Nomor */}
+                                            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#E9F3FF] dark:bg-[#E9F3FF]/10 shrink-0 mt-1">
+                                                <span className="text-xs font-bold text-[#2a85ff] dark:text-[#7BB8FF]">{idx + 1}</span>
+                                            </div>
+
+                                            {/* Fields */}
+                                            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                {/* Biaya */}
+                                                <div>
+                                                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                                                        <HiOutlineDocumentText className="text-[#2a85ff]/60 shrink-0" />
+                                                        Biaya <span className="text-red-500">*</span>
+                                                    </p>
                                                     <Select<SelectOption>
                                                         isClearable
                                                         placeholder="Pilih biaya..."
@@ -438,13 +436,22 @@ const PendaftaranFormPage = ({
                                                         <p className="text-red-500 text-xs mt-1">{errors[`tagihan_${idx}_biaya`]}</p>
                                                     )}
                                                     {biaya && (
-                                                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
-                                                            {biaya.jenis_biaya} · {biaya.nama_kelas ?? '-'} · {formatRupiah(biaya.harga_biaya)}
+                                                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 flex-wrap">
+                                                            <span className="font-medium">{biaya.jenis_biaya}</span>
+                                                            <span className="text-gray-300">·</span>
+                                                            <span>{biaya.nama_kelas ?? '-'}</span>
+                                                            <span className="text-gray-300">·</span>
+                                                            <span className="font-semibold">{formatRupiah(biaya.harga_biaya)}</span>
                                                         </p>
                                                     )}
-                                                </td>
+                                                </div>
 
-                                                <td className="px-3 py-2">
+                                                {/* Jadwal Kelas */}
+                                                <div>
+                                                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                                                        <HiOutlineCollection className="text-[#2a85ff]/60 shrink-0" />
+                                                        Jadwal Kelas
+                                                    </p>
                                                     <Select<SelectOption>
                                                         isClearable
                                                         placeholder="- Pilih jadwal -"
@@ -457,9 +464,14 @@ const PendaftaranFormPage = ({
                                                         menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
                                                         menuPosition="fixed"
                                                     />
-                                                </td>
+                                                </div>
 
-                                                <td className="px-3 py-2">
+                                                {/* Periode */}
+                                                <div>
+                                                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                                                        <HiOutlineCalendar className="text-[#2a85ff]/60 shrink-0" />
+                                                        Periode
+                                                    </p>
                                                     <DatePicker
                                                         placeholder="Bulan & tahun"
                                                         inputFormat="MMMM YYYY"
@@ -469,29 +481,40 @@ const PendaftaranFormPage = ({
                                                             handlePeriodeChange(row._key, date as Date | null)
                                                         }
                                                     />
-                                                </td>
+                                                </div>
+                                            </div>
 
-                                                <td className="px-3 pt-3 text-center">
-                                                    {tagihanRows.length > 1 && (
-                                                        <span
-                                                            className="cursor-pointer inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
-                                                            onClick={() => handleRemoveTagihan(row._key)}
-                                                        >
-                                                            <HiOutlineTrash className="text-base" />
-                                                        </span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
+                                            {/* Hapus */}
+                                            {tagihanRows.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveTagihan(row._key)}
+                                                    className="flex items-center justify-center w-7 h-7 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors mt-1 shrink-0"
+                                                    title="Hapus tagihan"
+                                                >
+                                                    <HiOutlineTrash className="text-base" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+
+                            {/* Estimasi total */}
+                            {estimasiTotal > 0 && (
+                                <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-100 dark:border-gray-700">
+                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Estimasi Total</span>
+                                    <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                                        {formatRupiah(estimasiTotal)}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
 
-                    {/* â”€â”€ Section: Diskon â”€â”€ */}
+                    {/* Section: Diskon */}
                     <div>
                         <div className="mb-3">
                             <h5 className="font-semibold">Diskon</h5>
@@ -544,7 +567,7 @@ const PendaftaranFormPage = ({
                         </div>
                     </div>
 
-                    {/* â”€â”€ Actions â”€â”€ */}
+                    {/* Actions */}
                     <div className="flex items-center justify-end gap-4 mt-6">
                         <Button
                             type="button"

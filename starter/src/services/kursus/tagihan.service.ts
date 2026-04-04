@@ -5,6 +5,7 @@ import type {
     ICreateTagihan,
     IUpdateTagihan,
     ITagihanQuery,
+    IAddDetailTagihan,
     ApiResponse,
     ApiPaginatedResponse,
 } from '@/@types/kursus.types'
@@ -14,6 +15,8 @@ const normalizeTagihan = (t: ITagihan): ITagihan => ({
     total_harga: Number(t.total_harga),
     total_bayar: Number(t.total_bayar),
     nominal_diskon: t.nominal_diskon != null ? Number(t.nominal_diskon) : null,
+    persen_diskon: t.persen_diskon != null ? Number(t.persen_diskon) : null,
+    detail: t.detail?.map((d) => ({ ...d, harga_akhir: Number(d.harga_akhir) })),
 })
 
 const TagihanService = {
@@ -68,6 +71,32 @@ const TagihanService = {
             url: API_ENDPOINTS.KURSUS.TAGIHAN.BY_ID(id),
             method: 'DELETE',
         })
+    },
+
+    async addDetail(id: string, payload: IAddDetailTagihan): Promise<ApiResponse<ITagihan>> {
+        const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>, IAddDetailTagihan>({
+            url: API_ENDPOINTS.KURSUS.TAGIHAN.ADD_DETAIL(id),
+            method: 'POST',
+            data: payload,
+        })
+        return { ...res, data: normalizeTagihan(res.data) }
+    },
+
+    async applyDiskon(id: string, payload: Pick<IUpdateTagihan, 'id_diskon' | 'kode_diskon'>): Promise<ApiResponse<ITagihan>> {
+        const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>, typeof payload>({
+            url: API_ENDPOINTS.KURSUS.TAGIHAN.BY_ID(id),
+            method: 'PATCH',
+            data: payload,
+        })
+        return { ...res, data: normalizeTagihan(res.data) }
+    },
+
+    async removeDetail(id: string, idDetail: string): Promise<ApiResponse<ITagihan>> {
+        const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>>({
+            url: API_ENDPOINTS.KURSUS.TAGIHAN.REMOVE_DETAIL(id, idDetail),
+            method: 'DELETE',
+        })
+        return { ...res, data: normalizeTagihan(res.data) }
     },
 }
 
