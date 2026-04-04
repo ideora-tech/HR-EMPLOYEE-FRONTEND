@@ -15,6 +15,7 @@ const JadwalKelasService = {
         const params = new URLSearchParams()
         if (query?.search) params.append('search', query.search)
         if (query?.aktif !== undefined) params.append('aktif', String(query.aktif))
+        if (query?.tanggal) params.append('tanggal', query.tanggal)
         if (query?.page) params.append('page', String(query.page))
         if (query?.limit) params.append('limit', String(query.limit))
 

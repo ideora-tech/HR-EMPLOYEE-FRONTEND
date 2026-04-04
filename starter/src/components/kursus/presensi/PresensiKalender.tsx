@@ -106,10 +106,9 @@ const PresensiKalender = ({ refreshToken, onClickJadwal }: PresensiKalenderProps
         const months = Array.from(
             new Set([weekMonday.format('YYYY-MM'), weekEnd.format('YYYY-MM')]),
         )
-        const tanggal = dayjs().format('YYYY-MM-DD')
         Promise.all([
-            JadwalKelasService.getAll({ aktif: 1, tanggal }),
-            Promise.all(months.map((bulan) => PresensiService.getAll({ bulan }))),
+            JadwalKelasService.getAll({ aktif: 1, limit: 500 }),
+            Promise.all(months.map((bulan) => PresensiService.getAll({ bulan, limit: 500 }))),
         ])
             .then(([jadwalRes, presensiResults]) => {
                 if (jadwalRes.success) setJadwalData(jadwalRes.data)
@@ -168,9 +167,8 @@ const PresensiKalender = ({ refreshToken, onClickJadwal }: PresensiKalenderProps
         type S = { hadir: number; tidakHadir: number; firstId: string }
         const m = new Map<string, S>()
         presensiData.forEach((p) => {
-            if (!p.waktu_mulai_kelas) return
-            const tanggal = p.waktu_mulai_kelas.replace('T', ' ').slice(0, 10)
-            const key = `${p.id_jadwal_kelas}::${tanggal}`
+            if (!p.tanggal) return
+            const key = `${p.id_jadwal_kelas}::${p.tanggal}`
             const ex = m.get(key)
             if (ex) {
                 if (p.status === 1) ex.hadir++
