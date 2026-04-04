@@ -20,18 +20,11 @@ import type { IBiaya, IDiskon, IJadwalKelas, IDaftarSiswa, IDaftarSiswaItem } fr
 
 type SelectOption = { value: string; label: string }
 type JKOption = { value: '' | '1' | '2'; label: string }
-type DiskonModeOption = { value: 'none' | 'dropdown' | 'kode'; label: string }
 
 const JK_OPTIONS: JKOption[] = [
     { value: '', label: '- Tidak diisi -' },
     { value: '1', label: 'Laki-laki' },
     { value: '2', label: 'Perempuan' },
-]
-
-const DISKON_MODE_OPTIONS: DiskonModeOption[] = [
-    { value: 'none', label: 'Tanpa Diskon' },
-    { value: 'dropdown', label: 'Pilih dari Daftar Diskon' },
-    { value: 'kode', label: 'Masukkan Kode Promo' },
 ]
 
 interface TagihanItem {
@@ -372,6 +365,68 @@ const PendaftaranFormPage = ({
 
                     <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
 
+                    {/* Section: Diskon */}
+                    <div>
+                        <div className="mb-3">
+                            <h5 className="font-semibold">Diskon</h5>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            {/* Mode selector */}
+                            <div className="flex gap-2">
+                                {(['none', 'dropdown', 'kode'] as const).map((mode) => (
+                                    <button
+                                        key={mode}
+                                        type="button"
+                                        onClick={() => {
+                                            setDiskonMode(mode)
+                                            setSelectedDiskon(null)
+                                            setKodeDiskon('')
+                                            setErrors((p) => { const n = { ...p }; delete n.diskon; return n })
+                                        }}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${diskonMode === mode
+                                            ? 'bg-[#E9F3FF] text-[#2a85ff] border-[#d0e6ff] dark:bg-[#E9F3FF]/10 dark:border-[#E9F3FF]/20 dark:text-[#7BB8FF]'
+                                            : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                            }`}
+                                    >
+                                        {mode === 'none' ? 'Tanpa Diskon' : mode === 'dropdown' ? 'Pilih Diskon' : 'Kode Promo'}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {diskonMode === 'dropdown' && (
+                                <FormItem
+                                    invalid={!!errors.diskon}
+                                    errorMessage={errors.diskon}
+                                >
+                                    <Select<SelectOption>
+                                        placeholder="— Pilih diskon aktif —"
+                                        options={diskonOptions}
+                                        isLoading={loadingDiskon}
+                                        isClearable
+                                        value={selectedDiskon}
+                                        onChange={(opt) => setSelectedDiskon(opt as SelectOption | null)}
+                                    />
+                                </FormItem>
+                            )}
+
+                            {diskonMode === 'kode' && (
+                                <FormItem
+                                    invalid={!!errors.diskon}
+                                    errorMessage={errors.diskon}
+                                >
+                                    <Input
+                                        placeholder="Masukkan kode promo"
+                                        value={kodeDiskon}
+                                        onChange={(e) => setKodeDiskon(e.target.value.toUpperCase())}
+                                    />
+                                </FormItem>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
+
                     {/* Section: Tagihan */}
                     <div>
                         {errors.tagihan_global && (
@@ -508,61 +563,6 @@ const PendaftaranFormPage = ({
                                         {formatRupiah(estimasiTotal)}
                                     </span>
                                 </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
-
-                    {/* Section: Diskon */}
-                    <div>
-                        <div className="mb-3">
-                            <h5 className="font-semibold">Diskon</h5>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                            <FormItem label="Mode Diskon">
-                                <Select<DiskonModeOption>
-                                    options={DISKON_MODE_OPTIONS}
-                                    value={DISKON_MODE_OPTIONS.find((o) => o.value === diskonMode) ?? DISKON_MODE_OPTIONS[0]}
-                                    onChange={(opt) => {
-                                        setDiskonMode((opt as DiskonModeOption).value)
-                                        setSelectedDiskon(null)
-                                        setKodeDiskon('')
-                                        setErrors((p) => { const n = { ...p }; delete n.diskon; return n })
-                                    }}
-                                />
-                            </FormItem>
-
-                            {diskonMode === 'dropdown' && (
-                                <FormItem
-                                    label="Pilih Diskon"
-                                    invalid={!!errors.diskon}
-                                    errorMessage={errors.diskon}
-                                >
-                                    <Select<SelectOption>
-                                        placeholder="- Pilih diskon aktif -"
-                                        options={diskonOptions}
-                                        isLoading={loadingDiskon}
-                                        isClearable
-                                        value={selectedDiskon}
-                                        onChange={(opt) => setSelectedDiskon(opt as SelectOption | null)}
-                                    />
-                                </FormItem>
-                            )}
-
-                            {diskonMode === 'kode' && (
-                                <FormItem
-                                    label="Kode Promo"
-                                    invalid={!!errors.diskon}
-                                    errorMessage={errors.diskon}
-                                >
-                                    <Input
-                                        placeholder="Masukkan kode promo"
-                                        value={kodeDiskon}
-                                        onChange={(e) => setKodeDiskon(e.target.value.toUpperCase())}
-                                    />
-                                </FormItem>
                             )}
                         </div>
                     </div>

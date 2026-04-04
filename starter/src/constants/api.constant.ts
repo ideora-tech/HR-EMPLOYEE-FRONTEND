@@ -142,6 +142,7 @@ export const API_ENDPOINTS = {
             BY_ID: (id: string) => `${PROXY}/kursus/siswa/${id}`,
             DAFTAR: `${PROXY}/kursus/siswa/daftar`,
             TUNGGAKAN: `${PROXY}/kursus/siswa/tunggakan`,
+            BELUM_SELESAI: `${PROXY}/kursus/siswa/belum-selesai`,
             IMPORT: `${PROXY}/kursus/siswa/upload/excel`,
             TEMPLATE: `${PROXY}/kursus/siswa/template/excel`,
         },

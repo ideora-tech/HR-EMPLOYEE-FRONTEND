@@ -263,7 +263,7 @@ export interface ICreateSiswa {
     foto_url?: string
 }
 
-export type IUpdateSiswa = Partial<ICreateSiswa> & { aktif?: 0 | 1 }
+export type IUpdateSiswa = Partial<ICreateSiswa> & { aktif?: 0 | 1; status_pendaftaran?: number }
 
 // Pendaftaran one-shot: siswa + tagihan sekaligus
 export interface IDaftarSiswaItem {

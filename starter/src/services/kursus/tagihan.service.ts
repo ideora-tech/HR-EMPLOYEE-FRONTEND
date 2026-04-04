@@ -20,6 +20,19 @@ const normalizeTagihan = (t: ITagihan): ITagihan => ({
 })
 
 const TagihanService = {
+    async getBelumSelesai(query?: ITagihanQuery): Promise<ApiPaginatedResponse<ITagihan>> {
+        const params = new URLSearchParams()
+        if (query?.search) params.append('search', query.search)
+        if (query?.page) params.append('page', String(query.page))
+        if (query?.limit) params.append('limit', String(query.limit))
+        const qs = params.toString()
+        const url = qs
+            ? `${API_ENDPOINTS.KURSUS.SISWA.BELUM_SELESAI}?${qs}`
+            : API_ENDPOINTS.KURSUS.SISWA.BELUM_SELESAI
+        const res = await ApiService.fetchDataWithAxios<ApiPaginatedResponse<ITagihan>>({ url, method: 'GET' })
+        return { ...res, data: res.data.map(normalizeTagihan) }
+    },
+
     async getAll(query?: ITagihanQuery): Promise<ApiPaginatedResponse<ITagihan>> {
         const params = new URLSearchParams()
         if (query?.search) params.append('search', query.search)

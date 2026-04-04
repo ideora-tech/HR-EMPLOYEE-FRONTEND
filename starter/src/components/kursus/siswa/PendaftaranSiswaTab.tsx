@@ -56,7 +56,7 @@ const PendaftaranSiswaTab = ({ pendingAdd, onPendingAddHandled }: PendaftaranSis
     const fetchData = useCallback(async () => {
         setLoading(true)
         try {
-            const res = await TagihanService.getAll({
+            const res = await TagihanService.getBelumSelesai({
                 search: search || undefined,
                 page: currentPage,
                 limit: pageSize,

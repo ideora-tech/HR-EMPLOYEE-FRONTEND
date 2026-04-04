@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Notification, toast } from '@/components/ui'
 import PembayaranFormPage from '@/components/kursus/pembayaran/PembayaranFormPage'
 import PembayaranService from '@/services/kursus/pembayaran.service'
+import TagihanService from '@/services/kursus/tagihan.service'
+import SiswaService from '@/services/kursus/siswa.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import { ROUTES } from '@/constants/route.constant'
@@ -18,6 +20,15 @@ const CatatPembayaranPage = () => {
         setSubmitting(true)
         try {
             await PembayaranService.create(payload)
+            // Jika tagihan sudah LUNAS, update status_pendaftaran siswa menjadi SELESAI
+            try {
+                const tagihanRes = await TagihanService.getById(payload.id_tagihan)
+                if (tagihanRes.success && tagihanRes.data.status === 3) {
+                    await SiswaService.update(tagihanRes.data.id_siswa, { status_pendaftaran: 3 })
+                }
+            } catch {
+                // silent — jangan blokir alur pembayaran yang sudah sukses
+            }
             toast.push(
                 <Notification type="success" title={MESSAGES.SUCCESS.CREATED(ENTITY.PEMBAYARAN)} />,
             )
