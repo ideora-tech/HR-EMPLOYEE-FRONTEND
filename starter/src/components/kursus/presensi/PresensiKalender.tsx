@@ -2,39 +2,32 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import dayjs from 'dayjs'
-import { DatePicker, Notification, toast } from '@/components/ui'
-import type { DatePickerRangeValue } from '@/components/ui/DatePicker/DatePickerRange'
+import { Input, Notification, toast } from '@/components/ui'
 import {
     HiChevronLeft,
     HiChevronRight,
     HiOutlineCheck,
+    HiOutlineSearch,
+    HiOutlineX,
 } from 'react-icons/hi'
 import type { IJadwalKelas, IPresensi } from '@/@types/kursus.types'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
 import PresensiService from '@/services/kursus/presensi.service'
 
-/* ─── helpers ────────────────────────────────────────────── */
+/* --- constants -------------------------------------------- */
 
-const HARI_NAMES = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+const HARI_LIST = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] as const
+
+// Offset dari Senin (0) sampai Minggu (6)
+const HARI_OFFSET: Record<string, number> = {
+    Senin: 0, Selasa: 1, Rabu: 2, Kamis: 3, Jumat: 4, Sabtu: 5, Minggu: 6,
+}
+
+/* --- helpers ---------------------------------------------- */
 
 function getMondayOf(date: dayjs.Dayjs): dayjs.Dayjs {
-    const jsDay = date.day()
-    const diff = jsDay === 0 ? -6 : 1 - jsDay
-    return date.add(diff, 'day').startOf('day')
-}
-
-function toHari(day: dayjs.Dayjs): number {
-    const d = day.day()
-    return d === 0 ? 7 : d
-}
-
-function hariName(day: dayjs.Dayjs): string {
-    return HARI_NAMES[toHari(day) - 1]
-}
-
-function timeFromISO(iso: string): string {
-    const sep = iso.includes('T') ? 'T' : ' '
-    return iso.split(sep)[1]?.slice(0, 5) ?? '00:00'
+    const d = date.day()
+    return date.subtract(d === 0 ? 6 : d - 1, 'day').startOf('day')
 }
 
 function getShiftStyle(jamMulai: string) {
@@ -45,7 +38,7 @@ function getShiftStyle(jamMulai: string) {
             border: 'border-orange-200 dark:border-orange-500/30',
             text: 'text-orange-700 dark:text-orange-300',
             badge: 'bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-300',
-            label: 'Shift Pagi',
+            label: 'Pagi',
         }
     if (hour >= 12 && hour < 17)
         return {
@@ -53,7 +46,7 @@ function getShiftStyle(jamMulai: string) {
             border: 'border-emerald-200 dark:border-emerald-500/30',
             text: 'text-emerald-700 dark:text-emerald-300',
             badge: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300',
-            label: 'Shift Siang',
+            label: 'Siang',
         }
     if (hour >= 17)
         return {
@@ -61,85 +54,65 @@ function getShiftStyle(jamMulai: string) {
             border: 'border-blue-200 dark:border-blue-500/30',
             text: 'text-blue-700 dark:text-blue-300',
             badge: 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300',
-            label: 'Shift Malam',
+            label: 'Malam',
         }
     return {
         bg: 'bg-indigo-50 dark:bg-indigo-500/10',
         border: 'border-indigo-200 dark:border-indigo-500/30',
         text: 'text-indigo-700 dark:text-indigo-300',
         badge: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300',
-        label: 'Shift Dini Hari',
+        label: 'Dini Hari',
     }
 }
 
-/* ─── types ──────────────────────────────────────────────── */
+/* --- types ------------------------------------------------ */
 
 interface PresensiKalenderProps {
     refreshToken?: number
     onClickJadwal: (jadwal: IJadwalKelas, tanggal: string, presensiId: string | null) => void
 }
 
-/* ─── component ──────────────────────────────────────────── */
+/* --- component -------------------------------------------- */
 
 const PresensiKalender = ({ refreshToken, onClickJadwal }: PresensiKalenderProps) => {
     const today = dayjs().startOf('day')
 
-    const [rangeStart, setRangeStart] = useState<dayjs.Dayjs>(() => getMondayOf(today))
-    const [rangeEnd, setRangeEnd] = useState<dayjs.Dayjs>(() => getMondayOf(today).add(6, 'day'))
-
+    const [weekMonday, setWeekMonday] = useState<dayjs.Dayjs>(() => getMondayOf(today))
     const [jadwalData, setJadwalData] = useState<IJadwalKelas[]>([])
     const [presensiData, setPresensiData] = useState<IPresensi[]>([])
     const [loading, setLoading] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
 
-    const rangeDays = useMemo(
-        () => rangeEnd.diff(rangeStart, 'day') + 1,
-        [rangeStart, rangeEnd],
-    )
+    /* --- computed dates for each hari column ----------- */
+    const weekDates = useMemo(() => {
+        const result: Record<string, dayjs.Dayjs> = {}
+        HARI_LIST.forEach((hari) => {
+            result[hari] = weekMonday.add(HARI_OFFSET[hari], 'day')
+        })
+        return result
+    }, [weekMonday])
 
-    const weekDays = useMemo(
-        () => Array.from({ length: rangeDays }, (_, i) => rangeStart.add(i, 'day')),
-        [rangeStart, rangeDays],
-    )
+    const weekEnd = weekMonday.add(6, 'day')
+    const weekLabel = `${weekMonday.format('D MMM')} – ${weekEnd.format('D MMM YYYY')}`
 
-    /* ─── navigation ────────────────────────────────────── */
-    const prevRange = () => {
-        setRangeStart((s) => s.subtract(rangeDays, 'day'))
-        setRangeEnd((e) => e.subtract(rangeDays, 'day'))
-    }
-    const nextRange = () => {
-        setRangeStart((s) => s.add(rangeDays, 'day'))
-        setRangeEnd((e) => e.add(rangeDays, 'day'))
-    }
-    const goToday = () => {
-        const monday = getMondayOf(today)
-        setRangeStart(monday)
-        setRangeEnd(monday.add(6, 'day'))
-    }
+    /* --- navigation -------------------------------------- */
+    const prevWeek = () => setWeekMonday((m) => m.subtract(7, 'day'))
+    const nextWeek = () => setWeekMonday((m) => m.add(7, 'day'))
+    const goThisWeek = () => setWeekMonday(getMondayOf(today))
 
-    const handleRangeChange = (val: DatePickerRangeValue) => {
-        const [start, end] = val
-        if (start) setRangeStart(dayjs(start).startOf('day'))
-        if (end) setRangeEnd(dayjs(end).startOf('day'))
-    }
-
-    /* ─── fetch jadwal + presensi ───────────────────────── */
+    /* --- fetch jadwal + presensi ------------------------- */
     useEffect(() => {
         setLoading(true)
-        // Collect unique months covered by the visible range
         const months = Array.from(
-            new Set([rangeStart.format('YYYY-MM'), rangeEnd.format('YYYY-MM')]),
+            new Set([weekMonday.format('YYYY-MM'), weekEnd.format('YYYY-MM')]),
         )
+        const tanggal = dayjs().format('YYYY-MM-DD')
         Promise.all([
-            JadwalKelasService.getAll({
-                week_start: rangeStart.format('YYYY-MM-DD'),
-                week_end: rangeEnd.format('YYYY-MM-DD'),
-                limit: 500,
-            }),
-            Promise.all(months.map((bulan) => PresensiService.getAll({ bulan, limit: 500 }))),
+            JadwalKelasService.getAll({ aktif: 1, tanggal }),
+            Promise.all(months.map((bulan) => PresensiService.getAll({ bulan }))),
         ])
             .then(([jadwalRes, presensiResults]) => {
                 if (jadwalRes.success) setJadwalData(jadwalRes.data)
-                // Merge + deduplicate presensi from potentially 2 months
                 const seen = new Set<string>()
                 const merged: IPresensi[] = []
                 presensiResults.forEach((res) => {
@@ -157,111 +130,96 @@ const PresensiKalender = ({ refreshToken, onClickJadwal }: PresensiKalenderProps
                 toast.push(<Notification type="danger" title="Gagal memuat data kalender" />)
             })
             .finally(() => setLoading(false))
-    }, [rangeStart, rangeEnd, refreshToken])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [weekMonday, refreshToken])
 
-    /* ─── group jadwal by instruktur → byHari ───────────── */
+    /* --- group jadwal by instruktur ? byHari (string) -- */
     const grouped = useMemo(() => {
-        const map = new Map<
-            string,
-            { items: IJadwalKelas[]; byHari: Record<number, IJadwalKelas[]> }
-        >()
+        const map = new Map<string, { items: IJadwalKelas[]; byHari: Record<string, IJadwalKelas[]> }>()
         jadwalData.forEach((j) => {
-            const key = j.instruktur?.trim() || '(Tanpa Instruktur)'
+            const key = j.nama_karyawan?.trim() || '(Tanpa Instruktur)'
             if (!map.has(key)) {
-                const byHari: Record<number, IJadwalKelas[]> = {}
-                for (let h = 1; h <= 7; h++) byHari[h] = []
+                const byHari: Record<string, IJadwalKelas[]> = {}
+                HARI_LIST.forEach((h) => { byHari[h] = [] })
                 map.set(key, { items: [], byHari })
             }
             const g = map.get(key)!
             g.items.push(j)
-
-            const startD = new Date(j.tanggal_mulai.replace(' ', 'T'))
-            const endD = new Date(j.tanggal_selesai.replace(' ', 'T'))
-            const startDate = new Date(startD.getFullYear(), startD.getMonth(), startD.getDate())
-            const endDate = new Date(endD.getFullYear(), endD.getMonth(), endD.getDate())
-            const diffDays = Math.round(
-                (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-            )
-
-            if (diffDays >= 6) {
-                for (let h = 1; h <= 7; h++) g.byHari[h].push(j)
-            } else {
-                for (let i = 0; i <= diffDays; i++) {
-                    const d = new Date(startDate)
-                    d.setDate(d.getDate() + i)
-                    const jsDay = d.getDay()
-                    const hari = jsDay === 0 ? 7 : jsDay
-                    g.byHari[hari].push(j)
-                }
-            }
+            if (g.byHari[j.hari] !== undefined) g.byHari[j.hari].push(j)
         })
         map.forEach((g) => {
-            for (let h = 1; h <= 7; h++) {
-                g.byHari[h].sort((a, b) =>
-                    timeFromISO(a.tanggal_mulai).localeCompare(timeFromISO(b.tanggal_mulai)),
-                )
-            }
+            HARI_LIST.forEach((h) => {
+                g.byHari[h].sort((a, b) => a.jam_mulai.localeCompare(b.jam_mulai))
+            })
         })
         return map
     }, [jadwalData])
 
-    const groupKeys = useMemo(() => Array.from(grouped.keys()).sort(), [grouped])
+    /* --- filtered instruktur keys ------------------------- */
+    const filteredKeys = useMemo(() => {
+        const keys = Array.from(grouped.keys()).sort()
+        if (!searchQuery.trim()) return keys
+        const q = searchQuery.toLowerCase()
+        return keys.filter((k) => k.toLowerCase().includes(q))
+    }, [grouped, searchQuery])
 
-    /* ─── presensi lookup map: `id_jadwal::tanggal` → id_presensi ── */
+    /* --- presensi map: id_jadwal_kelas::tanggal → { hadir, tidakHadir, firstId } --- */
     const presensiMap = useMemo(() => {
-        const m = new Map<string, string>()
+        type S = { hadir: number; tidakHadir: number; firstId: string }
+        const m = new Map<string, S>()
         presensiData.forEach((p) => {
-            // tanggal_mulai = "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS"
-            const tanggal = p.jadwal.tanggal_mulai.replace('T', ' ').slice(0, 10)
-            m.set(`${p.jadwal.id_jadwal}::${tanggal}`, p.id_presensi)
+            if (!p.waktu_mulai_kelas) return
+            const tanggal = p.waktu_mulai_kelas.replace('T', ' ').slice(0, 10)
+            const key = `${p.id_jadwal_kelas}::${tanggal}`
+            const ex = m.get(key)
+            if (ex) {
+                if (p.status === 1) ex.hadir++
+                else if (p.status === 2) ex.tidakHadir++
+            } else {
+                m.set(key, {
+                    hadir: p.status === 1 ? 1 : 0,
+                    tidakHadir: p.status === 2 ? 1 : 0,
+                    firstId: p.id_presensi,
+                })
+            }
         })
         return m
     }, [presensiData])
 
-    const gridStyle = {
-        gridTemplateColumns: `220px repeat(${weekDays.length}, minmax(0, 1fr))`,
-    }
+    const gridStyle = { gridTemplateColumns: `200px repeat(7, minmax(0, 1fr))` }
 
-    /* ─── render ─────────────────────────────────────────── */
+    /* --- render ------------------------------------------- */
     return (
         <div className="flex flex-col gap-3">
-            {/* ── Navigation bar ──────────────────────────── */}
+            {/* Navigation bar */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
-                    {/* Prev */}
                     <button
                         type="button"
-                        onClick={prevRange}
+                        onClick={prevWeek}
                         className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 transition-colors"
                     >
                         <HiChevronLeft className="text-lg" />
                     </button>
 
-                    {/* Date range picker */}
-                    <DatePicker.DatePickerRange
-                        value={[rangeStart.toDate(), rangeEnd.toDate()]}
-                        inputFormat="DD MMM YYYY"
-                        separator="–"
-                        clearable={false}
-                        onChange={handleRangeChange}
-                    />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200 min-w-[190px] text-center">
+                        {weekLabel}
+                    </span>
 
-                    {/* Next */}
                     <button
                         type="button"
-                        onClick={nextRange}
+                        onClick={nextWeek}
                         className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 transition-colors"
                     >
                         <HiChevronRight className="text-lg" />
                     </button>
 
-                    {/* Today */}
                     <button
                         type="button"
-                        onClick={goToday}
+                        onClick={goThisWeek}
                         className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors whitespace-nowrap"
                     >
-                        Hari Ini
+                        Minggu Ini
                     </button>
                 </div>
 
@@ -269,15 +227,15 @@ const PresensiKalender = ({ refreshToken, onClickJadwal }: PresensiKalenderProps
                 <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                     <span className="flex items-center gap-1.5">
                         <span className="w-3 h-3 rounded-full bg-emerald-400" />
-                        Sudah absen
+                        Hadir semua
                     </span>
                     <span className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-full bg-orange-400 animate-pulse" />
-                        Belum absen hari ini
+                        <span className="w-3 h-3 rounded-full bg-red-400" />
+                        Ada tidak hadir
                     </span>
                     <span className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600" />
-                        Klik untuk absen
+                        <span className="w-3 h-3 rounded-full bg-orange-400" />
+                        Belum diabsen
                     </span>
                 </div>
             </div>
@@ -289,29 +247,45 @@ const PresensiKalender = ({ refreshToken, onClickJadwal }: PresensiKalenderProps
                 </div>
             ) : (
                 <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-xl">
-                    <div style={{ minWidth: `${220 + weekDays.length * 140}px` }}>
+                    <div style={{ minWidth: `${200 + 7 * 140}px` }}>
                         {/* Header row */}
                         <div className="grid" style={gridStyle}>
-                            <div className="px-3 py-2.5 border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center">
-                                <span className="text-xs font-medium text-gray-400">Instruktur</span>
+                            <div className="px-3 py-2.5 border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                                <Input
+                                    size="sm"
+                                    placeholder="Cari instruktur..."
+                                    prefix={<HiOutlineSearch className="text-gray-400" />}
+                                    suffix={
+                                        searchQuery ? (
+                                            <HiOutlineX
+                                                className="text-gray-400 cursor-pointer hover:text-gray-600"
+                                                onClick={() => setSearchQuery('')}
+                                            />
+                                        ) : null
+                                    }
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
                             </div>
-                            {weekDays.map((day, i) => {
-                                const isToday = day.isSame(today, 'day')
+
+                            {HARI_LIST.map((hari) => {
+                                const dayDate = weekDates[hari]
+                                const isToday = dayDate.isSame(today, 'day')
                                 return (
                                     <div
-                                        key={i}
+                                        key={hari}
                                         className="px-2 py-2 text-center border-b border-r last:border-r-0 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
                                     >
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            {hariName(day)}
+                                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                                            {hari}
                                         </p>
                                         <div
                                             className={`mx-auto mt-0.5 flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${isToday
                                                 ? 'bg-primary text-white'
-                                                : 'text-gray-700 dark:text-gray-200'
+                                                : 'text-gray-500 dark:text-gray-400'
                                                 }`}
                                         >
-                                            {day.format('D')}
+                                            {dayDate.format('D')}
                                         </div>
                                     </div>
                                 )
@@ -319,14 +293,12 @@ const PresensiKalender = ({ refreshToken, onClickJadwal }: PresensiKalenderProps
                         </div>
 
                         {/* Body rows */}
-                        {groupKeys.length === 0 ? (
+                        {filteredKeys.length === 0 ? (
                             <div className="text-center py-16 text-gray-400 text-sm">
-                                {jadwalData.length === 0
-                                    ? 'Belum ada jadwal di periode ini'
-                                    : 'Tidak ditemukan'}
+                                {jadwalData.length === 0 ? 'Belum ada jadwal' : 'Tidak ditemukan'}
                             </div>
                         ) : (
-                            groupKeys.map((instruktur) => {
+                            filteredKeys.map((instruktur) => {
                                 const group = grouped.get(instruktur)!
                                 const initials = instruktur
                                     .split(' ')
@@ -349,98 +321,94 @@ const PresensiKalender = ({ refreshToken, onClickJadwal }: PresensiKalenderProps
                                                     : 'bg-primary/10 text-primary dark:bg-primary/20'
                                                     }`}
                                             >
-                                                {isTanpa ? '—' : initials}
+                                                {isTanpa ? '\u2014' : initials}
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-snug truncate">
                                                     {instruktur}
                                                 </p>
                                                 <p className="text-xs text-gray-400 mt-0.5">
-                                                    {group.items.length} Kelas
+                                                    {group.items.length} jadwal
                                                 </p>
                                             </div>
                                         </div>
 
-                                        {/* Day cells */}
-                                        {weekDays.map((day, i) => {
-                                            const hari = toHari(day)
-                                            const isToday = day.isSame(today, 'day')
+                                        {/* Hari columns */}
+                                        {HARI_LIST.map((hari) => {
+                                            const dayDate = weekDates[hari]
+                                            const tanggalStr = dayDate.format('YYYY-MM-DD')
+                                            const isToday = dayDate.isSame(today, 'day')
                                             return (
                                                 <div
-                                                    key={i}
-                                                    className={`p-2 border-r last:border-r-0 border-gray-100 dark:border-gray-700 flex flex-col gap-1.5 min-h-[80px] ${isToday
-                                                        ? 'bg-primary/[0.04] dark:bg-primary/10'
-                                                        : ''
+                                                    key={hari}
+                                                    className={`p-2 border-r last:border-r-0 border-gray-100 dark:border-gray-700 flex flex-col gap-1.5 min-h-[80px] ${isToday ? 'bg-primary/[0.04] dark:bg-primary/10' : ''
                                                         }`}
                                                 >
                                                     {group.byHari[hari].map((jadwal) => {
-                                                        const jamMulai = timeFromISO(
-                                                            jadwal.tanggal_mulai,
-                                                        )
-                                                        const jamSelesai = timeFromISO(
-                                                            jadwal.tanggal_selesai,
-                                                        )
-                                                        const tanggalStr = day.format('YYYY-MM-DD')
-                                                        const presensiKey = `${jadwal.id_jadwal}::${tanggalStr}`
-                                                        const presensiId =
-                                                            presensiMap.get(presensiKey) ?? null
-                                                        const done = presensiId !== null
-                                                        const style = getShiftStyle(jamMulai)
-
+                                                        const presensiKey = `${jadwal.id_jadwal_kelas}::${tanggalStr}`
+                                                        const summary = presensiMap.get(presensiKey) ?? null
+                                                        const presensiId = summary?.firstId ?? null
+                                                        const sessionStatus = !summary
+                                                            ? 'none'
+                                                            : summary.tidakHadir > 0
+                                                                ? 'absent'
+                                                                : 'full'
+                                                        const style = getShiftStyle(jadwal.jam_mulai)
                                                         return (
                                                             <div
-                                                                key={jadwal.id_jadwal}
-                                                                title={done ? 'Lihat / Edit presensi' : 'Klik untuk absen'}
-                                                                className={`relative p-2 rounded-lg border group transition-all hover:shadow-md hover:-translate-y-0.5 cursor-pointer select-none ${done
+                                                                key={jadwal.id_jadwal_kelas}
+                                                                title={
+                                                                    sessionStatus === 'full'
+                                                                        ? 'Hadir semua'
+                                                                        : sessionStatus === 'absent'
+                                                                            ? 'Ada yang tidak hadir'
+                                                                            : 'Klik untuk absen'
+                                                                }
+                                                                className={`relative p-2 rounded-lg border group/card transition-shadow hover:shadow-md cursor-pointer select-none ${sessionStatus === 'full'
                                                                     ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30'
-                                                                    : `${style.bg} ${style.border}`
+                                                                    : sessionStatus === 'absent'
+                                                                        ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30'
+                                                                        : `${style.bg} ${style.border}`
                                                                     }`}
                                                                 onClick={() =>
-                                                                    onClickJadwal(
-                                                                        jadwal,
-                                                                        tanggalStr,
-                                                                        presensiId,
-                                                                    )
+                                                                    onClickJadwal(jadwal, tanggalStr, presensiId)
                                                                 }
                                                             >
-                                                                {done ? (
-                                                                    <>
-                                                                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300">
-                                                                            <HiOutlineCheck className="text-[11px]" />
-                                                                            Sudah Absen
-                                                                        </span>
-                                                                        <p className="text-xs font-bold mt-1 text-emerald-700 dark:text-emerald-300">
-                                                                            {jamMulai} – {jamSelesai}
-                                                                        </p>
-                                                                        <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 mt-0.5 leading-snug truncate">
-                                                                            {jadwal.nama_jadwal}
-                                                                        </p>
-                                                                    </>
+                                                                {sessionStatus === 'full' ? (
+                                                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300">
+                                                                        <HiOutlineCheck className="text-[11px]" />
+                                                                        Hadir Semua
+                                                                    </span>
+                                                                ) : sessionStatus === 'absent' ? (
+                                                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400">
+                                                                        Ada Tidak Hadir
+                                                                    </span>
                                                                 ) : (
-                                                                    <>
-                                                                        <span
-                                                                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${style.badge}`}
-                                                                        >
-                                                                            {isToday && (
-                                                                                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-                                                                            )}
-                                                                            {isToday ? 'Absen Sekarang' : style.label}
-                                                                        </span>
-                                                                        <p
-                                                                            className={`text-xs font-bold mt-1 ${style.text}`}
-                                                                        >
-                                                                            {jamMulai} – {jamSelesai}
-                                                                        </p>
-                                                                        <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 mt-0.5 leading-snug truncate">
-                                                                            {jadwal.nama_jadwal}
-                                                                        </p>
-                                                                        {jadwal.lokasi && (
-                                                                            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">
-                                                                                {jadwal.lokasi}
-                                                                            </p>
+                                                                    <span
+                                                                        className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${style.badge}`}
+                                                                    >
+                                                                        {isToday && (
+                                                                            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                                                                         )}
-                                                                    </>
+                                                                        {isToday ? 'Absen Sekarang' : style.label}
+                                                                    </span>
                                                                 )}
+                                                                <p
+                                                                    className={`text-xs font-bold mt-1 ${sessionStatus === 'full'
+                                                                        ? 'text-emerald-700 dark:text-emerald-300'
+                                                                        : sessionStatus === 'absent'
+                                                                            ? 'text-red-600 dark:text-red-400'
+                                                                            : style.text
+                                                                        }`}
+                                                                >
+                                                                    {jadwal.jam_mulai} – {jadwal.jam_selesai}
+                                                                </p>
+                                                                <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 mt-0.5 leading-snug truncate">
+                                                                    {jadwal.nama_kelas}
+                                                                </p>
+                                                                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+                                                                    {jadwal.nama_kategori_umur}
+                                                                </p>
                                                             </div>
                                                         )
                                                     })}

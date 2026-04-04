@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button, Dialog, FormItem, Input, Select } from '@/components/ui'
 import { Notification, toast } from '@/components/ui'
+import { HiOutlineUpload, HiOutlineX, HiOutlinePhotograph } from 'react-icons/hi'
 import PembayaranService from '@/services/kursus/pembayaran.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
@@ -60,8 +61,11 @@ const INITIAL: FormState = {
 
 const PembayaranForm = ({ open, tagihan, onClose, onSaved }: PembayaranFormProps) => {
     const [form, setForm] = useState<FormState>(INITIAL)
+    const [buktiFile, setBuktiFile] = useState<File | null>(null)
+    const [buktiPreview, setBuktiPreview] = useState<string | null>(null)
     const [saving, setSaving] = useState(false)
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     /* Reset on open */
     useEffect(() => {
@@ -72,12 +76,30 @@ const PembayaranForm = ({ open, tagihan, onClose, onSaved }: PembayaranFormProps
                 jumlah: sisa > 0 ? formatNum(sisa) : '0',
                 tanggal_bayar: todayIso(),
             })
+            setBuktiFile(null)
+            setBuktiPreview(null)
             setErrors({})
         }
     }, [open, tagihan])
 
     const set = <K extends keyof FormState>(key: K, val: FormState[K]) =>
         setForm((prev) => ({ ...prev, [key]: val }))
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null
+        if (!file) return
+        setBuktiFile(file)
+        const reader = new FileReader()
+        reader.onload = (ev) => setBuktiPreview(ev.target?.result as string)
+        reader.readAsDataURL(file)
+        // reset input so same file can be re-selected
+        e.target.value = ''
+    }
+
+    const handleRemoveFile = () => {
+        setBuktiFile(null)
+        setBuktiPreview(null)
+    }
 
     const validate = (): boolean => {
         const e: typeof errors = {}
@@ -97,7 +119,8 @@ const PembayaranForm = ({ open, tagihan, onClose, onSaved }: PembayaranFormProps
                 tanggal_bayar: form.tanggal_bayar,
                 metode: form.metode,
                 referensi: form.referensi || null,
-                catatan: form.catatan || null,
+                deskripsi: form.catatan || null,
+                bukti_bayar: buktiFile || null,
             })
             toast.push(
                 <Notification type="success" title={MESSAGES.SUCCESS.CREATED(ENTITY.PEMBAYARAN)} />,
@@ -125,7 +148,7 @@ const PembayaranForm = ({ open, tagihan, onClose, onSaved }: PembayaranFormProps
         >
             <h5 className="font-bold mb-1">Catat Pembayaran</h5>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Tagihan: <span className="font-medium text-gray-700 dark:text-gray-200">{tagihan.siswa.nama_siswa}</span>
+                Tagihan: <span className="font-medium text-gray-700 dark:text-gray-200">{tagihan.nama_siswa}</span>
                 {sisa > 0 && (
                     <> — sisa{' '}
                         <span className="text-amber-500 font-medium">
@@ -190,6 +213,57 @@ const PembayaranForm = ({ open, tagihan, onClose, onSaved }: PembayaranFormProps
                         value={form.catatan}
                         onChange={(e) => set('catatan', e.target.value)}
                     />
+                </FormItem>
+
+                {/* Bukti Bayar */}
+                <FormItem label="Bukti Pembayaran (opsional)">
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+                    {!buktiFile ? (
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full flex flex-col items-center justify-center gap-2 py-5 border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg text-gray-400 hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                        >
+                            <HiOutlineUpload className="text-2xl" />
+                            <span className="text-sm">Klik untuk upload foto/PDF bukti bayar</span>
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
+                            {buktiPreview && buktiFile.type.startsWith('image/') ? (
+                                <img
+                                    src={buktiPreview}
+                                    alt="preview"
+                                    className="w-14 h-14 object-cover rounded-md shrink-0"
+                                />
+                            ) : (
+                                <div className="w-14 h-14 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-md shrink-0">
+                                    <HiOutlinePhotograph className="text-2xl text-gray-400" />
+                                </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                                    {buktiFile.name}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                    {(buktiFile.size / 1024).toFixed(0)} KB
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleRemoveFile}
+                                className="shrink-0 p-1.5 text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                                title="Hapus file"
+                            >
+                                <HiOutlineX className="text-base" />
+                            </button>
+                        </div>
+                    )}
                 </FormItem>
             </div>
 

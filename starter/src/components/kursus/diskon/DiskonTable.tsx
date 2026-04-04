@@ -1,10 +1,12 @@
 'use client'
 
-import Tag from '@/components/ui/Tag'
-import Table from '@/components/ui/Table'
+import { useMemo } from 'react'
+import { Tag } from '@/components/ui'
+import { HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi'
+import DataTable from '@/components/shared/DataTable'
+import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
+import { formatRupiah } from '@/utils/formatNumber'
 import type { IDiskon } from '@/@types/kursus.types'
-
-const { Tr, Th, Td, THead, TBody } = Table
 
 interface DiskonTableProps {
     data: IDiskon[]
@@ -16,13 +18,9 @@ interface DiskonTableProps {
     onDelete: (item: IDiskon) => void
 }
 
-const formatRupiah = (value: number) =>
-    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value)
-
 const formatTanggal = (value: string | null) => {
     if (!value) return '-'
-    const d = new Date(value)
-    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+    return new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 const DiskonTable = ({
@@ -34,95 +32,101 @@ const DiskonTable = ({
     onEdit,
     onDelete,
 }: DiskonTableProps) => {
-    const { total, pageIndex, pageSize } = pagingData
-    const startNo = (pageIndex - 1) * pageSize + 1
+    const columns: ColumnDef<IDiskon>[] = useMemo(
+        () => [
+            {
+                header: 'No',
+                id: 'no',
+                size: 70,
+                cell: ({ row }: CellContext<IDiskon, unknown>) =>
+                    (pagingData.pageIndex - 1) * pagingData.pageSize + row.index + 1,
+            },
+            {
+                header: 'Kode',
+                accessorKey: 'kode_diskon',
+                size: 160,
+                cell: ({ row }: CellContext<IDiskon, unknown>) => (
+                    <span className="font-mono text-sm font-semibold">{row.original.kode_diskon}</span>
+                ),
+            },
+            {
+                header: 'Nama Diskon',
+                accessorKey: 'nama_diskon',
+                cell: ({ row }: CellContext<IDiskon, unknown>) => (
+                    <span className="font-semibold text-gray-800 dark:text-gray-100">{row.original.nama_diskon}</span>
+                ),
+            },
+            {
+                header: 'Diskon',
+                id: 'diskon',
+                size: 140,
+                cell: ({ row }: CellContext<IDiskon, unknown>) => {
+                    const { persentase, harga } = row.original
+                    const text =
+                        persentase != null ? `${persentase}%` :
+                            harga != null ? formatRupiah(harga) : '-'
+                    return <span className="font-medium">{text}</span>
+                },
+            },
+            {
+                header: 'Berlaku',
+                id: 'berlaku',
+                size: 200,
+                cell: ({ row }: CellContext<IDiskon, unknown>) => {
+                    const { berlaku_mulai, berlaku_sampai } = row.original
+                    if (!berlaku_mulai && !berlaku_sampai) return <span className="text-gray-400">-</span>
+                    return (
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                            {formatTanggal(berlaku_mulai)} – {formatTanggal(berlaku_sampai)}
+                        </span>
+                    )
+                },
+            },
+            {
+                header: 'Status',
+                id: 'status',
+                size: 100,
+                cell: ({ row }: CellContext<IDiskon, unknown>) => (
+                    <Tag className={`${row.original.aktif === 1 ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-100' : 'bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-100'} border-0`}>
+                        {row.original.aktif === 1 ? 'Aktif' : 'Nonaktif'}
+                    </Tag>
+                ),
+            },
+            {
+                header: '',
+                id: 'action',
+                size: 100,
+                cell: ({ row }: CellContext<IDiskon, unknown>) => (
+                    <div className="flex items-center justify-end gap-2">
+                        <span
+                            className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
+                            onClick={() => onEdit(row.original)}
+                        >
+                            <HiOutlinePencilAlt className="text-lg" />
+                        </span>
+                        <span
+                            className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
+                            onClick={() => onDelete(row.original)}
+                        >
+                            <HiOutlineTrash className="text-lg" />
+                        </span>
+                    </div>
+                ),
+            },
+        ],
+        [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete],
+    )
 
     return (
-        <Table
+        <DataTable
+            columns={columns}
+            data={data as unknown[]}
             loading={loading}
-            paginate
-            pagination={{
-                total,
-                currentPage: pageIndex,
-                pageSize,
-                onChange: onPaginationChange,
-                onChangePage: onSelectChange,
-            }}
-        >
-            <THead>
-                <Tr>
-                    <Th width={50}>No</Th>
-                    <Th>Kode</Th>
-                    <Th>Nama Diskon</Th>
-                    <Th>Diskon</Th>
-                    <Th>Berlaku</Th>
-                    <Th>Status</Th>
-                    <Th width={120}>Aksi</Th>
-                </Tr>
-            </THead>
-            <TBody>
-                {data.length === 0 && !loading ? (
-                    <Tr>
-                        <Td colSpan={7} className="text-center text-gray-400 py-8">
-                            Tidak ada data
-                        </Td>
-                    </Tr>
-                ) : (
-                    data.map((item, i) => {
-                        const diskonText =
-                            item.persentase != null
-                                ? `${item.persentase}%`
-                                : item.harga != null
-                                ? formatRupiah(item.harga)
-                                : '-'
-
-                        const berlaku =
-                            item.berlaku_mulai || item.berlaku_sampai
-                                ? `${formatTanggal(item.berlaku_mulai)} – ${formatTanggal(item.berlaku_sampai)}`
-                                : '-'
-
-                        return (
-                            <Tr key={item.id_diskon}>
-                                <Td className="text-center">{startNo + i}</Td>
-                                <Td>
-                                    <span className="font-mono text-sm font-semibold">{item.kode_diskon}</span>
-                                </Td>
-                                <Td>{item.nama_diskon}</Td>
-                                <Td className="font-medium">{diskonText}</Td>
-                                <Td className="text-sm">{berlaku}</Td>
-                                <Td>
-                                    <Tag
-                                        className={`${
-                                            item.aktif === 1
-                                                ? 'bg-emerald-100 text-emerald-600'
-                                                : 'bg-red-100 text-red-600'
-                                        } border-0`}
-                                    >
-                                        {item.aktif === 1 ? 'Aktif' : 'Nonaktif'}
-                                    </Tag>
-                                </Td>
-                                <Td>
-                                    <div className="flex items-center gap-2">
-                                        <span
-                                            className="cursor-pointer select-none font-medium text-blue-600 hover:text-blue-800 text-sm"
-                                            onClick={() => onEdit(item)}
-                                        >
-                                            Edit
-                                        </span>
-                                        <span
-                                            className="cursor-pointer select-none font-medium text-red-500 hover:text-red-700 text-sm"
-                                            onClick={() => onDelete(item)}
-                                        >
-                                            Hapus
-                                        </span>
-                                    </div>
-                                </Td>
-                            </Tr>
-                        )
-                    })
-                )}
-            </TBody>
-        </Table>
+            noData={!loading && data.length === 0}
+            pagingData={pagingData}
+            onPaginationChange={onPaginationChange}
+            onSelectChange={onSelectChange}
+        />
     )
 }
 

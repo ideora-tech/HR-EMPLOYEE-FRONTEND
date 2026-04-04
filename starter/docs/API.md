@@ -1801,6 +1801,8 @@ Soft delete record exit.
 - [Siswa](#kursus-siswa)
 - [Tagihan](#kursus-tagihan)
 - [Pembayaran](#kursus-pembayaran)
+- [Presensi](#kursus-presensi)
+- [Catat Kelas Siswa](#kursus-catat-kelas-siswa)
 - [Dashboard](#kursus-dashboard)
 
 ---
@@ -1999,7 +2001,7 @@ Soft delete.
 
 > Table: `kursus_biaya` | PK: `id_biaya` (UUID)
 
-Daftar biaya/harga. Mendukung dua jenis: **biaya pendaftaran** (hanya perlu `id_kelas`) dan **biaya bulanan** (perlu `id_paket` + `id_kategori_umur`).
+Daftar biaya/harga. Mendukung dua jenis: **biaya pendaftaran** (hanya perlu `id_kelas`) dan **biaya kelas** (perlu `id_paket` + `id_kategori_umur`).
 `nama_kelas`, `nama_paket`, `nama_kategori_umur` **diisi otomatis** dari ID.
 
 ### `GET /kursus/biaya`
@@ -2029,12 +2031,12 @@ Detail satu biaya.
 **Request Body:**
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
-| `nama_biaya` | YES | Contoh: "Biaya Bulanan", "Biaya Pendaftaran" |
-| `jenis_biaya` | YES | `PENDAFTARAN` / `BULANAN` / `LAINNYA` |
+| `nama_biaya` | YES | Contoh: "Biaya Kelas", "Biaya Pendaftaran" |
+| `jenis_biaya` | YES | `PENDAFTARAN` / `KELAS` / `LAINNYA` |
 | `harga_biaya` | YES | Integer (Rupiah) |
 | `id_kelas` | NO | UUID kelas. Wajib untuk `PENDAFTARAN` |
-| `id_paket` | NO | UUID paket. Wajib untuk `BULANAN`/`LAINNYA` |
-| `id_kategori_umur` | NO | UUID kategori umur. Wajib untuk `BULANAN`/`LAINNYA` |
+| `id_paket` | NO | UUID paket. Wajib untuk `KELAS`/`LAINNYA` |
+| `id_kategori_umur` | NO | UUID kategori umur. Wajib untuk `KELAS`/`LAINNYA` |
 | `deskripsi` | NO | Teks bebas |
 | `aktif` | NO | Default `1` |
 
@@ -2048,11 +2050,11 @@ Detail satu biaya.
 }
 ```
 
-**Contoh — Biaya Bulanan:**
+**Contoh — Biaya Kelas:**
 ```json
 {
-  "nama_biaya": "Biaya Bulanan Anak 3-6 Tahun",
-  "jenis_biaya": "BULANAN",
+  "nama_biaya": "Biaya Kelas Anak 3-6 Tahun",
+  "jenis_biaya": "KELAS",
   "harga_biaya": 500000,
   "id_kelas": "uuid-kelas",
   "id_paket": "uuid-paket",
@@ -2065,8 +2067,8 @@ Detail satu biaya.
 {
   "data": {
     "id_biaya": "uuid",
-    "nama_biaya": "Biaya Bulanan Anak 3-6 Tahun",
-    "jenis_biaya": "BULANAN",
+    "nama_biaya": "Biaya Kelas Anak 3-6 Tahun",
+    "jenis_biaya": "KELAS",
     "harga_biaya": 500000,
     "id_kelas": "uuid-kelas",
     "nama_kelas": "Ballet",
@@ -2163,6 +2165,8 @@ Daftar jadwal kelas dengan pagination.
         "tanggal_mulai": "2026-04-01",
         "tanggal_selesai": "2026-06-30",
         "sesi_pertemuan": 24,
+        "kuota": 20,
+        "kuota_terpakai": 7,
         "deskripsi": null,
         "aktif": 1
       }
@@ -2171,6 +2175,8 @@ Daftar jadwal kelas dengan pagination.
   }
 }
 ```
+
+> `kuota_terpakai` = jumlah siswa aktif terdaftar (status tagihan bukan DIBATALKAN). `kuota: null` = tidak dibatasi.
 
 ### `GET /kursus/jadwal-kelas/kelas/:id_kelas`
 
@@ -2207,8 +2213,11 @@ Detail satu jadwal.
 | `jam_mulai` | NO | HH:MM |
 | `jam_selesai` | NO | HH:MM |
 | `sesi_pertemuan` | NO | Integer |
+| `kuota` | NO | Kuota maksimal siswa. `null` = tidak dibatasi |
 | `deskripsi` | NO | Teks bebas |
 | `aktif` | NO | Default `1` |
+
+> Saat pendaftaran siswa (`POST /kursus/siswa/daftar`), backend otomatis mengecek `kuota_terpakai >= kuota`. Jika penuh, request ditolak dengan `400 Bad Request`.
 
 ### `PATCH /kursus/jadwal-kelas/:id`
 
@@ -2226,9 +2235,17 @@ Soft delete.
 
 ### `GET /kursus/siswa`
 
-Daftar siswa dengan pagination dan search.
+Daftar siswa dengan pagination, search, dan filter status pendaftaran.
 
-**Query Params:** `page`, `limit`, `search` (nama/email/telepon), `aktif`
+**Query Params:**
+
+| Param | Tipe | Default | Keterangan |
+|-------|------|---------|------------|
+| `page` | number | 1 | Halaman |
+| `limit` | number | 10 | Jumlah per halaman |
+| `search` | string | — | Cari nama / email / telepon |
+| `aktif` | 0\|1 | — | Filter aktif |
+| `status_pendaftaran` | 1\|2\|3\|4 | — | Filter status: `1`=BARU, `2`=AKTIF, `3`=SELESAI, `4`=DIBATALKAN |
 
 **Response `200`:**
 ```json
@@ -2244,13 +2261,25 @@ Daftar siswa dengan pagination dan search.
         "alamat": "Jl. Sudirman No. 1",
         "jenis_kelamin": 1,
         "foto_url": null,
-        "aktif": 1
+        "aktif": 1,
+        "status_pendaftaran": 1,
+        "dibuat_pada": "2026-04-01T00:00:00.000Z",
+        "diubah_pada": null
       }
     ],
     "meta": { "page": 1, "limit": 10, "total": 50, "totalPages": 5 }
   }
 }
 ```
+
+**Enum `status_pendaftaran`:**
+
+| Nilai | Label |
+|-------|-------|
+| `1` | BARU — baru mendaftar, belum ada konfirmasi |
+| `2` | AKTIF — sudah aktif mengikuti kelas |
+| `3` | SELESAI — kontrak selesai |
+| `4` | DIBATALKAN — pendaftaran dibatalkan |
 
 ### `GET /kursus/siswa/tunggakan`
 
@@ -2301,6 +2330,8 @@ Detail satu siswa.
 | `jenis_kelamin` | NO | `1`=Laki-laki, `2`=Perempuan |
 | `foto_url` | NO | URL foto maks 255 karakter |
 
+> `status_pendaftaran` otomatis di-set `1` (BARU) saat create siswa. Untuk mengubah status, gunakan `PATCH /kursus/siswa/:id`.
+
 ---
 
 ### `POST /kursus/siswa/daftar`
@@ -2339,6 +2370,10 @@ Detail satu siswa.
 > - Backend memvalidasi: diskon harus `aktif = 1` dan tanggal hari ini berada dalam `berlaku_mulai` s.d. `berlaku_sampai`
 > - Diskon diterapkan ke **semua tagihan** dalam request ini
 
+> **Kuota jadwal:** Jika `id_jadwal_kelas` diisi dan jadwal sudah penuh (`kuota_terpakai >= kuota`), request ditolak `400 Bad Request`.
+
+> **`status_pendaftaran`:** Siswa otomatis di-set `1` (BARU) saat pendaftaran melalui endpoint ini.
+
 **Cara mendapatkan daftar diskon untuk dropdown:** `GET /kursus/diskon/aktif` — sudah difilter otomatis berdasarkan tanggal hari ini.
 
 **Response `201`:**
@@ -2376,20 +2411,21 @@ Soft delete.
 
 ## Kursus — Tagihan
 
-> Table: `kursus_tagihan` | PK: `id_tagihan` (UUID)
+> Table: `kursus_tagihan` (header) + `kursus_tagihan_detail` (baris per biaya) | PK: `id_tagihan` (UUID)
 > Status: `1`=MENUNGGU, `2`=SEBAGIAN, `3`=LUNAS, `4`=DIBATALKAN
 
-Cukup kirim `id_siswa` + `id_biaya`. Semua `nama_*`, `id_kelas`, `id_paket`, `id_kategori_umur`, dan `total_harga` **diambil otomatis** dari data biaya.
+Struktur tagihan terdiri dari **1 header** (total + diskon) dan **N baris detail** (1 per biaya).
+Tagihan dibuat otomatis via `POST /kursus/siswa/daftar` — tidak perlu dibuat manual.
 
 ### `GET /kursus/tagihan`
 
-Daftar tagihan dengan pagination.
+Daftar tagihan (header) dengan pagination.
 
 **Query Params:** `page`, `limit`, `search`, `aktif`
 
 ### `GET /kursus/tagihan/siswa/:id_siswa`
 
-Semua tagihan satu siswa (tanpa pagination).
+Semua tagihan satu siswa beserta detail baris (tanpa pagination).
 
 ### `GET /kursus/tagihan/jadwal-kelas/:id_jadwal_kelas`
 
@@ -2398,7 +2434,7 @@ Berguna untuk melihat daftar siswa aktif di suatu jadwal.
 
 ### `GET /kursus/tagihan/:id`
 
-Detail satu tagihan.
+Detail satu tagihan header beserta semua baris detail.
 
 **Response `200`:**
 ```json
@@ -2407,70 +2443,72 @@ Detail satu tagihan.
     "id_tagihan": "uuid",
     "id_siswa": "uuid",
     "nama_siswa": "Andi Wijaya",
-    "id_biaya": "uuid",
-    "nama_biaya": "Biaya Bulanan Anak 3-6 Tahun",
-    "id_kategori_umur": "uuid",
-    "nama_kategori_umur": "3-6 Tahun",
-    "id_paket": "uuid",
-    "nama_paket": "Reguler",
-    "id_kelas": "uuid",
-    "nama_kelas": "Ballet",
-    "id_jadwal_kelas": "uuid",
-    "hari_jadwal": "Senin",
-    "jam_jadwal": "08:00-09:00",
-    "nama_instruktur": "Sari Dewi",
-    "periode": "2026-04",
-    "sesi_pertemuan": 8,
-    "total_harga": 500000,
+    "id_diskon": "uuid-diskon",
+    "nama_diskon": "Promo April",
+    "persen_diskon": 15,
+    "nominal_diskon": 75000,
+    "total_harga": 425000,
     "total_bayar": 250000,
     "status": 2,
-    "deskripsi": null,
-    "aktif": 1
+    "deskripsi": "Diskon diterapkan — total sebelum diskon: Rp500.000",
+    "aktif": 1,
+    "dibuat_pada": "2026-04-01T00:00:00.000Z",
+    "detail": [
+      {
+        "id_detail": "uuid",
+        "id_tagihan": "uuid",
+        "id_biaya": "uuid",
+        "nama_biaya": "Biaya Pendaftaran",
+        "id_kelas": "uuid",
+        "nama_kelas": "Ballet",
+        "id_paket": null,
+        "nama_paket": null,
+        "id_kategori_umur": null,
+        "nama_kategori_umur": null,
+        "id_jadwal_kelas": null,
+        "hari_jadwal": null,
+        "jam_jadwal": null,
+        "nama_instruktur": null,
+        "periode": null,
+        "harga_dasar": 150000,
+        "harga_akhir": 127500
+      },
+      {
+        "id_detail": "uuid-2",
+        "id_tagihan": "uuid",
+        "id_biaya": "uuid-biaya-kelas",
+        "nama_biaya": "Biaya Kelas Anak 3-6 Tahun",
+        "id_kelas": "uuid",
+        "nama_kelas": "Ballet",
+        "id_paket": "uuid",
+        "nama_paket": "Reguler",
+        "id_kategori_umur": "uuid",
+        "nama_kategori_umur": "3-6 Tahun",
+        "id_jadwal_kelas": "uuid-jadwal",
+        "hari_jadwal": "Senin",
+        "jam_jadwal": "09:00-10:00",
+        "nama_instruktur": "Sari Dewi",
+        "periode": "2026-04",
+        "harga_dasar": 350000,
+        "harga_akhir": 297500
+      }
+    ]
   }
 }
 ```
 
-### `POST /kursus/tagihan`
-
-**Request Body:**
-| Field | Wajib | Keterangan |
-|-------|-------|------------|
-| `id_siswa` | YES | UUID siswa |
-| `id_biaya` | YES | UUID biaya — semua data kelas/paket/kategori/harga diambil otomatis |
-| `id_jadwal_kelas` | NO | UUID jadwal kelas — asosiasi jadwal dengan tagihan |
-| `periode` | NO | Format YYYY-MM (opsional untuk biaya pendaftaran) |
-| `sesi_pertemuan` | NO | Integer |
-| `total_harga` | NO | Override harga (default: `harga_biaya` dari tabel biaya) |
-| `deskripsi` | NO | Teks bebas |
-| `aktif` | NO | Default `1` |
-
-**Contoh — Biaya Pendaftaran:**
-```json
-{
-  "id_siswa": "uuid-siswa",
-  "id_biaya": "uuid-biaya-pendaftaran"
-}
-```
-
-**Contoh — Biaya Bulanan dengan jadwal:**
-```json
-{
-  "id_siswa": "uuid-siswa",
-  "id_biaya": "uuid-biaya-bulanan",
-  "id_jadwal_kelas": "uuid-jadwal",
-  "periode": "2026-04",
-  "sesi_pertemuan": 8
-}
-```
+> `harga_dasar` = harga asli dari master biaya. `harga_akhir` = harga setelah diskon diterapkan.
 
 ### `PATCH /kursus/tagihan/:id`
 
-Partial update. Jika `id_biaya` berubah, semua `nama_*` dan `total_harga` default diperbarui otomatis.
+Partial update header tagihan.
 
-**Field tambahan di PATCH:**
+**Request Body:**
 | Field | Keterangan |
 |-------|------------|
-| `status` | `1`-`4` — set manual (misal `4` untuk DIBATALKAN) |
+| `status` | `1`–`4` — set manual (misal `4` untuk DIBATALKAN) |
+| `deskripsi` | Keterangan tambahan |
+| `aktif` | 0\|1 |
 
 ### `DELETE /kursus/tagihan/:id`
 
@@ -2526,11 +2564,37 @@ Detail satu pembayaran.
     "metode": "TRANSFER",
     "referensi": "TRF-20260401-001",
     "deskripsi": "DP pertama",
+    "bukti_bayar": null,
     "aktif": 1,
     "dibuat_pada": "2026-04-01T00:00:00.000Z"
   }
 }
 ```
+
+### `POST /kursus/pembayaran/:id/bukti-bayar`
+
+Upload bukti pembayaran (foto transfer / kwitansi). File disimpan di server, URL disimpan di kolom `bukti_bayar`.
+
+**Content-Type:** `multipart/form-data` | **Form Field:** `bukti_bayar` (binary)
+
+| Constraint | Nilai |
+|------------|-------|
+| Format | `.jpg`, `.jpeg`, `.png`, `.webp`, `.pdf` |
+| Ukuran maks | 5 MB |
+
+**Response `200`:**
+```json
+{
+  "message": "Bukti pembayaran berhasil diupload",
+  "data": {
+    "id_pembayaran": "uuid",
+    "bukti_bayar": "http://localhost:3000/uploads/pembayaran/uuid-file.jpg",
+    ...
+  }
+}
+```
+
+> File lama otomatis dihapus dari disk jika sebelumnya sudah ada `bukti_bayar`.
 
 ### `PATCH /kursus/pembayaran/:id`
 
@@ -2539,6 +2603,350 @@ Partial update.
 ### `DELETE /kursus/pembayaran/:id`
 
 Soft delete — status tagihan otomatis di-recalculate setelah hapus.
+
+---
+
+## Kursus — Presensi
+
+> **Auth:** Bearer Token wajib di semua endpoint
+
+Presensi dicatat per siswa per jadwal kelas **per tanggal**. Satu siswa bisa absen di jadwal yang sama di tanggal berbeda (misalnya Senin minggu ini vs Senin minggu depan). Setiap perubahan presensi otomatis memperbarui `kursus_catat_kelas_siswa.total_sesi_hadir` dan `total_sesi_tidak_hadir`.
+
+**Status presensi:**
+
+| Nilai | Keterangan |
+|-------|------------|
+| `1` | HADIR |
+| `2` | TIDAK_HADIR |
+| `3` | SAKIT |
+| `4` | IZIN |
+
+---
+
+### `GET /kursus/presensi`
+
+Daftar presensi dengan pagination, search nama siswa, dan filter bulan/tanggal.
+
+**Query Params:**
+
+| Param | Tipe | Default | Keterangan |
+|-------|------|---------|------------|
+| `search` | string | — | Cari nama siswa |
+| `page` | number | 1 | Halaman |
+| `limit` | number | 10 | Jumlah per halaman |
+| `bulan` | string | — | Filter bulan format `YYYY-MM` |
+| `tanggal` | string | — | Filter tanggal spesifik format `YYYY-MM-DD` |
+| `id_jadwal_kelas` | string (UUID) | — | Filter per jadwal kelas |
+| `id_siswa` | string (UUID) | — | Filter per siswa |
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil data presensi",
+  "data": [
+    {
+      "id_presensi": "uuid-...",
+      "id_jadwal_kelas": "uuid-jadwal",
+      "id_siswa": "uuid-siswa",
+      "tanggal": "2026-04-07",
+      "nama_siswa": "Budi Santoso",
+      "status": 1,
+      "waktu_mulai_kelas": "2026-04-07T08:00:00.000Z",
+      "catatan": null,
+      "aktif": 1,
+      "dibuat_pada": "2026-04-07T08:05:00.000Z",
+      "diubah_pada": null,
+      "jadwal": {
+        "id_jadwal_kelas": "uuid-jadwal",
+        "nama_kelas": "COREO",
+        "hari": "Senin",
+        "jam_mulai": "08:00",
+        "jam_selesai": "09:00"
+      },
+      "siswa": {
+        "id_siswa": "uuid-siswa",
+        "nama_siswa": "Budi Santoso",
+        "email": "budi@email.com",
+        "telepon": "08123456789"
+      }
+    }
+  ],
+  "meta": { "page": 1, "limit": 10, "total": 50, "totalPages": 5 }
+}
+```
+
+---
+
+### `GET /kursus/presensi/jadwal/:id_jadwal`
+
+Daftar semua siswa di satu jadwal beserta status presensinya pada tanggal tertentu. Berguna untuk tampilan absen massal.
+
+**Query Params:**
+
+| Param | Tipe | Default | Keterangan |
+|-------|------|---------|------------|
+| `tanggal` | string | Hari ini (WIB) | Tanggal sesi format `YYYY-MM-DD` |
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil absen jadwal",
+  "tanggal": "2026-04-07",
+  "data": [
+    {
+      "siswa": {
+        "id_siswa": "uuid-siswa",
+        "nama_siswa": "Budi Santoso",
+        "email": "budi@email.com",
+        "telepon": "08123456789"
+      },
+      "presensi": {
+        "id_presensi": "uuid-presensi",
+        "status": 1,
+        "catatan": null,
+        "waktu_mulai_kelas": "2026-04-07T08:00:00.000Z"
+      }
+    },
+    {
+      "siswa": {
+        "id_siswa": "uuid-siswa-2",
+        "nama_siswa": "Ani Wijaya",
+        "email": null,
+        "telepon": "08198765432"
+      },
+      "presensi": null
+    }
+  ]
+}
+```
+
+> `presensi: null` artinya siswa belum diabsen pada tanggal tersebut.
+> Response selalu menyertakan field `tanggal` — dipakai frontend untuk sinkronisasi date picker.
+
+---
+
+### `GET /kursus/presensi/siswa/:id_siswa`
+
+Riwayat presensi satu siswa + total sesi yang sudah dihadiri (status=HADIR) di seluruh kelas.
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil presensi siswa",
+  "data": [ ...array presensi... ],
+  "sesi_terpakai": 12
+}
+```
+
+---
+
+### `GET /kursus/presensi/siswa-jadwal/:id_jadwal/:id_siswa`
+
+Presensi spesifik satu siswa di satu jadwal pada tanggal tertentu.
+
+**Query Params:**
+
+| Param | Tipe | Default | Keterangan |
+|-------|------|---------|------------|
+| `tanggal` | string | Hari ini (WIB) | Tanggal sesi format `YYYY-MM-DD` |
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil presensi",
+  "data": { ...presensi... }
+}
+```
+
+> `data: null` jika belum ada presensi pada tanggal tersebut.
+
+---
+
+### `GET /kursus/presensi/:id`
+
+Detail presensi berdasarkan UUID.
+
+---
+
+### `POST /kursus/presensi/batch`
+
+Absen massal semua siswa di satu jadwal sekaligus pada tanggal tertentu (upsert — create jika belum ada, update jika sudah ada untuk tanggal yang sama).
+
+**Request Body:**
+```json
+{
+  "id_jadwal": "uuid-jadwal",
+  "tanggal": "2026-04-07",
+  "items": [
+    { "id_siswa": "uuid-siswa-1", "status": 1, "catatan": null },
+    { "id_siswa": "uuid-siswa-2", "status": 3, "catatan": "Demam" },
+    { "id_siswa": "uuid-siswa-3", "status": 2, "catatan": null }
+  ]
+}
+```
+
+| Field | Tipe | Wajib | Keterangan |
+|-------|------|-------|------------|
+| `id_jadwal` | string (UUID) | ✅ | Jadwal kelas yang diabsen |
+| `tanggal` | string (YYYY-MM-DD) | ❌ | Tanggal sesi. Default = hari ini (WIB) |
+| `items` | array | ✅ | List siswa + status |
+| `items[].id_siswa` | string (UUID) | ✅ | |
+| `items[].status` | 1\|2\|3\|4 | ✅ | Status kehadiran |
+| `items[].catatan` | string | ❌ | Catatan opsional |
+
+**Response `201`:** array presensi yang berhasil disimpan.
+
+> Setelah batch upsert, `total_sesi_hadir` dan `total_sesi_tidak_hadir` di `kursus_catat_kelas_siswa` otomatis diperbarui untuk setiap siswa.
+
+---
+
+### `POST /kursus/presensi`
+
+Catat presensi satu siswa.
+
+**Request Body:**
+```json
+{
+  "id_jadwal": "uuid-jadwal",
+  "id_siswa": "uuid-siswa",
+  "tanggal": "2026-04-07",
+  "status": 1,
+  "catatan": null
+}
+```
+
+| Field | Tipe | Wajib | Keterangan |
+|-------|------|-------|------------|
+| `id_jadwal` | string (UUID) | ✅ | |
+| `id_siswa` | string (UUID) | ✅ | |
+| `tanggal` | string (YYYY-MM-DD) | ❌ | Default = hari ini (WIB) |
+| `status` | 1\|2\|3\|4 | ✅ | |
+| `catatan` | string | ❌ | |
+
+**Response `201`:** data presensi.
+
+> Error `409` jika presensi siswa di jadwal ini **pada tanggal yang sama** sudah ada — gunakan `PATCH` untuk mengubah.
+
+---
+
+### `PATCH /kursus/presensi/:id`
+
+Koreksi status atau catatan presensi.
+
+**Request Body:**
+```json
+{
+  "status": 2,
+  "catatan": "Tidak hadir tanpa keterangan"
+}
+```
+
+> Jika `status` berubah, `total_sesi_hadir` dan `total_sesi_tidak_hadir` otomatis direcalculate.
+
+**Response `200`:** data presensi setelah diupdate.
+
+---
+
+### `DELETE /kursus/presensi/:id`
+
+Soft delete presensi. `total_sesi_hadir` dan `total_sesi_tidak_hadir` otomatis direcalculate setelah hapus.
+
+**Response `200`:**
+```json
+{ "message": "Presensi berhasil dihapus", "data": null }
+```
+
+---
+
+## Kursus — Catat Kelas Siswa
+
+> **Auth:** Bearer Token wajib di semua endpoint
+
+Tabel pencatatan otomatis yang merekam **berapa sesi siswa sudah hadir dan tidak hadir** per kelas. Data ini diperbarui otomatis setiap ada perubahan presensi — tidak perlu diisi manual.
+
+**Satu record = satu kombinasi (siswa, kelas).** Jika siswa ikut 2 kelas, akan ada 2 record.
+
+---
+
+### `GET /kursus/catat-kelas-siswa/siswa/:id_siswa`
+
+Daftar semua kelas yang diikuti siswa beserta total sesi yang sudah dihadiri.
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil data kelas siswa",
+  "data": [
+    {
+      "id_catat": "uuid-...",
+      "id_siswa": "uuid-siswa",
+      "nama_siswa": "Budi Santoso",
+      "id_kelas": "uuid-kelas",
+      "nama_kelas": "COREO",
+      "total_sesi_hadir": 8,
+      "total_sesi_tidak_hadir": 2,
+      "aktif": 1,
+      "dibuat_pada": "2026-04-01T00:00:00.000Z",
+      "diubah_pada": "2026-04-03T08:30:00.000Z"
+    },
+    {
+      "id_catat": "uuid-...",
+      "id_siswa": "uuid-siswa",
+      "nama_siswa": "Budi Santoso",
+      "id_kelas": "uuid-kelas-2",
+      "nama_kelas": "K-POP",
+      "total_sesi_hadir": 3,
+      "total_sesi_tidak_hadir": 0,
+      "aktif": 1,
+      "dibuat_pada": "2026-04-01T00:00:00.000Z",
+      "diubah_pada": "2026-04-02T09:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### `GET /kursus/catat-kelas-siswa/kelas/:id_kelas`
+
+Daftar semua siswa yang pernah hadir di kelas beserta total sesi masing-masing.
+
+**Response `200`:**
+```json
+{
+  "message": "Berhasil mengambil data siswa di kelas",
+  "data": [
+    {
+      "id_catat": "uuid-...",
+      "id_siswa": "uuid-siswa-1",
+      "nama_siswa": "Budi Santoso",
+      "id_kelas": "uuid-kelas",
+      "nama_kelas": "COREO",
+      "total_sesi_hadir": 8,
+      "total_sesi_tidak_hadir": 2,
+      "aktif": 1,
+      "dibuat_pada": "2026-04-01T00:00:00.000Z",
+      "diubah_pada": "2026-04-03T08:30:00.000Z"
+    },
+    {
+      "id_catat": "uuid-...",
+      "id_siswa": "uuid-siswa-2",
+      "nama_siswa": "Ani Wijaya",
+      "id_kelas": "uuid-kelas",
+      "nama_kelas": "COREO",
+      "total_sesi_hadir": 5,
+      "total_sesi_tidak_hadir": 1,
+      "aktif": 1,
+      "dibuat_pada": "2026-04-01T00:00:00.000Z",
+      "diubah_pada": "2026-04-02T09:00:00.000Z"
+    }
+  ]
+}
+```
+
+> `total_sesi_hadir` dihitung dari jumlah presensi dengan `status = 1 (HADIR)` yang tidak dihapus.
+> `total_sesi_tidak_hadir` dihitung dari `status IN (2, 3, 4)` — mencakup TIDAK_HADIR, SAKIT, dan IZIN.
+> Kedua nilai selalu sinkron — diperbarui otomatis setiap `POST`, `PATCH`, atau `DELETE` presensi.
 
 ---
 

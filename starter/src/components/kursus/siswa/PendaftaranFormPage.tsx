@@ -40,7 +40,6 @@ interface TagihanItem {
     id_jadwal_kelas: string
     periodeDate: Date | null
     periode: string
-    sesi_pertemuan: string
 }
 
 interface FormState {
@@ -73,7 +72,6 @@ const newTagihanItem = (): TagihanItem => ({
     id_jadwal_kelas: '',
     periodeDate: null,
     periode: '',
-    sesi_pertemuan: '',
 })
 
 const dateToString = (date: Date): string => {
@@ -242,7 +240,6 @@ const PendaftaranFormPage = ({
             id_biaya: row.id_biaya,
             ...(row.id_jadwal_kelas && { id_jadwal_kelas: row.id_jadwal_kelas }),
             ...(row.periode.trim() && { periode: row.periode.trim() }),
-            ...(row.sesi_pertemuan && { sesi_pertemuan: Number(row.sesi_pertemuan) }),
         }))
 
         const payload: IDaftarSiswa = {
@@ -404,92 +401,91 @@ const PendaftaranFormPage = ({
                             <p className="text-red-500 text-sm mb-3">{errors.tagihan_global}</p>
                         )}
 
-                        <div className="flex flex-col gap-4">
-                            {tagihanRows.map((row, idx) => {
-                                const biaya = row.id_biaya ? biayaMap[row.id_biaya] : null
-                                return (
-                                    <div
-                                        key={row._key}
-                                        className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-                                    >
-                                        <div className="flex items-center justify-between mb-3">
-                                            <span className="text-sm font-medium text-gray-500">
-                                                Tagihan #{idx + 1}
-                                            </span>
-                                            {tagihanRows.length > 1 && (
-                                                <span
-                                                    className="cursor-pointer inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
-                                                    onClick={() => handleRemoveTagihan(row._key)}
-                                                >
-                                                    <HiOutlineTrash className="text-base" />
-                                                </span>
-                                            )}
-                                        </div>
+                        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase">
+                                        <th className="px-3 py-2.5 text-left font-medium w-8">#</th>
+                                        <th className="px-3 py-2.5 text-left font-medium min-w-[260px]">
+                                            Biaya <span className="text-red-500">*</span>
+                                        </th>
+                                        <th className="px-3 py-2.5 text-left font-medium min-w-[220px]">Jadwal Kelas</th>
+                                        <th className="px-3 py-2.5 text-left font-medium min-w-[180px]">Periode</th>
+                                        <th className="px-3 py-2.5 w-10"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                    {tagihanRows.map((row, idx) => {
+                                        const biaya = row.id_biaya ? biayaMap[row.id_biaya] : null
+                                        return (
+                                            <tr key={row._key} className="bg-white dark:bg-gray-900 align-top">
+                                                <td className="px-3 pt-3 text-gray-400 text-xs">{idx + 1}</td>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                                            <FormItem
-                                                label="Biaya"
-                                                asterisk
-                                                className="md:col-span-2"
-                                                invalid={!!errors[`tagihan_${idx}_biaya`]}
-                                                errorMessage={errors[`tagihan_${idx}_biaya`]}
-                                            >
-                                                <Select<SelectOption>
-                                                    placeholder="Pilih jenis biaya..."
-                                                    options={biayaOptions}
-                                                    isLoading={loadingBiaya}
-                                                    value={biayaOptions.find((o) => o.value === row.id_biaya) ?? null}
-                                                    onChange={(opt) =>
-                                                        handleTagihanChange(row._key, 'id_biaya', opt ? (opt as SelectOption).value : '')
-                                                    }
-                                                />
-                                                {biaya && (
-                                                    <span className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 block">
-                                                        {biaya.jenis_biaya} · {biaya.nama_kelas ?? '-'} · {formatRupiah(biaya.harga_biaya)}
-                                                    </span>
-                                                )}
-                                            </FormItem>
+                                                <td className="px-3 py-2">
+                                                    <Select<SelectOption>
+                                                        isClearable
+                                                        placeholder="Pilih biaya..."
+                                                        options={biayaOptions}
+                                                        isLoading={loadingBiaya}
+                                                        value={biayaOptions.find((o) => o.value === row.id_biaya) ?? null}
+                                                        onChange={(opt) =>
+                                                            handleTagihanChange(row._key, 'id_biaya', opt ? (opt as SelectOption).value : '')
+                                                        }
+                                                        menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                                                        menuPosition="fixed"
+                                                    />
+                                                    {errors[`tagihan_${idx}_biaya`] && (
+                                                        <p className="text-red-500 text-xs mt-1">{errors[`tagihan_${idx}_biaya`]}</p>
+                                                    )}
+                                                    {biaya && (
+                                                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                                                            {biaya.jenis_biaya} · {biaya.nama_kelas ?? '-'} · {formatRupiah(biaya.harga_biaya)}
+                                                        </p>
+                                                    )}
+                                                </td>
 
-                                            <FormItem label="Jadwal Kelas (opsional)">
-                                                <Select<SelectOption>
-                                                    isClearable
-                                                    placeholder="- Pilih jadwal -"
-                                                    options={jadwalOptions}
-                                                    isLoading={loadingJadwal}
-                                                    value={jadwalOptions.find((o) => o.value === row.id_jadwal_kelas) ?? null}
-                                                    onChange={(opt) =>
-                                                        handleTagihanChange(row._key, 'id_jadwal_kelas', opt ? (opt as SelectOption).value : '')
-                                                    }
-                                                />
-                                            </FormItem>
+                                                <td className="px-3 py-2">
+                                                    <Select<SelectOption>
+                                                        isClearable
+                                                        placeholder="- Pilih jadwal -"
+                                                        options={jadwalOptions}
+                                                        isLoading={loadingJadwal}
+                                                        value={jadwalOptions.find((o) => o.value === row.id_jadwal_kelas) ?? null}
+                                                        onChange={(opt) =>
+                                                            handleTagihanChange(row._key, 'id_jadwal_kelas', opt ? (opt as SelectOption).value : '')
+                                                        }
+                                                        menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                                                        menuPosition="fixed"
+                                                    />
+                                                </td>
 
-                                            <FormItem label="Periode (opsional)">
-                                                <DatePicker
-                                                    placeholder="Pilih bulan & tahun"
-                                                    inputFormat="MMMM YYYY"
-                                                    clearable
-                                                    value={row.periodeDate}
-                                                    onChange={(date) =>
-                                                        handlePeriodeChange(row._key, date as Date | null)
-                                                    }
-                                                />
-                                            </FormItem>
+                                                <td className="px-3 py-2">
+                                                    <DatePicker
+                                                        placeholder="Bulan & tahun"
+                                                        inputFormat="MMMM YYYY"
+                                                        clearable
+                                                        value={row.periodeDate}
+                                                        onChange={(date) =>
+                                                            handlePeriodeChange(row._key, date as Date | null)
+                                                        }
+                                                    />
+                                                </td>
 
-                                            <FormItem label="Sesi Pertemuan (opsional)">
-                                                <Input
-                                                    type="number"
-                                                    min={1}
-                                                    placeholder="Jumlah sesi"
-                                                    value={row.sesi_pertemuan}
-                                                    onChange={(e) =>
-                                                        handleTagihanChange(row._key, 'sesi_pertemuan', e.target.value)
-                                                    }
-                                                />
-                                            </FormItem>
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                                                <td className="px-3 pt-3 text-center">
+                                                    {tagihanRows.length > 1 && (
+                                                        <span
+                                                            className="cursor-pointer inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
+                                                            onClick={() => handleRemoveTagihan(row._key)}
+                                                        >
+                                                            <HiOutlineTrash className="text-base" />
+                                                        </span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 

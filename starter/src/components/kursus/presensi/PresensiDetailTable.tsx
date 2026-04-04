@@ -2,22 +2,18 @@
 
 import { Select } from '@/components/ui'
 
-export type KeteranganValue = 1 | 2 | 3 | 4
+export type KeteranganValue = 1 | 2
 
 type KetOption = { value: KeteranganValue; label: string }
 
 const KET_OPTIONS: KetOption[] = [
     { value: 1, label: 'Hadir' },
-    { value: 2, label: 'Izin' },
-    { value: 3, label: 'Sakit' },
-    { value: 4, label: 'Alpha' },
+    { value: 2, label: 'Tidak Hadir' },
 ]
 
 const KET_CLASS: Record<KeteranganValue, string> = {
     1: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
-    2: 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300',
-    3: 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300',
-    4: 'bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-400',
+    2: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
 }
 
 export type PresensiRow = {

@@ -182,6 +182,16 @@ export type IUpdateDiskon = Partial<ICreateDiskon>
 // ─── Jadwal Kelas ─────────────────────────────────────────────────────────────
 // Table: kursus_jadwal_kelas | PK: id_jadwal_kelas (UUID)
 
+export interface IJadwalKelasQuery {
+    search?: string
+    aktif?: number
+    page?: number
+    limit?: number
+    tanggal?: string      // YYYY-MM-DD — filter jadwal aktif pada tanggal ini
+    week_start?: string   // YYYY-MM-DD — filter jadwal mulai dari tanggal ini
+    week_end?: string     // YYYY-MM-DD — filter jadwal sampai tanggal ini
+}
+
 export interface IJadwalKelas {
     id_jadwal_kelas: string        // UUID
     id_kelas: string
@@ -287,6 +297,16 @@ export interface IDaftarSiswaResponse {
 // Table: kursus_tagihan | PK: id_tagihan (UUID)
 // Status: 1=MENUNGGU, 2=SEBAGIAN, 3=LUNAS, 4=DIBATALKAN
 
+export interface ITagihanDetailItem {
+    id_biaya: string
+    nama_biaya: string
+    nama_kelas: string | null
+    nama_kategori_umur: string | null
+    nama_paket: string | null
+    harga_akhir: number
+    periode: string | null
+}
+
 export interface ITagihan {
     id_tagihan: string
     id_siswa: string
@@ -304,6 +324,10 @@ export interface ITagihan {
     jam_jadwal: string | null      // "HH:MM-HH:MM"
     nama_instruktur: string | null
     periode: string | null         // "YYYY-MM"
+    id_diskon: string | null
+    nama_diskon: string | null
+    persen_diskon: number | null
+    nominal_diskon: number | null
     total_harga: number
     total_bayar: number
     status: 1 | 2 | 3 | 4
@@ -311,6 +335,7 @@ export interface ITagihan {
     aktif: number
     dibuat_pada: string
     diubah_pada: string | null
+    detail?: ITagihanDetailItem[]
 }
 
 export interface ICreateTagihan {
@@ -350,6 +375,7 @@ export interface IPembayaran {
     metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
     referensi: string | null
     deskripsi: string | null
+    bukti_bayar: string | null
     aktif: number
     dibuat_pada: string
     diubah_pada: string | null
@@ -369,6 +395,7 @@ export interface ICreatePembayaran {
     metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
     referensi?: string | null
     deskripsi?: string | null
+    bukti_bayar?: File | null
     aktif?: 0 | 1
 }
 
@@ -376,6 +403,113 @@ export interface IPembayaranQuery {
     search?: string
     page?: number
     limit?: number
+}
+
+// ─── Presensi ─────────────────────────────────────────────────────────────────
+// Status: 1=HADIR, 2=TIDAK_HADIR, 3=SAKIT, 4=IZIN
+
+export interface IPresensiJadwalSub {
+    id_jadwal_kelas: string
+    nama_kelas: string
+    hari: string
+    jam_mulai: string              // "HH:MM"
+    jam_selesai: string            // "HH:MM"
+    tanggal_mulai?: string         // ISO datetime (opsional — tidak selalu ada di response)
+    tanggal_selesai?: string       // ISO datetime (opsional)
+}
+
+export interface IPresensiSiswaSub {
+    id_siswa: string
+    nama_siswa: string
+    email: string | null
+    telepon: string | null
+}
+
+export interface IPresensiJadwalEntry {
+    siswa: IPresensiSiswaSub
+    presensi: {
+        id_presensi: string
+        status: 1 | 2 | 3 | 4
+        catatan: string | null
+        waktu_mulai_kelas: string
+    } | null
+}
+
+export interface IPresensi {
+    id_presensi: string
+    id_jadwal_kelas: string
+    id_siswa: string
+    tanggal: string                // "YYYY-MM-DD" — tanggal sesi presensi
+    nama_siswa: string
+    status: 1 | 2 | 3 | 4
+    waktu_mulai_kelas: string      // ISO datetime
+    catatan: string | null
+    aktif: number
+    dibuat_pada: string
+    diubah_pada: string | null
+    jadwal: IPresensiJadwalSub
+    siswa: IPresensiSiswaSub
+}
+
+export type IPresensiWithDetail = IPresensi
+
+/** Response dari GET /kursus/presensi/siswa/:id_siswa */
+export interface IPresensiSiswaRiwayat {
+    siswa: IPresensiSiswaSub
+    total_sesi_hadir: number
+    presensi: IPresensi[]
+}
+
+export interface ICreatePresensi {
+    id_jadwal: string              // id_jadwal_kelas
+    id_siswa: string
+    status: 1 | 2 | 3 | 4
+    tanggal?: string               // YYYY-MM-DD, opsional — default hari ini (WIB)
+    catatan?: string | null
+}
+
+export interface ICreateBatchPresensiItem {
+    id_siswa: string
+    status: 1 | 2 | 3 | 4
+    catatan?: string | null
+}
+
+export interface ICreateBatchPresensi {
+    id_jadwal: string              // id_jadwal_kelas
+    tanggal?: string               // YYYY-MM-DD, opsional — default hari ini (WIB)
+    items: ICreateBatchPresensiItem[]
+}
+
+export interface IUpdatePresensi {
+    status?: 1 | 2 | 3 | 4
+    catatan?: string | null
+}
+
+export interface IPresensiQuery {
+    search?: string
+    bulan?: string                 // "YYYY-MM"
+    tanggal?: string               // "YYYY-MM-DD"
+    id_jadwal_kelas?: string
+    id_siswa?: string
+    page?: number
+    limit?: number
+}
+
+// ─── Catat Kelas Siswa ───────────────────────────────────────────────────────
+// Table: kursus_catat_kelas_siswa | PK: id_catat (UUID)
+// Auto-managed — diperbarui otomatis setiap ada perubahan presensi
+
+export interface ICatatKelasSiswa {
+    id_catat: string               // UUID
+    id_siswa: string
+    nama_siswa: string
+    id_kelas: string
+    nama_kelas: string
+    total_sesi_hadir: number       // status=1 (HADIR)
+    total_sesi_tidak_hadir: number // status IN (2,3,4)
+    aktif: number
+    dibuat_pada: string
+    diubah_pada: string | null
 }
 
 // ─── Dashboard Kursus ─────────────────────────────────────────────────────────

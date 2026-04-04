@@ -4,6 +4,7 @@ import type {
     IPresensi,
     IPresensiJadwalEntry,
     IPresensiWithDetail,
+    IPresensiSiswaRiwayat,
     ICreatePresensi,
     ICreateBatchPresensi,
     IUpdatePresensi,
@@ -15,8 +16,11 @@ import type {
 const PresensiService = {
     async getAll(query?: IPresensiQuery): Promise<ApiPaginatedResponse<IPresensi>> {
         const params = new URLSearchParams()
-        if (query?.id_jadwal) params.append('id_jadwal', query.id_jadwal)
+        if (query?.search) params.append('search', query.search)
         if (query?.bulan) params.append('bulan', query.bulan)
+        if (query?.tanggal) params.append('tanggal', query.tanggal)
+        if (query?.id_jadwal_kelas) params.append('id_jadwal_kelas', query.id_jadwal_kelas)
+        if (query?.id_siswa) params.append('id_siswa', query.id_siswa)
         if (query?.page) params.append('page', String(query.page))
         if (query?.limit) params.append('limit', String(query.limit))
 
@@ -38,9 +42,29 @@ const PresensiService = {
         })
     },
 
-    async getByJadwal(id_jadwal: string): Promise<ApiResponse<IPresensiJadwalEntry[]>> {
+    async getByJadwal(id_jadwal: string, tanggal?: string): Promise<ApiResponse<IPresensiJadwalEntry[]>> {
+        const qs = tanggal ? `?tanggal=${tanggal}` : ''
         return ApiService.fetchDataWithAxios<ApiResponse<IPresensiJadwalEntry[]>>({
-            url: API_ENDPOINTS.KURSUS.PRESENSI.BY_JADWAL(id_jadwal),
+            url: `${API_ENDPOINTS.KURSUS.PRESENSI.BY_JADWAL(id_jadwal)}${qs}`,
+            method: 'GET',
+        })
+    },
+
+    async getBySiswa(id_siswa: string): Promise<ApiResponse<IPresensiSiswaRiwayat>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<IPresensiSiswaRiwayat>>({
+            url: API_ENDPOINTS.KURSUS.PRESENSI.BY_SISWA(id_siswa),
+            method: 'GET',
+        })
+    },
+
+    async getBySiswaJadwal(
+        id_jadwal: string,
+        id_siswa: string,
+        tanggal?: string,
+    ): Promise<ApiResponse<IPresensi>> {
+        const qs = tanggal ? `?tanggal=${tanggal}` : ''
+        return ApiService.fetchDataWithAxios<ApiResponse<IPresensi>>({
+            url: `${API_ENDPOINTS.KURSUS.PRESENSI.BY_SISWA_JADWAL(id_jadwal, id_siswa)}${qs}`,
             method: 'GET',
         })
     },

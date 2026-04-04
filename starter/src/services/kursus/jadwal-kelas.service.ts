@@ -5,12 +5,13 @@ import type {
     ICreateJadwalKelas,
     IUpdateJadwalKelas,
     IKursusQuery,
+    IJadwalKelasQuery,
     ApiResponse,
     ApiPaginatedResponse,
 } from '@/@types/kursus.types'
 
 const JadwalKelasService = {
-    async getAll(query?: IKursusQuery): Promise<ApiPaginatedResponse<IJadwalKelas>> {
+    async getAll(query?: IJadwalKelasQuery): Promise<ApiPaginatedResponse<IJadwalKelas>> {
         const params = new URLSearchParams()
         if (query?.search) params.append('search', query.search)
         if (query?.aktif !== undefined) params.append('aktif', String(query.aktif))

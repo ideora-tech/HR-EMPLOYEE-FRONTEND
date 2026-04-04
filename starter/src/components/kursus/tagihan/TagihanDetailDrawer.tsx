@@ -41,11 +41,12 @@ interface TagihanDetailDrawerProps {
     tagihan: ITagihan | null
     onClose: () => void
     onChanged: () => void
+    readOnly?: boolean
 }
 
 /* ─── component ──────────────────────────────────────────── */
 
-const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged }: TagihanDetailDrawerProps) => {
+const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = false }: TagihanDetailDrawerProps) => {
     const [payments, setPayments] = useState<IPembayaran[]>([])
     const [loading, setLoading] = useState(false)
     const [formOpen, setFormOpen] = useState(false)
@@ -153,12 +154,6 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged }: TagihanDetai
                                         <span>{tagihan.periode}</span>
                                     </>
                                 )}
-                                {tagihan.sesi_pertemuan && (
-                                    <>
-                                        <span className="text-gray-300">·</span>
-                                        <span>{tagihan.sesi_pertemuan} sesi</span>
-                                    </>
-                                )}
                             </div>
 
                             {/* Status badge */}
@@ -170,6 +165,25 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged }: TagihanDetai
 
                             {/* Progress bayar */}
                             <div>
+                                {tagihan.id_diskon && (
+                                    <div className="text-xs text-gray-400 mb-2 space-y-1">
+                                        <div className="flex justify-between">
+                                            <span>Harga biaya</span>
+                                            <span>{formatRupiah((tagihan.total_harga) + (tagihan.nominal_diskon ?? 0))}</span>
+                                        </div>
+                                        <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                                            <span>
+                                                Diskon — {tagihan.nama_diskon}
+                                                {tagihan.persen_diskon ? ` (${tagihan.persen_diskon}%)` : ''}
+                                            </span>
+                                            <span>− {formatRupiah(tagihan.nominal_diskon ?? 0)}</span>
+                                        </div>
+                                        <div className="flex justify-between font-medium text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-700 pt-1">
+                                            <span>Total tagihan</span>
+                                            <span>{formatRupiah(tagihan.total_harga)}</span>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="flex justify-between text-sm mb-1">
                                     <span className="text-gray-500">Dibayar</span>
                                     <span className="font-semibold text-gray-800 dark:text-gray-100">
@@ -203,7 +217,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged }: TagihanDetai
                         <h6 className="font-semibold text-gray-700 dark:text-gray-200 text-sm">
                             Riwayat Pembayaran
                         </h6>
-                        {tagihan && tagihan.status !== 3 && tagihan.status !== 4 && (
+                        {!readOnly && tagihan && tagihan.status !== 3 && tagihan.status !== 4 && (
                             <Button
                                 size="xs"
                                 variant="solid"

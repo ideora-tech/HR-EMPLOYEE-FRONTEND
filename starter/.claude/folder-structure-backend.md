@@ -265,6 +265,14 @@ Kolom `kode` dan `nama` di setiap tabel **menggunakan prefix nama tabel** agar t
 │   │       ├── pembayaran/                      ── MODULE: Pembayaran (table: kursus_pembayaran)
 │   │       │   └── ...
 │   │       │
+│   │       ├── presensi/                        ── MODULE: Presensi (table: kursus_presensi)
+│   │       │   ├── presensi.controller.ts       ← CRUD + batch + byJadwal + bySiswa
+│   │       │   └── ...
+│   │       │
+│   │       ├── catat-kelas-siswa/               ── MODULE: Catat Kelas Siswa (table: kursus_catat_kelas_siswa)
+│   │       │   ├── catat-kelas-siswa.controller.ts ← GET only (managed otomatis via presensi)
+│   │       │   └── ...
+│   │       │
 │   │       └── dashboard/                       ── MODULE: Dashboard Kursus
 │   │
 │   ├── [feature]/                               ── Template module baru
@@ -1465,7 +1473,7 @@ Ketika mereview project NestJS, periksa deviasi berikut dan laporkan:
 ## Kursus Modules — Detail Lengkap
 
 Group module untuk aplikasi kursus dansa. Semua controller prefix `/kursus/[nama]`.
-Semua tabel kursus menggunakan UUID PK dan prefix `kursus_` (kecuali `siswa`).
+Semua tabel kursus menggunakan UUID PK dan prefix `kursus_` (termasuk `kursus_siswa`).
 Nama denormalized disimpan di setiap baris (tidak ada JOIN antar tabel kursus).
 
 ### Database Schema
@@ -1545,7 +1553,7 @@ Nama denormalized disimpan di setiap baris (tidak ada JOIN antar tabel kursus).
 | aktif TINYINT DEFAULT 1 | | |
 | aktif + 6 audit cols | | |
 
-#### `siswa` (tabel tidak berubah)
+#### `kursus_siswa` (sebelumnya: `siswa`)
 | Kolom | Tipe | Keterangan |
 |-------|------|------------|
 | id_siswa | VARCHAR(36) PK | UUID |
@@ -1558,11 +1566,35 @@ Nama denormalized disimpan di setiap baris (tidak ada JOIN antar tabel kursus).
 | foto_url | VARCHAR(255) NULL | |
 | aktif + 6 audit cols | | |
 
+#### `kursus_presensi`
+| Kolom | Tipe | Keterangan |
+|-------|------|------------|
+| id_presensi | VARCHAR(36) PK | UUID |
+| id_jadwal_kelas | VARCHAR(36) FK | → kursus_jadwal_kelas |
+| id_siswa | VARCHAR(36) FK | → kursus_siswa |
+| nama_siswa | VARCHAR(100) NULL | Denormalized |
+| status | TINYINT NOT NULL | 1=HADIR, 2=TIDAK_HADIR, 3=SAKIT, 4=IZIN |
+| waktu_mulai_kelas | DATETIME NULL | |
+| catatan | TEXT NULL | |
+| aktif + 6 audit cols | | |
+
+#### `kursus_catat_kelas_siswa`
+| Kolom | Tipe | Keterangan |
+|-------|------|------------|
+| id_catat | VARCHAR(36) PK | UUID |
+| id_siswa | VARCHAR(36) FK | → kursus_siswa |
+| nama_siswa | VARCHAR(100) NULL | Denormalized |
+| id_kelas | VARCHAR(36) FK | → kursus_kelas |
+| nama_kelas | VARCHAR(100) NULL | Denormalized |
+| total_sesi_hadir | INT NOT NULL DEFAULT 0 | Dihitung otomatis dari presensi status=1 |
+| aktif + 4 audit cols | | (no dihapus_pada — tidak soft delete) |
+| UNIQUE | (id_siswa, id_kelas) | Satu record per kombinasi siswa+kelas |
+
 #### `kursus_tagihan`
 | Kolom | Tipe | Keterangan |
 |-------|------|------------|
 | id_tagihan | VARCHAR(36) PK | UUID |
-| id_siswa | VARCHAR(36) FK | → siswa |
+| id_siswa | VARCHAR(36) FK | → kursus_siswa |
 | nama_siswa | VARCHAR(100) | Denormalized |
 | id_biaya | VARCHAR(36) FK | → kursus_biaya |
 | nama_biaya | VARCHAR(100) | Denormalized |
@@ -1619,6 +1651,17 @@ Nama denormalized disimpan di setiap baris (tidak ada JOIN antar tabel kursus).
 #### `GET /kursus/tagihan/siswa/:id_siswa` — Tagihan per siswa
 #### `GET /kursus/pembayaran` — Daftar pembayaran (pagination)
 #### `GET /kursus/pembayaran/tagihan/:id_tagihan` — Pembayaran per tagihan
+#### `GET /kursus/presensi` — List presensi (pagination + search + filter bulan)
+#### `GET /kursus/presensi/jadwal/:id_jadwal` — Absen list per sesi (siswa + status presensi)
+#### `GET /kursus/presensi/siswa/:id_siswa` — Riwayat presensi + sesi_terpakai
+#### `GET /kursus/presensi/siswa-jadwal/:id_jadwal/:id_siswa` — Presensi satu siswa di satu jadwal
+#### `GET /kursus/presensi/:id` — Detail presensi
+#### `POST /kursus/presensi/batch` — Absen massal (upsert) — **panggil ini untuk absen**
+#### `POST /kursus/presensi` — Catat presensi satu siswa
+#### `PATCH /kursus/presensi/:id` — Koreksi status/catatan
+#### `DELETE /kursus/presensi/:id` — Soft delete
+#### `GET /kursus/catat-kelas-siswa/siswa/:id_siswa` — Semua kelas + total sesi hadir siswa
+#### `GET /kursus/catat-kelas-siswa/kelas/:id_kelas` — Semua siswa + total sesi hadir di kelas
 #### `GET /kursus/dashboard` — Ringkasan statistik kursus
 
 ---
@@ -1631,8 +1674,21 @@ Setiap POST/DELETE pembayaran, service memanggil `tagihanService.recalculateStat
 - `status`: 1=MENUNGGU (0), 2=SEBAGIAN (partial), 3=LUNAS (total_bayar >= total_harga)
 
 #### Siswa tunggakan
-`findTunggakan()` query: `kursus_tagihan WHERE status IN (1,2)` JOIN `siswa`
-GROUP BY `siswa.id_siswa` → COUNT tagihan belum lunas, SUM sisa outstanding.
+`findTunggakan()` query: `kursus_tagihan WHERE status IN (1,2)` JOIN `kursus_siswa`
+GROUP BY `kursus_siswa.id_siswa` → COUNT tagihan belum lunas, SUM sisa outstanding.
+
+#### Presensi — Auto recalculate catat_kelas_siswa
+Setiap `POST`, `PATCH` (jika status berubah), `DELETE` presensi → service memanggil
+`catatService.recalculate(id_siswa, id_kelas, names, userId)`:
+- Hitung ulang COUNT dari scratch: `kursus_presensi JOIN kursus_jadwal_kelas WHERE status=1 AND dihapus_pada IS NULL`
+- Upsert record di `kursus_catat_kelas_siswa` (INSERT jika belum ada, UPDATE jika sudah)
+- `id_kelas` didapat dari `jadwalKelasService.findById(id_jadwal_kelas).id_kelas`
+
+#### Validasi konflik jadwal instruktur
+`findKonflikInstruktur(id_karyawan, hari, jam_mulai, jam_selesai, excludeId?)`:
+- Query: overlap jam → `jam_mulai_existing < jam_selesai_baru AND jam_selesai_existing > jam_mulai_baru`
+- Dipanggil di `JadwalKelasService.create()` dan `update()`
+- Response 409 jika konflik ditemukan
 
 ---
 
@@ -1736,6 +1792,38 @@ src/modules/kursus/
 │   ├── pembayaran.module.ts               ← import TagihanModule
 │   └── pembayaran.controller.ts
 │
+├── presensi/
+│   ├── interfaces/
+│   │   ├── presensi.interface.ts              ← IPresensiPublic, IPresensiJadwalItem
+│   │   └── presensi-repository.interface.ts  ← IPresensiQuery (+ bulan filter), batchUpsert
+│   ├── dto/
+│   │   ├── create-presensi.dto.ts            ← id_jadwal, id_siswa, status, catatan
+│   │   ├── create-batch-presensi.dto.ts      ← id_jadwal + items[]
+│   │   ├── update-presensi.dto.ts            ← status, catatan (optional)
+│   │   ├── presensi-query.dto.ts             ← extends PaginationQueryDto + bulan
+│   │   └── presensi-response.dto.ts
+│   ├── presensi.repository.ts    ← table: kursus_presensi
+│   │                                JOIN kursus_jadwal_kelas as j
+│   │                                JOIN kursus_siswa as s
+│   │                                findByJadwal() via kursus_tagihan_detail
+│   │                                batchUpsert() = upsert per siswa
+│   ├── presensi.service.ts       ← inject JadwalKelasService + SiswaService + CatatKelasSiswaService
+│   │                                recalculate dipanggil setelah create/batchUpsert/update(status)/remove
+│   ├── presensi.module.ts        ← import JadwalKelasModule, SiswaModule, CatatKelasSiswaModule
+│   └── presensi.controller.ts   ← GET /batch sebelum /:id, GET /jadwal/:id, GET /siswa/:id
+│
+├── catat-kelas-siswa/
+│   ├── interfaces/
+│   │   ├── catat-kelas-siswa.interface.ts              ← ICatatKelasSiswa, ICatatKelasSiswaPublic
+│   │   └── catat-kelas-siswa-repository.interface.ts  ← upsertAndRecalculate()
+│   ├── dto/
+│   │   └── catat-kelas-siswa-response.dto.ts
+│   ├── catat-kelas-siswa.repository.ts  ← table: kursus_catat_kelas_siswa
+│   │                                       upsertAndRecalculate() = COUNT presensi status=1 lalu UPDATE
+│   ├── catat-kelas-siswa.service.ts     ← recalculate(), findBySiswa(), findByKelas()
+│   ├── catat-kelas-siswa.module.ts      ← exports CatatKelasSiswaService
+│   └── catat-kelas-siswa.controller.ts ← GET /siswa/:id_siswa, GET /kelas/:id_kelas (read-only)
+│
 └── dashboard/
     ├── interfaces/
     │   └── dashboard.interface.ts            ← IDashboardSummary, ISiswaPerKelas (bukan ISiswaPerProgram)
@@ -1760,929 +1848,3 @@ src/modules/kursus/
 | `*_create_kursus_jadwal_kelas_table.ts` | Buat tabel `kursus_jadwal_kelas` (was: jadwal_kelas) |
 | `*_create_kursus_tagihan_table.ts` | Buat tabel `kursus_tagihan` (was: tagihan) |
 | `*_create_kursus_pembayaran_table.ts` | Buat tabel `kursus_pembayaran` (was: pembayaran) |
-resIn: '7d' });
-
-    await this.authRepository.saveRefreshToken(user.id, refreshToken);
-
-    const { password_hash, deleted_at, ...userPublic } = user;
-    return { user: userPublic, tokens: { accessToken, refreshToken } };
-  }
-
-  async register(dto: RegisterDto): Promise<IAuthPayload> {
-    await this.usersService.create(dto);
-    return this.login({ email: dto.email, password: dto.password });
-  }
-
-  async logout(userId: number, refreshToken: string): Promise<void> {
-    await this.authRepository.deleteRefreshToken(userId, refreshToken);
-  }
-}
-```
-
----
-
-### `src/modules/users/users.module.ts`
-```typescript
-import { Module } from '@nestjs/common';
-import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
-import { UsersRepository } from './users.repository';
-
-@Module({
-  controllers: [UsersController],
-  providers: [UsersService, UsersRepository],
-  exports: [UsersService], // export service saja, bukan repository
-})
-export class UsersModule {}
-```
-
----
-
-### `src/modules/auth/auth.module.ts`
-```typescript
-import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { ConfigService } from '@nestjs/config';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { AuthRepository } from './auth.repository';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { UsersModule } from '../users/users.module';
-
-@Module({
-  imports: [
-    PassportModule,
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_SECRET'),
-        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', '1d') },
-      }),
-    }),
-    UsersModule,
-  ],
-  controllers: [AuthController],
-  providers: [AuthService, AuthRepository, JwtStrategy],
-})
-export class AuthModule {}
-```
-
----
-
-### `src/database/database.module.ts`
-```typescript
-import { Module, Global } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import Knex from 'knex';
-
-export const KNEX_CONNECTION = 'KNEX_CONNECTION';
-
-@Global()
-@Module({
-  providers: [
-    {
-      provide: KNEX_CONNECTION,
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => Knex({
-        client: config.get('DB_CLIENT'),
-        connection: {
-          host: config.get('DB_HOST'),
-          port: config.get<number>('DB_PORT'),
-          database: config.get('DB_NAME'),
-          user: config.get('DB_USER'),
-          password: config.get('DB_PASSWORD'),
-        },
-        pool: { min: 2, max: 10 },
-        acquireConnectionTimeout: 10000,
-      }),
-    },
-  ],
-  exports: [KNEX_CONNECTION],
-})
-export class DatabaseModule {}
-```
-
----
-
-### `knexfile.ts`
-```typescript
-import type { Knex } from 'knex';
-import * as dotenv from 'dotenv';
-dotenv.config();
-
-const config: { [key: string]: Knex.Config } = {
-  development: {
-    client: 'mysql2',
-    connection: {
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT) || 3306,
-      database: process.env.DB_NAME,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-    },
-    migrations: { directory: './src/database/migrations', extension: 'ts' },
-    seeds: { directory: './src/database/seeds' },
-  },
-  test: {
-    client: 'mysql2',
-    connection: {
-      host: process.env.TEST_DB_HOST ?? 'localhost',
-      port: Number(process.env.TEST_DB_PORT) || 3306,
-      database: process.env.TEST_DB_NAME ?? 'test_db',
-      user: process.env.TEST_DB_USER,
-      password: process.env.TEST_DB_PASSWORD,
-    },
-    migrations: { directory: './src/database/migrations', extension: 'ts' },
-  },
-  production: {
-    client: 'mysql2',
-    connection: {
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT) || 3306,
-      database: process.env.DB_NAME,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      ssl: { rejectUnauthorized: true },
-    },
-    pool: { min: 2, max: 20 },
-    migrations: { directory: './src/database/migrations', extension: 'ts' },
-  },
-};
-
-export default config;
-```
-
----
-
-### `.env.example`
-```env
-PORT=3000
-NODE_ENV=development
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
-
-JWT_SECRET=ganti_dengan_random_string_minimal_32_karakter
-JWT_EXPIRES_IN=1d
-JWT_REFRESH_SECRET=ganti_dengan_random_string_lain_minimal_32_karakter
-JWT_REFRESH_EXPIRES_IN=7d
-
-DB_CLIENT=mysql2
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=your_database
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-```
-
----
-
-### `package.json` (scripts penting)
-```json
-{
-  "scripts": {
-    "build": "nest build",
-    "start": "node dist/main",
-    "start:dev": "nest start --watch",
-    "lint": "eslint \"{src,test}/**/*.ts\"",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
-    "migration:make": "knex migrate:make --knexfile knexfile.ts",
-    "migration:latest": "knex migrate:latest --knexfile knexfile.ts",
-    "migration:rollback": "knex migrate:rollback --knexfile knexfile.ts",
-    "seed:run": "knex seed:run --knexfile knexfile.ts"
-  }
-}
-```
-
----
-
-## Export Module — Excel & PDF
-
-### Library yang Digunakan
-| Kebutuhan | Library | Install |
-|-----------|---------|---------|
-| Excel | `exceljs` | `npm install exceljs` |
-| PDF | `puppeteer` | `npm install puppeteer` |
-
-> **Mengapa exceljs?** Support styling sel, merge cell, freeze pane, auto-filter, gambar/logo — jauh lebih lengkap dari `xlsx`.
-> **Mengapa puppeteer?** Render HTML → PDF, sehingga tampilan invoice/laporan bisa dibuat via HTML/CSS biasa, hasilnya pixel-perfect.
-
----
-
-### `src/export/interfaces/export-options.interface.ts`
-```typescript
-export interface IExcelColumn {
-  header: string;       // Label header kolom
-  key: string;          // Key dari data object
-  width?: number;       // Lebar kolom (default: 20)
-  style?: Partial<ExcelJS.Style>;
-}
-
-export interface IExcelOptions {
-  sheetName: string;
-  title?: string;        // Judul laporan (merge cell di baris 1)
-  columns: IExcelColumn[];
-  data: Record<string, any>[];
-  createdBy?: string;
-}
-
-export interface IPdfOptions {
-  templatePath?: string; // Path ke file HTML template
-  templateHtml?: string; // Atau langsung HTML string
-  data: Record<string, any>;
-  filename?: string;
-}
-```
-
----
-
-### `src/export/dto/export-query.dto.ts`
-```typescript
-import { IsOptional, IsDateString, IsEnum } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
-
-export class ExportQueryDto {
-  @ApiPropertyOptional({ example: '2024-01-01' })
-  @IsOptional()
-  @IsDateString()
-  dateFrom?: string;
-
-  @ApiPropertyOptional({ example: '2024-12-31' })
-  @IsOptional()
-  @IsDateString()
-  dateTo?: string;
-}
-```
-
----
-
-### `src/export/excel.service.ts`
-```typescript
-import { Injectable } from '@nestjs/common';
-import * as ExcelJS from 'exceljs';
-import { IExcelOptions } from './interfaces/export-options.interface';
-
-@Injectable()
-export class ExcelService {
-
-  async generate(options: IExcelOptions): Promise<Buffer> {
-    const workbook = new ExcelJS.Workbook();
-
-    // Metadata workbook
-    workbook.creator = options.createdBy ?? 'System';
-    workbook.created = new Date();
-
-    const sheet = workbook.addWorksheet(options.sheetName, {
-      pageSetup: { paperSize: 9, orientation: 'landscape' }, // A4 landscape
-    });
-
-    let startRow = 1;
-
-    // ── Baris judul (merge cell) ──
-    if (options.title) {
-      const lastCol = options.columns.length;
-      sheet.mergeCells(1, 1, 1, lastCol);
-      const titleCell = sheet.getCell('A1');
-      titleCell.value = options.title;
-      titleCell.font = { bold: true, size: 14 };
-      titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-      titleCell.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FF1F4E79' }, // biru gelap
-      };
-      titleCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
-      sheet.getRow(1).height = 35;
-      startRow = 2;
-    }
-
-    // ── Definisi kolom ──
-    sheet.columns = options.columns.map((col) => ({
-      header: col.header,
-      key: col.key,
-      width: col.width ?? 20,
-      style: col.style,
-    }));
-
-    // ── Styling header row ──
-    const headerRow = sheet.getRow(startRow);
-    headerRow.eachCell((cell) => {
-      cell.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FF2E75B6' }, // biru
-      };
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
-      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-      cell.border = {
-        top: { style: 'thin' }, bottom: { style: 'thin' },
-        left: { style: 'thin' }, right: { style: 'thin' },
-      };
-    });
-    headerRow.height = 25;
-
-    // ── Freeze pane (header tetap terlihat saat scroll) ──
-    sheet.views = [{ state: 'frozen', ySplit: startRow }];
-
-    // ── Auto filter ──
-    sheet.autoFilter = {
-      from: { row: startRow, column: 1 },
-      to: { row: startRow, column: options.columns.length },
-    };
-
-    // ── Isi data ──
-    options.data.forEach((row, index) => {
-      const dataRow = sheet.addRow(row);
-      dataRow.eachCell((cell) => {
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFD9D9D9' } },
-          bottom: { style: 'thin', color: { argb: 'FFD9D9D9' } },
-          left: { style: 'thin', color: { argb: 'FFD9D9D9' } },
-          right: { style: 'thin', color: { argb: 'FFD9D9D9' } },
-        };
-        cell.alignment = { vertical: 'middle', wrapText: true };
-      });
-      dataRow.height = 20;
-
-      // Alternating row color
-      if (index % 2 === 0) {
-        dataRow.eachCell((cell) => {
-          cell.fill = {
-            type: 'pattern', pattern: 'solid',
-            fgColor: { argb: 'FFF2F7FB' }, // biru sangat muda
-          };
-        });
-      }
-    });
-
-    // ── Baris total (opsional, jika kolom numerik) ──
-    const numericCols = options.columns.filter((c) => c.key.includes('total') || c.key.includes('amount'));
-    if (numericCols.length > 0) {
-      const totalRow = sheet.addRow({});
-      const firstCell = totalRow.getCell(1);
-      firstCell.value = 'TOTAL';
-      firstCell.font = { bold: true };
-
-      numericCols.forEach((col) => {
-        const colIdx = options.columns.findIndex((c) => c.key === col.key) + 1;
-        const cell = totalRow.getCell(colIdx);
-        cell.value = {
-          formula: `SUM(${sheet.getColumn(colIdx).letter}${startRow + 1}:${sheet.getColumn(colIdx).letter}${sheet.rowCount})`,
-        };
-        cell.font = { bold: true };
-        cell.numFmt = '#,##0.00';
-      });
-    }
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    return Buffer.from(buffer);
-  }
-}
-```
-
----
-
-### `src/export/pdf.service.ts`
-```typescript
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import * as puppeteer from 'puppeteer';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { IPdfOptions } from './interfaces/export-options.interface';
-
-@Injectable()
-export class PdfService implements OnModuleDestroy {
-  private browser: puppeteer.Browser | null = null;
-
-  // Reuse browser instance — jangan launch baru tiap request (berat!)
-  private async getBrowser(): Promise<puppeteer.Browser> {
-    if (!this.browser) {
-      this.browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'], // wajib untuk Docker/Linux
-      });
-    }
-    return this.browser;
-  }
-
-  async generate(options: IPdfOptions): Promise<Buffer> {
-    const browser = await this.getBrowser();
-    const page = await browser.newPage();
-
-    // Ambil HTML — dari file template atau string langsung
-    let html = options.templateHtml ?? '';
-    if (options.templatePath) {
-      html = readFileSync(options.templatePath, 'utf-8');
-    }
-
-    // Inject data ke template (ganti placeholder {{key}} dengan nilai)
-    html = this.renderTemplate(html, options.data);
-
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,    // render background CSS
-      margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
-    });
-
-    await page.close(); // tutup page, bukan browser
-    return Buffer.from(pdfBuffer);
-  }
-
-  // Simple template engine: ganti {{key}} dengan data[key]
-  private renderTemplate(html: string, data: Record<string, any>): string {
-    return html.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (_, key) => {
-      const value = key.split('.').reduce((obj: any, k: string) => obj?.[k], data);
-      return value !== undefined ? String(value) : '';
-    });
-  }
-
-  // Tutup browser saat module destroy (graceful shutdown)
-  async onModuleDestroy() {
-    if (this.browser) {
-      await this.browser.close();
-      this.browser = null;
-    }
-  }
-}
-```
-
----
-
-### `src/export/templates/report.template.html`
-```html
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #333; }
-
-    /* ── Header laporan ── */
-    .header { display: flex; justify-content: space-between; align-items: center;
-              padding-bottom: 16px; border-bottom: 2px solid #1F4E79; margin-bottom: 20px; }
-    .header .company h2 { font-size: 18px; color: #1F4E79; }
-    .header .company p  { font-size: 11px; color: #666; }
-    .header .logo img   { height: 50px; }
-
-    /* ── Judul laporan ── */
-    .report-title { text-align: center; margin-bottom: 16px; }
-    .report-title h1 { font-size: 16px; color: #1F4E79; text-transform: uppercase; }
-    .report-title p  { font-size: 11px; color: #888; }
-
-    /* ── Tabel ── */
-    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-    thead tr { background-color: #2E75B6; color: white; }
-    thead th { padding: 8px 10px; text-align: left; font-size: 11px; }
-    tbody tr:nth-child(even) { background-color: #F2F7FB; }
-    tbody td { padding: 7px 10px; border-bottom: 1px solid #E0E0E0; font-size: 11px; }
-    tfoot tr { background-color: #1F4E79; color: white; font-weight: bold; }
-    tfoot td { padding: 8px 10px; }
-
-    /* ── Footer ── */
-    .footer { margin-top: 24px; display: flex; justify-content: space-between;
-              font-size: 10px; color: #999; border-top: 1px solid #E0E0E0; padding-top: 8px; }
-
-    /* ── Tanda tangan ── */
-    .signature { margin-top: 40px; display: flex; justify-content: flex-end; }
-    .signature .sign-box { text-align: center; }
-    .signature .sign-line { width: 180px; border-bottom: 1px solid #333;
-                            margin: 50px auto 4px; }
-  </style>
-</head>
-<body>
-
-  <div class="header">
-    <div class="company">
-      <h2>{{companyName}}</h2>
-      <p>{{companyAddress}}</p>
-    </div>
-  </div>
-
-  <div class="report-title">
-    <h1>{{reportTitle}}</h1>
-    <p>Periode: {{dateFrom}} s/d {{dateTo}} &nbsp;|&nbsp; Dicetak: {{printedAt}}</p>
-  </div>
-
-  <!-- Konten dinamis inject dari service -->
-  {{tableContent}}
-
-  <div class="signature">
-    <div class="sign-box">
-      <p>{{signatureCity}}, {{signatureDate}}</p>
-      <p>{{signatureRole}}</p>
-      <div class="sign-line"></div>
-      <p><strong>{{signatureName}}</strong></p>
-    </div>
-  </div>
-
-  <div class="footer">
-    <span>Digenerate otomatis oleh sistem</span>
-    <span>Halaman <span class="pageNumber"></span></span>
-  </div>
-
-</body>
-</html>
-```
-
----
-
-### `src/export/export.controller.ts`
-```typescript
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
-import { Response } from 'express';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { ExcelService } from './excel.service';
-import { PdfService } from './pdf.service';
-import { ExportQueryDto } from './dto/export-query.dto';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-
-@ApiTags('Export')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
-@Controller({ path: 'export', version: '1' })
-export class ExportController {
-  constructor(
-    private readonly excelService: ExcelService,
-    private readonly pdfService: PdfService,
-  ) {}
-
-  @Get('users/excel')
-  async exportUsersExcel(
-    @Query() query: ExportQueryDto,
-    @Res() res: Response,
-  ) {
-    // Contoh data — di real app inject UsersService dan ambil data dari DB
-    const data = [
-      { no: 1, name: 'Arief', email: 'arief@email.com', role: 'admin', created_at: '2024-01-01' },
-    ];
-
-    const buffer = await this.excelService.generate({
-      sheetName: 'Data Users',
-      title: 'LAPORAN DATA USERS',
-      createdBy: 'System',
-      columns: [
-        { header: 'No',         key: 'no',         width: 6  },
-        { header: 'Nama',       key: 'name',        width: 25 },
-        { header: 'Email',      key: 'email',       width: 30 },
-        { header: 'Role',       key: 'role',        width: 15 },
-        { header: 'Tgl Daftar', key: 'created_at',  width: 18 },
-      ],
-      data,
-    });
-
-    res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="users-${Date.now()}.xlsx"`,
-      'Content-Length': buffer.length,
-    });
-    res.end(buffer);
-  }
-
-  @Get('users/pdf')
-  async exportUsersPdf(
-    @Query() query: ExportQueryDto,
-    @Res() res: Response,
-  ) {
-    const { join } = require('path');
-
-    const buffer = await this.pdfService.generate({
-      templatePath: join(__dirname, 'templates', 'report.template.html'),
-      data: {
-        companyName: 'PT. Contoh Maju',
-        companyAddress: 'Jl. Contoh No. 1, Jakarta',
-        reportTitle: 'LAPORAN DATA USERS',
-        dateFrom: query.dateFrom ?? '-',
-        dateTo: query.dateTo ?? '-',
-        printedAt: new Date().toLocaleDateString('id-ID'),
-        signatureCity: 'Jakarta',
-        signatureDate: new Date().toLocaleDateString('id-ID'),
-        signatureRole: 'Manager',
-        signatureName: '( ________________ )',
-        tableContent: `
-          <table>
-            <thead>
-              <tr><th>No</th><th>Nama</th><th>Email</th><th>Role</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>1</td><td>Arief</td><td>arief@email.com</td><td>Admin</td></tr>
-            </tbody>
-          </table>
-        `,
-      },
-    });
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="users-${Date.now()}.pdf"`,
-      'Content-Length': buffer.length,
-    });
-    res.end(buffer);
-  }
-}
-```
-
----
-
-### `src/export/export.module.ts`
-```typescript
-import { Module } from '@nestjs/common';
-import { ExportController } from './export.controller';
-import { ExcelService } from './excel.service';
-import { PdfService } from './pdf.service';
-
-@Module({
-  controllers: [ExportController],
-  providers: [ExcelService, PdfService],
-  exports: [ExcelService, PdfService], // export agar bisa dipakai module lain
-})
-export class ExportModule {}
-```
-
----
-
-### Install dependencies
-```bash
-npm install exceljs puppeteer
-npm install --save-dev @types/puppeteer
-```
-
----
-
-## Aturan Review Folder Structure
-
-Ketika mereview project NestJS, periksa deviasi berikut dan laporkan:
-
-| Deviasi | Severity | Saran |
-|---------|----------|-------|
-| Query Knex ada di service (bukan repository) | HIGH | Pindahkan semua query ke `*.repository.ts` |
-| Logic bisnis ada di controller | HIGH | Pindahkan ke service |
-| Logic bisnis ada di repository | HIGH | Repository hanya boleh berisi query DB |
-| Knex tidak di-inject via `KNEX_CONNECTION` di repository | HIGH | Pakai `@Inject(KNEX_CONNECTION)` |
-| Tidak ada folder `interfaces/` di module | MEDIUM | Buat `interfaces/` dengan shape & repository contract |
-| Repository tidak `implements` interface contract | MEDIUM | Tambah `implements I[Feature]Repository` |
-| Return type service/repository pakai `any` | MEDIUM | Ganti dengan interface yang tepat |
-| `IUser` dan `IUserPublic` tidak dipisah | MEDIUM | Pisahkan — `IUserPublic` exclude field sensitif |
-| Repository di-export dari module | MEDIUM | Hanya export service — repository internal module |
-| DTO tanpa `class-validator` decorator | HIGH | Tambah validasi |
-| Module tidak punya file `*.module.ts` sendiri | MEDIUM | Buat module file terpisah |
-| `common/interfaces/` tidak ada | MEDIUM | Buat `pagination`, `response`, `jwt-payload` interface |
-| Global config pakai `process.env` langsung | MEDIUM | Ganti dengan `ConfigService` |
-| Tidak ada `HttpExceptionFilter` global | MEDIUM | Tambah di `main.ts` |
-| Semua file flat di `src/` tanpa subfolder | HIGH | Restructure ke feature-based modules |
-| Export Excel pakai `xlsx` library | INFO | Pertimbangkan migrasi ke `exceljs` untuk styling lebih baik |
-| PDF generate pakai `pdfkit` tanpa HTML template | INFO | Pertimbangkan `puppeteer` untuk hasil lebih fleksibel |
-| Browser puppeteer di-launch tiap request | HIGH | Reuse browser instance via singleton service |
-| Template HTML PDF di-hardcode di service | MEDIUM | Pisahkan ke file `templates/*.html` |
-
----
-
-## Kursus Modules — Detail Lengkap
-
-Group module untuk aplikasi kursus dansa. Semua controller prefix `/kursus/[nama]`.
-
-### Database Schema
-
-#### `siswa`
-| Kolom | Tipe | Keterangan |
-|-------|------|------------|
-| id_siswa | VARCHAR(36) PK | UUID |
-| nama | VARCHAR(100) NOT NULL | |
-| email | VARCHAR(100) NULL | |
-| telepon | VARCHAR(20) NULL | |
-| tanggal_lahir | DATE NULL | |
-| alamat | TEXT NULL | |
-| jenis_kelamin | TINYINT NULL | 1=L, 2=P |
-| foto_url | VARCHAR(255) NULL | |
-| aktif + 6 audit cols | | |
-
-#### `program_pengajaran`
-| Kolom | Tipe | Keterangan |
-|-------|------|------------|
-| id_program | VARCHAR(36) PK | UUID |
-| kode_program | VARCHAR(50) UNIQUE | 409 jika duplikat |
-| nama | VARCHAR(100) NOT NULL | |
-| deskripsi | TEXT NULL | |
-| tingkat | VARCHAR(20) NULL | PEMULA/MENENGAH/MAHIR |
-| durasi_menit | INT DEFAULT 60 | |
-| aktif + 6 audit cols | | |
-
-#### `tarif`
-| Kolom | Tipe | Keterangan |
-|-------|------|------------|
-| id_tarif | VARCHAR(36) PK | UUID |
-| id_program | VARCHAR(36) FK | → program_pengajaran |
-| nama | VARCHAR(100) NOT NULL | |
-| jenis | VARCHAR(20) NOT NULL | PER_SESI / PAKET |
-| jumlah_pertemuan | INT NULL | Hanya untuk PAKET |
-| harga | DECIMAL(12,2) NOT NULL | |
-| aktif + 6 audit cols | | |
-
-#### `jadwal_kelas`
-| Kolom | Tipe | Keterangan |
-|-------|------|------------|
-| id_jadwal | VARCHAR(36) PK | UUID |
-| id_program | VARCHAR(36) FK | → program_pengajaran |
-| nama | VARCHAR(100) NOT NULL | |
-| tanggal_mulai | DATETIME NOT NULL | Tanggal+jam mulai sesi |
-| tanggal_selesai | DATETIME NOT NULL | Tanggal+jam selesai sesi |
-| instruktur | VARCHAR(100) NULL | |
-| lokasi | VARCHAR(100) NULL | |
-| kuota | INT DEFAULT 10 | Max siswa |
-| aktif + 6 audit cols | | |
-
-> **Penting**: Setiap row = 1 sesi per hari. POST create menerima date range + jam_mulai/jam_selesai lalu generate N row (satu per hari dalam range tersebut).
-
-#### `daftar_kelas`
-| Kolom | Tipe | Keterangan |
-|-------|------|------------|
-| id_daftar | VARCHAR(36) PK | UUID |
-| id_siswa | VARCHAR(36) FK | → siswa |
-| id_jadwal | VARCHAR(36) FK | → jadwal_kelas |
-| id_tarif | VARCHAR(36) FK NULL | → tarif |
-| tanggal_daftar | DATE NOT NULL | |
-| status | TINYINT DEFAULT 1 | 1=AKTIF, 2=SELESAI, 3=BERHENTI |
-| catatan | TEXT NULL | |
-| aktif + 6 audit cols | | |
-
----
-
-### Endpoints
-
-#### `GET /kursus/siswa`
-- Query: `page`, `limit`, `search` (nama/email/telepon), `aktif`
-- Response: `PaginatedResult<ISiswaPublic>`
-
-#### `POST /kursus/siswa`
-- Body: `CreateSiswaDto` (nama wajib, sisanya optional)
-- Excel import: `POST /kursus/siswa/upload` (multipart, field `file`)
-- Excel template: `GET /kursus/siswa/template`
-
-#### `GET /kursus/program-pengajaran`
-- Query: `page`, `limit`, `search` (nama/kode_program), `aktif`
-
-#### `POST /kursus/program-pengajaran`
-- 409 `ConflictException` jika `kode_program` sudah ada
-
-#### `GET /kursus/tarif/program/:id_program`
-- Deklarasi route ini **sebelum** `/:id` di controller
-
-#### `GET /kursus/jadwal-kelas`
-- Query tambahan: `week_start` (YYYY-MM-DD), `week_end` (YYYY-MM-DD)
-- Filter: `tanggal_mulai >= week_start AND tanggal_mulai <= week_end 23:59:59`
-- Menggunakan `JadwalKelasQueryDto extends PaginationQueryDto` (bukan PaginationQueryDto langsung)
-
-#### `POST /kursus/jadwal-kelas`
-- Input: `tanggal_mulai` (date), `tanggal_selesai` (date), `jam_mulai` (HH:MM), `jam_selesai` (HH:MM)
-- Service looping per hari: `new Date(\`${dateStr}T${dto.jam_mulai}:00\`)`
-- Return: `IJadwalKelasPublic[]` (array semua row yang dibuat)
-- Conflict check instruktur per hari sebelum insert
-
-#### `DELETE /kursus/jadwal-kelas/:id`
-- Cek `countAktifByJadwal` — jika > 0, throw `BadRequestException` (tidak boleh hapus jika ada siswa aktif)
-
-#### `GET /kursus/jadwal-kelas/:id/kuota`
-- Return: `{ kuota, terisi, sisa }`
-
-#### `GET /kursus/daftar-kelas`
-- Enriched JOIN: siswa + jadwal_kelas + program_pengajaran + tarif (leftJoin)
-- Query: `search` (nama/email siswa), `aktif`
-
-#### `GET /kursus/daftar-kelas/siswa/:id_siswa`
-- `GET /kursus/daftar-kelas/jadwal/:id_jadwal`
-- Deklarasi kedua route ini **sebelum** `/:id` di controller
-
-#### `POST /kursus/daftar-kelas`
-- Cek siswa ada → cek jadwal ada → cek duplikat aktif → cek kuota → optional cek tarif → insert
-
-#### `POST /kursus/daftar-kelas/batch`
-- Body: `CreateBatchDaftarKelasDto` (`id_jadwal: string[]` — array jadwal)
-- Per jadwal: duplicate check + kuota check
-- Return: `IDaftarKelasPublic[]`
-- Deklarasi route ini **sebelum** `POST /` di controller
-
----
-
-### Business Logic Kritis
-
-#### Jadwal Kelas — Generate per hari
-```typescript
-// service create
-for (const current = new Date(start); current <= end; current.setDate(current.getDate() + 1)) {
-    const dateStr = current.toISOString().split('T')[0];
-    const tanggalMulai = new Date(`${dateStr}T${dto.jam_mulai}:00`);
-    const tanggalSelesai = new Date(`${dateStr}T${dto.jam_selesai}:00`);
-    // cek benturan instruktur...
-    // insert...
-}
-```
-
-#### Jadwal Kelas — Conflict instruktur
-```typescript
-// repository
-.where('tanggal_mulai', '<', tanggalSelesai)   // overlap check
-.where('tanggal_selesai', '>', tanggalMulai)
-.whereNot({ id_jadwal: excludeId })             // exclude self saat update
-```
-
-#### Daftar Kelas — Duplicate check
-```typescript
-// Siswa dianggap "sudah terdaftar" jika aktif=1 DAN status != 3 (Berhenti)
-// Status Berhenti (3) boleh di-assign ulang
-```
-
-#### Daftar Kelas — Kuota check
-```typescript
-// countAktifByJadwal: WHERE id_jadwal=X AND aktif=1 AND status=1
-// status=1 (AKTIF) saja yang dihitung terhadap kuota
-```
-
----
-
-### Timezone — `dateStrings: true`
-
-Database config (`src/config/database.config.ts`) menggunakan `dateStrings: true` pada koneksi mysql2.
-Ini membuat DATETIME dikembalikan sebagai string `"2026-03-23 08:00:00"` (bukan `Date` object UTC).
-Tanpa ini, mysql2 mengkonversi ke UTC (WIB UTC+7 → 08:00 jadi 01:00).
-
----
-
-### File Structure Detail
-
-```
-src/modules/kursus/
-├── siswa/
-│   ├── interfaces/
-│   │   ├── siswa.interface.ts              ← ISiswa, ISiswaPublic
-│   │   └── siswa-repository.interface.ts  ← ICreateSiswa, ISiswaQuery, ISiswaRepository
-│   ├── dto/
-│   │   ├── create-siswa.dto.ts
-│   │   ├── update-siswa.dto.ts
-│   │   └── siswa-response.dto.ts
-│   ├── siswa.repository.ts
-│   ├── siswa.service.ts                   ← Excel import/export logic
-│   ├── siswa.module.ts
-│   └── siswa.controller.ts               ← GET /template, POST /upload, CRUD
-│
-├── program-pengajaran/
-│   ├── interfaces/
-│   ├── dto/
-│   ├── program-pengajaran.repository.ts  ← findByKode untuk 409 check
-│   ├── program-pengajaran.service.ts
-│   ├── program-pengajaran.module.ts
-│   └── program-pengajaran.controller.ts
-│
-├── tarif/
-│   ├── interfaces/
-│   ├── dto/
-│   ├── tarif.repository.ts               ← findByProgram
-│   ├── tarif.service.ts
-│   ├── tarif.module.ts
-│   └── tarif.controller.ts              ← GET /program/:id_program sebelum /:id
-│
-├── jadwal-kelas/
-│   ├── interfaces/
-│   │   ├── jadwal-kelas.interface.ts           ← tanggal_mulai/tanggal_selesai: Date
-│   │   └── jadwal-kelas-repository.interface.ts ← IJadwalKelasQuery (week_start/week_end)
-│   ├── dto/
-│   │   ├── create-jadwal-kelas.dto.ts          ← date range + jam_mulai/jam_selesai
-│   │   ├── update-jadwal-kelas.dto.ts          ← tanggal_mulai/selesai sebagai ISO datetime
-│   │   ├── jadwal-kelas-query.dto.ts           ← extends PaginationQueryDto + week_start/end
-│   │   └── jadwal-kelas-response.dto.ts
-│   ├── jadwal-kelas.repository.ts             ← findBenturanInstruktur, countAktifByJadwal
-│   ├── jadwal-kelas.service.ts               ← loop per hari, block delete jika ada siswa aktif
-│   ├── jadwal-kelas.module.ts
-│   └── jadwal-kelas.controller.ts           ← GET /:id/kuota, return array dari POST
-│
-└── daftar-kelas/
-    ├── interfaces/
-    │   ├── daftar-kelas.interface.ts          ← jadwal.{tanggal_mulai, tanggal_selesai, id_program}
-    │   └── daftar-kelas-repository.interface.ts ← batchCreate, findAktifBySiswaAndJadwal
-    ├── dto/
-    │   ├── create-daftar-kelas.dto.ts
-    │   ├── create-batch-daftar-kelas.dto.ts  ← id_jadwal: string[] (IsArray + IsUUID each)
-    │   ├── update-daftar-kelas.dto.ts
-    │   └── daftar-kelas-response.dto.ts
-    ├── daftar-kelas.repository.ts            ← baseQuery JOIN 4 tabel, batchCreate, findAktif...
-    ├── daftar-kelas.service.ts              ← duplicate check, kuota check, batchCreate
-    ├── daftar-kelas.module.ts              ← import Siswa+JadwalKelas+TarifModule
-    └── daftar-kelas.controller.ts          ← /batch sebelum /, /siswa/:id sebelum /:id
-```
-
----
-
-### Migrations Kursus
-
-| File | Isi |
-|------|-----|
-| `20260322_18_create_siswa_table.ts` | Buat tabel `siswa` |
-| `20260322_19_create_program_pengajaran_table.ts` | Buat tabel `program_pengajaran` |
-| `20260322_20_create_tarif_table.ts` | Buat tabel `tarif` |
-| `20260322_21_create_jadwal_kelas_table.ts` | Buat tabel `jadwal_kelas` (dengan hari/jam) |
-| `20260322_22_create_daftar_kelas_table.ts` | Buat tabel `daftar_kelas` |
-| `20260322_23_create_tingkat_program_table.ts` | Buat tabel `tingkat_program` |
-| `20260323_26_alter_jadwal_kelas_datetime.ts` | Drop hari/jam_mulai/jam_selesai, tambah tanggal_mulai/tanggal_selesai DATETIME |

@@ -42,4 +42,5 @@ export const ENTITY = {
     DEPARTEMEN: 'Departemen',
     JABATAN: 'Jabatan',
     LOKASI_KANTOR: 'Lokasi Kantor',
+    PRESENSI: 'Presensi',
 } as const

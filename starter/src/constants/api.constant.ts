@@ -155,6 +155,19 @@ export const API_ENDPOINTS = {
             BY_ID: (id: string) => `${PROXY}/kursus/pembayaran/${id}`,
             BY_TAGIHAN: (idTagihan: string) => `${PROXY}/kursus/pembayaran/tagihan/${idTagihan}`,
         },
+        PRESENSI: {
+            BASE: `${PROXY}/kursus/presensi`,
+            BY_ID: (id: string) => `${PROXY}/kursus/presensi/${id}`,
+            BY_JADWAL: (idJadwal: string) => `${PROXY}/kursus/presensi/jadwal/${idJadwal}`,
+            BY_SISWA: (idSiswa: string) => `${PROXY}/kursus/presensi/siswa/${idSiswa}`,
+            BY_SISWA_JADWAL: (idJadwal: string, idSiswa: string) =>
+                `${PROXY}/kursus/presensi/siswa-jadwal/${idJadwal}/${idSiswa}`,
+            BATCH: `${PROXY}/kursus/presensi/batch`,
+        },
+        CATAT_KELAS_SISWA: {
+            BY_SISWA: (idSiswa: string) => `${PROXY}/kursus/catat-kelas-siswa/siswa/${idSiswa}`,
+            BY_KELAS: (idKelas: string) => `${PROXY}/kursus/catat-kelas-siswa/kelas/${idKelas}`,
+        },
     },
 
     // Struktur Organisasi

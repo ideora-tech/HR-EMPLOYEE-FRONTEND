@@ -9,6 +9,13 @@ import type {
     ApiPaginatedResponse,
 } from '@/@types/kursus.types'
 
+const normalizeTagihan = (t: ITagihan): ITagihan => ({
+    ...t,
+    total_harga: Number(t.total_harga),
+    total_bayar: Number(t.total_bayar),
+    nominal_diskon: t.nominal_diskon != null ? Number(t.nominal_diskon) : null,
+})
+
 const TagihanService = {
     async getAll(query?: ITagihanQuery): Promise<ApiPaginatedResponse<ITagihan>> {
         const params = new URLSearchParams()
@@ -20,24 +27,24 @@ const TagihanService = {
         const url = qs
             ? `${API_ENDPOINTS.KURSUS.TAGIHAN.BASE}?${qs}`
             : API_ENDPOINTS.KURSUS.TAGIHAN.BASE
-        return ApiService.fetchDataWithAxios<ApiPaginatedResponse<ITagihan>>({
-            url,
-            method: 'GET',
-        })
+        const res = await ApiService.fetchDataWithAxios<ApiPaginatedResponse<ITagihan>>({ url, method: 'GET' })
+        return { ...res, data: res.data.map(normalizeTagihan) }
     },
 
     async getBySiswa(idSiswa: string): Promise<ApiResponse<ITagihan[]>> {
-        return ApiService.fetchDataWithAxios<ApiResponse<ITagihan[]>>({
+        const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan[]>>({
             url: API_ENDPOINTS.KURSUS.TAGIHAN.BY_SISWA(idSiswa),
             method: 'GET',
         })
+        return { ...res, data: res.data.map(normalizeTagihan) }
     },
 
     async getById(id: string): Promise<ApiResponse<ITagihan>> {
-        return ApiService.fetchDataWithAxios<ApiResponse<ITagihan>>({
+        const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>>({
             url: API_ENDPOINTS.KURSUS.TAGIHAN.BY_ID(id),
             method: 'GET',
         })
+        return { ...res, data: normalizeTagihan(res.data) }
     },
 
     async create(payload: ICreateTagihan): Promise<ApiResponse<ITagihan>> {

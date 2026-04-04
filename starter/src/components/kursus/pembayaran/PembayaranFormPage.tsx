@@ -80,6 +80,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
     const [tagihanOptions, setTagihanOptions] = useState<TagihanOption[]>([])
     const [loadingTagihan, setLoadingTagihan] = useState(false)
     const [selectedTagihan, setSelectedTagihan] = useState<ITagihan | null>(null)
+    const [loadingDetail, setLoadingDetail] = useState(false)
 
     const loadTagihan = useCallback(async () => {
         setLoadingTagihan(true)
@@ -90,7 +91,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                 setTagihanOptions(
                     belumLunas.map((t) => ({
                         value: t.id_tagihan,
-                        label: `${t.nama_siswa}${t.periode ? ` — ${t.periode}` : ''} (${t.nama_biaya})`,
+                        label: `${t.nama_siswa}`,
                         tagihan: t,
                     })),
                 )
@@ -117,15 +118,26 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
     const set = <K extends keyof FormState>(key: K, val: FormState[K]) =>
         setForm((p) => ({ ...p, [key]: val }))
 
-    const handleTagihanChange = (opt: TagihanOption) => {
+    const handleTagihanChange = async (opt: TagihanOption) => {
         const t = opt.tagihan
         const sisa = t.total_harga - t.total_bayar
+        // Set data dari list dulu (langsung tampil)
         setSelectedTagihan(t)
         setForm((p) => ({
             ...p,
             id_tagihan: t.id_tagihan,
             jumlah: formatNum(sisa > 0 ? sisa : 0),
         }))
+        // Lalu fetch detail lengkap (detail[], diskon)
+        setLoadingDetail(true)
+        try {
+            const res = await TagihanService.getById(t.id_tagihan)
+            if (res.success) setSelectedTagihan(res.data)
+        } catch {
+            // biarkan data dari list tetap tampil
+        } finally {
+            setLoadingDetail(false)
+        }
     }
 
     const validate = (): boolean => {
@@ -211,81 +223,123 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
 
                         {/* Info tagihan — muncul setelah dipilih */}
                         {selectedTagihan && (
-                            <div className="mt-4 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                                 {/* Header strip */}
                                 <div className="flex items-center justify-between px-5 py-3 bg-indigo-50 dark:bg-indigo-500/10 border-b border-indigo-100 dark:border-indigo-500/20">
                                     <div className="flex items-center gap-2">
                                         <HiOutlineUser className="text-indigo-500 text-base shrink-0" />
-                                        <span className="font-semibold text-indigo-700 dark:text-indigo-300 text-sm">
+                                        <span className="font-semibold text-indigo-700 dark:text-indigo-300 text-base">
                                             {selectedTagihan.nama_siswa}
                                         </span>
                                     </div>
-                                    {statusInfo && (
-                                        <Tag className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${statusInfo.cls}`}>
-                                            {statusInfo.label}
-                                        </Tag>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {loadingDetail && <Spinner size={14} />}
+                                        {statusInfo && (
+                                            <Tag className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${statusInfo.cls}`}>
+                                                {statusInfo.label}
+                                            </Tag>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Detail info */}
-                                <div className="px-5 py-4 bg-white dark:bg-gray-800/40 grid grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-6 text-sm">
-                                    <div className="flex items-start gap-2">
-                                        <HiOutlineTag className="text-gray-400 mt-0.5 shrink-0" />
-                                        <div>
-                                            <p className="text-xs text-gray-400">Biaya</p>
-                                            <p className="font-medium text-gray-700 dark:text-gray-200">{selectedTagihan.nama_biaya}</p>
-                                        </div>
-                                    </div>
+                                <div className=" bg-white dark:bg-gray-800/40 grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
                                     {selectedTagihan.nama_kelas && (
                                         <div className="flex items-start gap-2">
-                                            <HiOutlineCollection className="text-gray-400 mt-0.5 shrink-0" />
+                                            <HiOutlineCollection className="text-gray-400 mt-0.5 shrink-0 text-lg" />
                                             <div>
-                                                <p className="text-xs text-gray-400">Kelas</p>
-                                                <p className="font-medium text-gray-700 dark:text-gray-200">{selectedTagihan.nama_kelas}</p>
+                                                <p className="text-sm text-gray-400">Kelas</p>
+                                                <p className="font-semibold text-base text-gray-700 dark:text-gray-200">{selectedTagihan.nama_kelas}</p>
                                             </div>
                                         </div>
                                     )}
                                     {selectedTagihan.periode && (
                                         <div className="flex items-start gap-2">
-                                            <HiOutlineCalendar className="text-gray-400 mt-0.5 shrink-0" />
+                                            <HiOutlineCalendar className="text-gray-400 mt-0.5 shrink-0 text-lg" />
                                             <div>
-                                                <p className="text-xs text-gray-400">Periode</p>
-                                                <p className="font-medium text-gray-700 dark:text-gray-200">{selectedTagihan.periode}</p>
+                                                <p className="text-sm text-gray-400">Periode</p>
+                                                <p className="font-semibold text-base text-gray-700 dark:text-gray-200">{selectedTagihan.periode}</p>
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Ringkasan nominal */}
+                                {selectedTagihan.id_diskon && (
+                                    <div className="px-5 py-3 bg-white dark:bg-gray-800/40 border-t border-gray-100 dark:border-gray-700 text-base space-y-2">
+                                        <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                                            <span>Harga biaya</span>
+                                            <span>{formatRupiah(selectedTagihan.total_harga + (selectedTagihan.nominal_diskon ?? 0))}</span>
+                                        </div>
+                                        <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                                            <span>
+                                                Diskon — {selectedTagihan.nama_diskon}
+                                                {selectedTagihan.persen_diskon ? ` (${selectedTagihan.persen_diskon}%)` : ''}
+                                            </span>
+                                            <span>− {formatRupiah(selectedTagihan.nominal_diskon ?? 0)}</span>
+                                        </div>
+                                        <div className="flex justify-between font-semibold text-gray-700 dark:text-gray-200 border-t border-gray-100 dark:border-gray-700 pt-1.5">
+                                            <span>Total tagihan</span>
+                                            <span>{formatRupiah(selectedTagihan.total_harga)}</span>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-gray-700 border-t border-gray-100 dark:border-gray-700">
                                     <div className="flex flex-col items-center gap-1 py-4 px-3 bg-gray-50 dark:bg-gray-800/60">
                                         <div className="flex items-center gap-1.5 text-gray-400">
-                                            <HiOutlineCash className="text-base" />
-                                            <span className="text-xs">Total Tagihan</span>
+                                            <HiOutlineCash className="text-lg" />
+                                            <span className="text-sm">Total Tagihan</span>
                                         </div>
-                                        <p className="font-bold text-gray-800 dark:text-gray-100 text-base">
+                                        <p className="font-bold text-gray-800 dark:text-gray-100 text-lg">
                                             {formatRupiah(selectedTagihan.total_harga)}
                                         </p>
                                     </div>
                                     <div className="flex flex-col items-center gap-1 py-4 px-3 bg-emerald-50 dark:bg-emerald-500/10">
                                         <div className="flex items-center gap-1.5 text-emerald-500">
-                                            <HiOutlineCheckCircle className="text-base" />
-                                            <span className="text-xs">Sudah Dibayar</span>
+                                            <HiOutlineCheckCircle className="text-lg" />
+                                            <span className="text-sm">Sudah Dibayar</span>
                                         </div>
-                                        <p className="font-bold text-emerald-600 dark:text-emerald-400 text-base">
+                                        <p className="font-bold text-emerald-600 dark:text-emerald-400 text-lg">
                                             {formatRupiah(selectedTagihan.total_bayar)}
                                         </p>
                                     </div>
                                     <div className={`flex flex-col items-center gap-1 py-4 px-3 ${(sisa ?? 0) > 0 ? 'bg-amber-50 dark:bg-amber-500/10' : 'bg-gray-50 dark:bg-gray-800/60'}`}>
                                         <div className={`flex items-center gap-1.5 ${(sisa ?? 0) > 0 ? 'text-amber-500' : 'text-gray-400'}`}>
-                                            <HiOutlineClock className="text-base" />
-                                            <span className="text-xs">Sisa Tagihan</span>
+                                            <HiOutlineClock className="text-lg" />
+                                            <span className="text-sm">Sisa Tagihan</span>
                                         </div>
-                                        <p className={`font-bold text-base ${(sisa ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400'}`}>
+                                        <p className={`font-bold text-lg ${(sisa ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400'}`}>
                                             {formatRupiah(sisa ?? 0)}
                                         </p>
                                     </div>
                                 </div>
+
+                                {/* Detail items */}
+                                {selectedTagihan.detail && selectedTagihan.detail.length > 0 && (
+                                    <div className="border-t border-gray-100 dark:border-gray-700">
+                                        <table className="w-full text-sm">
+                                            <thead>
+                                                <tr className="bg-gray-50 dark:bg-gray-800 text-gray-400 uppercase">
+                                                    <th className="px-4 py-2.5 text-left font-medium">Biaya</th>
+                                                    <th className="px-4 py-2.5 text-left font-medium">Kelas</th>
+                                                    <th className="px-4 py-2.5 text-left font-medium">Periode</th>
+                                                    <th className="px-4 py-2.5 text-right font-medium">Harga</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                                                {selectedTagihan.detail.map((d, i) => (
+                                                    <tr key={i} className="bg-white dark:bg-gray-900">
+                                                        <td className="px-4 py-2.5 text-gray-700 dark:text-gray-200">{d.nama_biaya}</td>
+                                                        <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400">{d.nama_kelas ?? '–'}</td>
+                                                        <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400">{d.periode ?? '–'}</td>
+                                                        <td className="px-4 py-2.5 text-right font-medium text-gray-700 dark:text-gray-200">{formatRupiah(d.harga_akhir)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

@@ -16,10 +16,10 @@ import type { IJadwalKelas } from '@/@types/kursus.types'
 
 /* ─── types ──────────────────────────────────────────────── */
 
-type StatusValue = 1 | 2 | 3 | 4
+type StatusValue = 1 | 2
 
 type AbsenRow = {
-    id_daftar: string
+    id_siswa: string
     nama_siswa: string
     telepon_siswa: string | null
     status: StatusValue | null
@@ -44,35 +44,17 @@ const STATUS_BUTTONS: {
         },
         {
             value: 2,
-            short: 'I',
-            label: 'Izin',
-            active: 'bg-blue-500 text-white ring-2 ring-blue-300',
-            inactive:
-                'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 hover:bg-blue-100 dark:hover:bg-blue-500/20',
-        },
-        {
-            value: 3,
-            short: 'S',
-            label: 'Sakit',
-            active: 'bg-amber-500 text-white ring-2 ring-amber-300',
-            inactive:
-                'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 hover:bg-amber-100 dark:hover:bg-amber-500/20',
-        },
-        {
-            value: 4,
-            short: 'A',
-            label: 'Alpha',
+            short: 'TH',
+            label: 'Tidak Hadir',
             active: 'bg-red-500 text-white ring-2 ring-red-300',
             inactive:
-                'bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400 border border-red-200 dark:border-red-500/30 hover:bg-red-100 dark:hover:bg-red-500/20',
+                'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 border border-red-200 dark:border-red-500/30 hover:bg-red-100 dark:hover:bg-red-500/20',
         },
     ]
 
 const STATUS_BADGE: Record<StatusValue, string> = {
     1: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
-    2: 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300',
-    3: 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300',
-    4: 'bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-400',
+    2: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400',
 }
 
 /* ─── helpers ────────────────────────────────────────────── */
@@ -130,12 +112,12 @@ const AbsenDrawer = ({
 
         const run = async () => {
             // Satu endpoint: list semua siswa di jadwal ini + status presensi mereka
-            const res = await PresensiService.getByJadwal(jadwal.id_jadwal)
+            const res = await PresensiService.getByJadwal(jadwal.id_jadwal_kelas, tanggal ?? undefined)
             if (!res.success) return
 
             setRows(
                 res.data.map((entry) => ({
-                    id_daftar: entry.id_daftar,
+                    id_siswa: entry.siswa.id_siswa,
                     nama_siswa: entry.siswa.nama_siswa,
                     telepon_siswa: entry.siswa.telepon,
                     // null = belum pernah diabsen → tidak ada default
@@ -158,9 +140,9 @@ const AbsenDrawer = ({
     }, [open, jadwal, presensiId])
 
     /* ── Handlers ── */
-    const handleToggle = (id_daftar: string, status: StatusValue) => {
+    const handleToggle = (id_siswa: string, status: StatusValue) => {
         setRows((prev) =>
-            prev.map((r) => (r.id_daftar === id_daftar ? { ...r, status } : r)),
+            prev.map((r) => (r.id_siswa === id_siswa ? { ...r, status } : r)),
         )
     }
 
@@ -191,9 +173,10 @@ const AbsenDrawer = ({
         setSaving(true)
         try {
             await PresensiService.batch({
-                id_jadwal: jadwal.id_jadwal,
+                id_jadwal: jadwal.id_jadwal_kelas,
+                ...(tanggal ? { tanggal } : {}),
                 items: filledRows.map((r) => ({
-                    id_daftar: r.id_daftar,
+                    id_siswa: r.id_siswa,
                     status: r.status as StatusValue,
                 })),
             })
@@ -224,8 +207,6 @@ const AbsenDrawer = ({
     const counts: Record<StatusValue, number> = {
         1: rows.filter((r) => r.status === 1).length,
         2: rows.filter((r) => r.status === 2).length,
-        3: rows.filter((r) => r.status === 3).length,
-        4: rows.filter((r) => r.status === 4).length,
     }
     const unsetCount = rows.filter((r) => r.status === null).length
 
@@ -235,7 +216,7 @@ const AbsenDrawer = ({
             title={
                 <div className="flex items-center gap-2">
                     <span className="font-semibold text-gray-800 dark:text-gray-100">
-                        {jadwal?.nama_jadwal ?? 'Absensi Kelas'}
+                        {jadwal?.nama_kelas ?? 'Absensi Kelas'}
                     </span>
                 </div>
             }
@@ -252,14 +233,14 @@ const AbsenDrawer = ({
                         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                             <HiOutlineClock className="shrink-0 text-base" />
                             <span>
-                                {timeFromISO(jadwal.tanggal_mulai)} –{' '}
-                                {timeFromISO(jadwal.tanggal_selesai)}
+                                {jadwal.jam_mulai} –{' '}
+                                {jadwal.jam_selesai}
                             </span>
-                            {jadwal.instruktur && (
+                            {jadwal.nama_karyawan && (
                                 <>
                                     <span className="text-gray-300 dark:text-gray-600">·</span>
                                     <HiOutlineUser className="shrink-0 text-base" />
-                                    <span>{jadwal.instruktur}</span>
+                                    <span>{jadwal.nama_karyawan}</span>
                                 </>
                             )}
                         </div>
@@ -374,7 +355,7 @@ const AbsenDrawer = ({
 
                                 return (
                                     <div
-                                        key={row.id_daftar}
+                                        key={row.id_siswa}
                                         className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50/60 dark:hover:bg-gray-800/30 transition-colors"
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
@@ -401,7 +382,7 @@ const AbsenDrawer = ({
                                                     type="button"
                                                     title={btn.label}
                                                     onClick={() =>
-                                                        handleToggle(row.id_daftar, btn.value)
+                                                        handleToggle(row.id_siswa, btn.value)
                                                     }
                                                     className={`w-10 h-9 rounded-lg text-xs font-bold transition-all ${row.status === btn.value
                                                         ? btn.active

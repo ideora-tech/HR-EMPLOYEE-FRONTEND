@@ -50,7 +50,7 @@ const PendaftaranSiswaTab = ({ pendingAdd, onPendingAddHandled }: PendaftaranSis
     useEffect(() => {
         SiswaService.getAll({ aktif: 1, limit: 200 })
             .then((res) => { if (res.success) setSiswaList(res.data) })
-            .catch(() => {})
+            .catch(() => { })
     }, [])
 
     const fetchData = useCallback(async () => {
@@ -142,7 +142,7 @@ const PendaftaranSiswaTab = ({ pendingAdd, onPendingAddHandled }: PendaftaranSis
         if (drawerTarget) {
             TagihanService.getById(drawerTarget.id_tagihan)
                 .then((res) => { if (res.success) setDrawerTarget(res.data) })
-                .catch(() => {})
+                .catch(() => { })
         }
     }
 
@@ -199,6 +199,7 @@ const PendaftaranSiswaTab = ({ pendingAdd, onPendingAddHandled }: PendaftaranSis
                     tagihan={drawerTarget}
                     onClose={() => setDrawerTarget(null)}
                     onChanged={handleDrawerChanged}
+                    readOnly
                 />
             )}
 

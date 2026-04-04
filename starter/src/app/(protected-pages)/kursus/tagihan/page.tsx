@@ -215,6 +215,7 @@ const TagihanPage = () => {
                     tagihan={drawerTarget}
                     onClose={() => setDrawerTarget(null)}
                     onChanged={handleDrawerChanged}
+                    readOnly
                 />
             )}
 

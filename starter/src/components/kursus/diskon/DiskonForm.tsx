@@ -10,6 +10,7 @@ import {
 } from '@/components/ui'
 import DatePicker from '@/components/ui/DatePicker'
 import type { IDiskon, ICreateDiskon, IUpdateDiskon } from '@/@types/kursus.types'
+import { formatNum } from '@/utils/formatNumber'
 
 interface DiskonFormProps {
     open: boolean
@@ -41,6 +42,15 @@ const INITIAL_STATE: FormState = {
     aktif: true,
 }
 
+const formatRupiahInput = (raw: string): string => {
+    const digits = raw.replace(/\D/g, '')
+    if (!digits) return ''
+    return formatNum(Number(digits))
+}
+
+const parseRupiah = (formatted: string): number =>
+    Number(formatted.replace(/\./g, '')) || 0
+
 const toDate = (val: string | null | undefined): Date | null => {
     if (!val) return null
     const d = new Date(val)
@@ -70,7 +80,7 @@ const DiskonForm = ({
                 kode_diskon: editData.kode_diskon,
                 nama_diskon: editData.nama_diskon,
                 persentase: editData.persentase != null ? String(editData.persentase) : '',
-                harga: editData.harga != null ? String(editData.harga) : '',
+                harga: editData.harga != null ? formatNum(editData.harga) : '',
                 berlaku_mulai: toDate(editData.berlaku_mulai),
                 berlaku_sampai: toDate(editData.berlaku_sampai),
                 deskripsi: editData.deskripsi ?? '',
@@ -89,7 +99,7 @@ const DiskonForm = ({
         if (!form.nama_diskon.trim()) e.nama_diskon = 'Nama diskon wajib diisi'
         if (form.persentase && (isNaN(Number(form.persentase)) || Number(form.persentase) < 0 || Number(form.persentase) > 100))
             e.persentase = 'Persentase 0–100'
-        if (form.harga && (isNaN(Number(form.harga)) || Number(form.harga) < 0))
+        if (form.harga && (isNaN(parseRupiah(form.harga)) || parseRupiah(form.harga) < 0))
             e.harga = 'Nominal harus angka positif'
         if (form.berlaku_mulai && form.berlaku_sampai && form.berlaku_sampai < form.berlaku_mulai)
             e.berlaku_sampai = 'Tanggal akhir tidak boleh sebelum tanggal mulai'
@@ -103,7 +113,7 @@ const DiskonForm = ({
             kode_diskon: form.kode_diskon.trim().toUpperCase(),
             nama_diskon: form.nama_diskon.trim(),
             persentase: form.persentase !== '' ? Number(form.persentase) : undefined,
-            harga: form.harga !== '' ? Number(form.harga) : undefined,
+            harga: form.harga !== '' ? parseRupiah(form.harga) : undefined,
             berlaku_mulai: toDateStr(form.berlaku_mulai),
             berlaku_sampai: toDateStr(form.berlaku_sampai),
             deskripsi: form.deskripsi.trim() || undefined,
@@ -179,19 +189,18 @@ const DiskonForm = ({
                     </FormItem>
 
                     <FormItem
-                        label="Harga Nominal (Rp)"
+                        label="Harga Nominal"
                         invalid={!!errors.harga}
                         errorMessage={errors.harga}
                         extra={<span className="text-xs text-gray-400">Atau nominal tetap, opsional</span>}
                     >
                         <Input
-                            type="number"
-                            min={0}
-                            placeholder="contoh: 50000"
+                            prefix={<span className="text-gray-500 font-medium">Rp</span>}
+                            placeholder="contoh: 50.000"
                             value={form.harga}
                             invalid={!!errors.harga}
                             onChange={(e) =>
-                                setForm((p) => ({ ...p, harga: e.target.value }))
+                                setForm((p) => ({ ...p, harga: formatRupiahInput(e.target.value) }))
                             }
                         />
                     </FormItem>

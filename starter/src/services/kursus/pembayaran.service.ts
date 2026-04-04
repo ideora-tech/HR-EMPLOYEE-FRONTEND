@@ -39,6 +39,22 @@ const PembayaranService = {
     },
 
     async create(payload: ICreatePembayaran): Promise<ApiResponse<IPembayaran>> {
+        if (payload.bukti_bayar) {
+            const formData = new FormData()
+            formData.append('id_tagihan', payload.id_tagihan)
+            formData.append('jumlah', String(payload.jumlah))
+            formData.append('tanggal_bayar', payload.tanggal_bayar)
+            formData.append('metode', payload.metode)
+            if (payload.referensi) formData.append('referensi', payload.referensi)
+            if (payload.deskripsi) formData.append('deskripsi', payload.deskripsi)
+            formData.append('bukti_bayar', payload.bukti_bayar)
+            return ApiService.fetchDataWithAxios<ApiResponse<IPembayaran>>({
+                url: API_ENDPOINTS.KURSUS.PEMBAYARAN.BASE,
+                method: 'POST',
+                data: formData,
+                headers: { 'Content-Type': 'multipart/form-data' },
+            })
+        }
         return ApiService.fetchDataWithAxios<ApiResponse<IPembayaran>, ICreatePembayaran>({
             url: API_ENDPOINTS.KURSUS.PEMBAYARAN.BASE,
             method: 'POST',

@@ -73,16 +73,6 @@ const TagihanTable = ({
                 ),
             },
             {
-                header: 'Biaya',
-                accessorKey: 'nama_biaya',
-                size: 160,
-                cell: ({ row }: CellContext<ITagihan, unknown>) => (
-                    <Tag className="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300 text-xs">
-                        {row.original.nama_biaya}
-                    </Tag>
-                ),
-            },
-            {
                 header: 'Periode',
                 accessorKey: 'periode',
                 size: 110,
