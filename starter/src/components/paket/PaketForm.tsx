@@ -9,7 +9,7 @@ import {
     Switcher,
 } from '@/components/ui'
 import type { IPaket, IPaketCreate, IPaketUpdate } from '@/@types/paket.types'
-import { formatNum } from '@/utils/formatNumber'
+import { formatNum, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 
 interface PaketFormProps {
     open: boolean
@@ -35,14 +35,6 @@ const INITIAL_STATE: FormState = {
     aktif: true,
 }
 
-const formatRupiah = (raw: string): string => {
-    const digits = raw.replace(/\D/g, '')
-    if (!digits) return '0'
-    return formatNum(Number(digits))
-}
-
-const parseRupiah = (formatted: string): number =>
-    Number(formatted.replace(/\./g, '')) || 0
 
 const PaketForm = ({
     open,
@@ -173,7 +165,7 @@ const PaketForm = ({
                         onChange={(e) =>
                             setForm((p) => ({
                                 ...p,
-                                harga: formatRupiah(e.target.value),
+                                harga: formatRupiahInput(e.target.value),
                             }))
                         }
                     />

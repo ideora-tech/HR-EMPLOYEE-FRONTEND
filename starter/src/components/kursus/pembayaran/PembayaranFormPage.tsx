@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Button, Card, Dialog, FormItem, Input, Notification, Select, Spinner, Tag, toast } from '@/components/ui'
+import { Button, Card, Dialog, FormItem, Input, Notification, Select, Spinner, toast } from '@/components/ui'
 import { HiArrowLeft, HiOutlinePlus, HiOutlineTrash, HiOutlineUser, HiOutlineTag, HiOutlineCollection, HiOutlineCalendar, HiOutlineCash, HiOutlineCheckCircle, HiOutlineClock, HiOutlineReceiptTax, HiOutlineDocumentText, HiOutlineX, HiCheck } from 'react-icons/hi'
 import TagihanService from '@/services/kursus/tagihan.service'
 import DiskonService from '@/services/kursus/diskon.service'
 import { parseApiError } from '@/utils/parseApiError'
-import { formatNum, formatRupiah } from '@/utils/formatNumber'
+import { formatNum, formatRupiah, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 import { ROUTES } from '@/constants/route.constant'
 import type { ITagihan, IDiskon, ICreatePembayaran } from '@/@types/kursus.types'
 import TambahDetailForm from '@/components/kursus/tagihan/TambahDetailForm'
@@ -18,15 +18,6 @@ function todayIso(): string {
     return new Date().toISOString().slice(0, 10)
 }
 
-function formatRupiahInput(raw: string): string {
-    const digits = raw.replace(/\D/g, '')
-    if (!digits) return '0'
-    return formatNum(Number(digits))
-}
-
-function parseRupiah(v: string): number {
-    return Number(v.replace(/\./g, '')) || 0
-}
 
 const STATUS_LABEL: Record<number, { label: string; cls: string }> = {
     1: { label: 'Menunggu', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' },
@@ -45,8 +36,6 @@ const METODE_OPTIONS: MetodeOption[] = [
 
 type TagihanOption = { value: string; label: string; tagihan: ITagihan }
 type DiskonOption = { value: string; label: string; diskon: IDiskon }
-type DiskonMode = 'none' | 'dropdown' | 'kode'
-
 interface FormState {
     id_tagihan: string
     jumlah: string
@@ -78,13 +67,6 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
     const router = useRouter()
     const searchParams = useSearchParams()
     const preselectedId = searchParams.get('id')
-
-    /* Fix: react-modal (Drawer/Dialog) kadang meninggalkan class drawer-open + drawer-lock-scroll
-       di body saat navigasi client-side, menyebabkan overflow:hidden dan scroll hilang */
-    useEffect(() => {
-        document.body.classList.remove('drawer-open', 'drawer-lock-scroll')
-        document.body.style.overflow = ''
-    }, [])
 
     const [form, setForm] = useState<FormState>(INITIAL)
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
@@ -156,7 +138,6 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
         if (!preselectedId || tagihanOptions.length === 0) return
         const opt = tagihanOptions.find((o) => o.value === preselectedId)
         if (opt) handleTagihanChange(opt)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [preselectedId, tagihanOptions])
 
     const set = <K extends keyof FormState>(key: K, val: FormState[K]) =>

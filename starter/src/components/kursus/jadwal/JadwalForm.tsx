@@ -37,20 +37,7 @@ const HARI_OPTIONS: HariOption[] = [
     { value: 'Minggu', label: 'Minggu' },
 ]
 
-/** Date → "YYYY-MM-DD" */
-const dateToYMD = (d: Date): string => {
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${dd}`
-}
 
-/** "YYYY-MM-DD" → Date */
-const ymdToDate = (s: string | null | undefined): Date | null => {
-    if (!s) return null
-    const [y, m, d] = s.split('-').map(Number)
-    return new Date(y, m - 1, d)
-}
 
 /* ─── props & state ──────────────────────────────────────── */
 
@@ -172,7 +159,7 @@ const JadwalForm = ({
     const validate = (): boolean => {
         const e: Partial<Record<keyof FormState, string>> = {}
         if (!form.id_kelas) e.id_kelas = 'Kelas wajib dipilih'
-        if (!form.id_karyawan) e.id_karyawan = 'Instruktur wajib dipilih'
+        if (!form.id_karyawan) e.id_karyawan = 'Coach wajib dipilih'
         if (!form.id_kategori_umur) e.id_kategori_umur = 'Kategori umur wajib dipilih'
         if (!form.hari) e.hari = 'Hari wajib dipilih'
         if (!form.jam_mulai) e.jam_mulai = 'Jam mulai wajib diisi'
@@ -229,15 +216,15 @@ const JadwalForm = ({
                     />
                 </FormItem>
 
-                {/* Instruktur */}
+                {/* Coach */}
                 <FormItem
-                    label="Instruktur"
+                    label="Coach"
                     asterisk
                     invalid={!!errors.id_karyawan}
                     errorMessage={errors.id_karyawan}
                 >
                     <Select<KaryawanOption>
-                        placeholder="— Pilih Instruktur —"
+                        placeholder="— Pilih Coach —"
                         options={karyawanOptions}
                         isLoading={loadingDropdowns}
                         value={karyawanOptions.find((o) => o.value === form.id_karyawan) ?? null}

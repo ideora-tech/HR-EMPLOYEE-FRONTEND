@@ -4,7 +4,6 @@ import type {
     IJadwalKelas,
     ICreateJadwalKelas,
     IUpdateJadwalKelas,
-    IKursusQuery,
     IJadwalKelasQuery,
     ApiResponse,
     ApiPaginatedResponse,

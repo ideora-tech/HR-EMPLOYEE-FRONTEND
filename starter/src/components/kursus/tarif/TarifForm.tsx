@@ -10,7 +10,7 @@ import {
     Switcher,
 } from '@/components/ui'
 import type { ITarif, ICreateTarif, IUpdateTarif, IProgramPengajaran } from '@/@types/kursus.types'
-import { formatNum } from '@/utils/formatNumber'
+import { formatNum, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 
 type JenisOption = { value: 'PER_SESI' | 'PAKET'; label: string }
 type ProgramOption = { value: string; label: string }
@@ -20,14 +20,6 @@ const JENIS_OPTIONS: JenisOption[] = [
     { value: 'PAKET', label: 'Paket' },
 ]
 
-const formatRupiahInput = (raw: string): string => {
-    const digits = raw.replace(/\D/g, '')
-    if (!digits) return '0'
-    return formatNum(Number(digits))
-}
-
-const parseRupiah = (formatted: string): number =>
-    Number(formatted.replace(/\./g, '')) || 0
 
 interface TarifFormProps {
     open: boolean
@@ -80,7 +72,7 @@ const TarifForm = ({
                 id_program: editData.id_program,
                 nama_tarif: editData.nama_tarif,
                 jenis_tarif: editData.jenis_tarif,
-                harga: formatNum(parseFloat(editData.harga)),
+                harga: formatNum(Number(editData.harga)),
                 jumlah_pertemuan: editData.jumlah_pertemuan ? String(editData.jumlah_pertemuan) : '',
                 aktif: editData.aktif === 1,
             })

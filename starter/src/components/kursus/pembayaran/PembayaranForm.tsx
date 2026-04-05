@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button, Dialog, FormItem, Input, Select } from '@/components/ui'
 import type { ITagihan, ICreatePembayaran } from '@/@types/kursus.types'
-import { formatNum } from '@/utils/formatNumber'
+import { formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 
 type MetodeOption = { value: 'TUNAI' | 'TRANSFER' | 'QRIS'; label: string }
 
@@ -17,15 +17,6 @@ function todayIso(): string {
     return new Date().toISOString().slice(0, 10)
 }
 
-function formatRupiahInput(raw: string): string {
-    const digits = raw.replace(/\D/g, '')
-    if (!digits) return '0'
-    return formatNum(Number(digits))
-}
-
-function parseRupiah(v: string): number {
-    return Number(v.replace(/\./g, '')) || 0
-}
 
 interface FormState {
     id_tagihan: string

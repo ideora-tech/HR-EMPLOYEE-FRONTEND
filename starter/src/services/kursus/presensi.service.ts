@@ -4,7 +4,7 @@ import type {
     IPresensi,
     IPresensiJadwalEntry,
     IPresensiWithDetail,
-    IPresensiSiswaRiwayat,
+    IPresensiSiswaResponse,
     ICreatePresensi,
     ICreateBatchPresensi,
     IUpdatePresensi,
@@ -50,8 +50,8 @@ const PresensiService = {
         })
     },
 
-    async getBySiswa(id_siswa: string): Promise<ApiResponse<IPresensiSiswaRiwayat>> {
-        return ApiService.fetchDataWithAxios<ApiResponse<IPresensiSiswaRiwayat>>({
+    async getBySiswa(id_siswa: string): Promise<IPresensiSiswaResponse> {
+        return ApiService.fetchDataWithAxios<IPresensiSiswaResponse>({
             url: API_ENDPOINTS.KURSUS.PRESENSI.BY_SISWA(id_siswa),
             method: 'GET',
         })

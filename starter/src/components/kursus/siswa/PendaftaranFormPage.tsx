@@ -367,7 +367,6 @@ const PendaftaranFormPage = ({
                             />
                         </FormItem>
                     </div>
-                    br
                     <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
 
                     {/* Section: Diskon */}

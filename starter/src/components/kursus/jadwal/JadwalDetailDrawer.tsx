@@ -62,7 +62,7 @@ const JadwalDetailDrawer = ({ open, jadwal, onClose }: JadwalDetailDrawerProps) 
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-xl px-3">
                     <DetailRow
                         icon={<HiOutlineUser />}
-                        label="Instruktur"
+                        label="Coach"
                         value={jadwal.nama_karyawan}
                     />
                     <DetailRow

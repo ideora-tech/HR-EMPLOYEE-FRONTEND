@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import {
     LAYOUT_COLLAPSIBLE_SIDE,
     LAYOUT_STACKED_SIDE,
@@ -48,6 +49,13 @@ const PostLoginLayout = ({ children }: CommonProps) => {
     const layoutType = useTheme((state) => state.layout.type)
 
     const pathname = usePathname()
+
+    // Bersihkan body class yang ditinggal react-modal (drawer-open, drawer-lock-scroll)
+    // saat navigasi terjadi sebelum animasi close drawer selesai
+    useEffect(() => {
+        document.body.classList.remove('drawer-open', 'drawer-lock-scroll')
+        document.body.style.overflow = ''
+    }, [pathname])
 
     const route = queryRoute(pathname)
 

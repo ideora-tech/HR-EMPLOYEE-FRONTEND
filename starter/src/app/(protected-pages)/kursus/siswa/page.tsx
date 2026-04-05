@@ -16,6 +16,8 @@ import SiswaTable from '@/components/kursus/siswa/SiswaTable'
 import SiswaImportModal from '@/components/kursus/siswa/SiswaImportModal'
 import SiswaMonitoring from '@/components/kursus/siswa/SiswaMonitoring'
 import PendaftaranSiswaTab from '@/components/kursus/siswa/PendaftaranSiswaTab'
+import AssignKelasModal from '@/components/kursus/siswa/AssignKelasModal'
+import SiswaKelasDrawer from '@/components/kursus/siswa/SiswaKelasDrawer'
 import SiswaService from '@/services/kursus/siswa.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
@@ -56,6 +58,8 @@ const SiswaPage = () => {
     const [total, setTotal] = useState(0)
 
     const [deleteTarget, setDeleteTarget] = useState<ISiswa | null>(null)
+    const [assignTarget, setAssignTarget] = useState<ISiswa | null>(null)
+    const [kelasDetailTarget, setKelasDetailTarget] = useState<ISiswa | null>(null)
     const [importOpen, setImportOpen] = useState(false)
     const [downloading, setDownloading] = useState(false)
 
@@ -247,6 +251,8 @@ const SiswaPage = () => {
                                 onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
                                 onEdit={(item) => router.push(`/kursus/siswa/${item.id_siswa}/edit`)}
                                 onDelete={setDeleteTarget}
+                                onAssignKelas={setAssignTarget}
+                                onViewKelas={setKelasDetailTarget}
                             />
                         </>
                     )}
@@ -254,6 +260,23 @@ const SiswaPage = () => {
                     {activeTab === 'monitoring' && <SiswaMonitoring />}
                 </div>
             </Card>
+
+            <SiswaKelasDrawer
+                isOpen={!!kelasDetailTarget}
+                siswa={kelasDetailTarget}
+                onClose={() => setKelasDetailTarget(null)}
+            />
+
+            <AssignKelasModal
+                isOpen={!!assignTarget}
+                siswa={assignTarget}
+                onClose={() => setAssignTarget(null)}
+                onSuccess={() => {
+                    toast.push(<Notification type="success" title="Kelas berhasil di-assign" />)
+                    setAssignTarget(null)
+                    fetchData()
+                }}
+            />
 
             <SiswaImportModal
                 open={importOpen}

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui'
 import DatePicker from '@/components/ui/DatePicker'
 import type { IDiskon, ICreateDiskon, IUpdateDiskon } from '@/@types/kursus.types'
-import { formatNum } from '@/utils/formatNumber'
+import { formatNum, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 
 interface DiskonFormProps {
     open: boolean
@@ -42,14 +42,6 @@ const INITIAL_STATE: FormState = {
     aktif: true,
 }
 
-const formatRupiahInput = (raw: string): string => {
-    const digits = raw.replace(/\D/g, '')
-    if (!digits) return ''
-    return formatNum(Number(digits))
-}
-
-const parseRupiah = (formatted: string): number =>
-    Number(formatted.replace(/\./g, '')) || 0
 
 const toDate = (val: string | null | undefined): Date | null => {
     if (!val) return null

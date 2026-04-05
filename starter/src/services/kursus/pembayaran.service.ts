@@ -48,7 +48,7 @@ const PembayaranService = {
             if (payload.referensi) formData.append('referensi', payload.referensi)
             if (payload.deskripsi) formData.append('deskripsi', payload.deskripsi)
             formData.append('bukti_bayar', payload.bukti_bayar)
-            return ApiService.fetchDataWithAxios<ApiResponse<IPembayaran>>({
+            return ApiService.fetchDataWithAxios<ApiResponse<IPembayaran>, FormData>({
                 url: API_ENDPOINTS.KURSUS.PEMBAYARAN.BASE,
                 method: 'POST',
                 data: formData,
@@ -62,10 +62,29 @@ const PembayaranService = {
         })
     },
 
+    async update(id: string, payload: Partial<Pick<ICreatePembayaran, 'jumlah' | 'tanggal_bayar' | 'metode' | 'referensi' | 'deskripsi' | 'aktif'>>): Promise<ApiResponse<IPembayaran>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<IPembayaran>>({
+            url: API_ENDPOINTS.KURSUS.PEMBAYARAN.BY_ID(id),
+            method: 'PATCH',
+            data: payload,
+        })
+    },
+
     async remove(id: string): Promise<ApiResponse<null>> {
         return ApiService.fetchDataWithAxios<ApiResponse<null>>({
             url: API_ENDPOINTS.KURSUS.PEMBAYARAN.BY_ID(id),
             method: 'DELETE',
+        })
+    },
+
+    async uploadBukti(id: string, file: File): Promise<ApiResponse<IPembayaran>> {
+        const formData = new FormData()
+        formData.append('bukti_bayar', file)
+        return ApiService.fetchDataWithAxios<ApiResponse<IPembayaran>, FormData>({
+            url: API_ENDPOINTS.KURSUS.PEMBAYARAN.BUKTI_BAYAR(id),
+            method: 'POST',
+            data: formData,
+            headers: { 'Content-Type': 'multipart/form-data' },
         })
     },
 }

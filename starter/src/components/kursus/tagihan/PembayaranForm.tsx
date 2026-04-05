@@ -8,7 +8,7 @@ import PembayaranService from '@/services/kursus/pembayaran.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { ITagihan } from '@/@types/kursus.types'
-import { formatNum } from '@/utils/formatNumber'
+import { formatNum, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 
 /* ─── types ──────────────────────────────────────────────── */
 
@@ -24,15 +24,6 @@ function todayIso(): string {
     return new Date().toISOString().slice(0, 10)
 }
 
-function formatRupiahInput(raw: string): string {
-    const digits = raw.replace(/\D/g, '')
-    if (!digits) return '0'
-    return formatNum(Number(digits))
-}
-
-function parseRupiah(v: string): number {
-    return Number(v.replace(/\./g, '')) || 0
-}
 
 interface PembayaranFormProps {
     open: boolean

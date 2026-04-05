@@ -230,6 +230,19 @@ export type IUpdateJadwalKelas = Partial<ICreateJadwalKelas>
 
 // ─── Siswa ────────────────────────────────────────────────────────────────────
 
+// Kelas yang sedang/sudah diikuti siswa (nested di dalam ISiswa)
+export interface ISiswaKelasItem {
+    id_catat: string
+    id_kelas: string
+    nama_kelas: string
+    total_sesi: number | null      // target total sesi
+    total_sesi_hadir: number
+    total_sesi_tidak_hadir: number
+    aktif: number
+    status: 0 | 1                  // 1=berjalan, 0=selesai/sesi habis
+    mulai_kelas: string | null
+}
+
 export interface ISiswa {
     id_siswa: string
     nama_siswa: string
@@ -240,8 +253,35 @@ export interface ISiswa {
     jenis_kelamin: number | null   // 1 = Laki-laki, 2 = Perempuan
     foto_url: string | null
     aktif: number
+    status_pendaftaran?: number
     dibuat_pada: string
     diubah_pada: string | null
+    kelas?: ISiswaKelasItem[]      // diisi saat GET /kursus/siswa
+}
+
+// Monitoring per-siswa (computed client-side)
+export interface ISiswaMonitoringKelasItem {
+    id_catat: string
+    id_kelas: string
+    nama_kelas: string
+    total_sesi: number | null
+    sesi_hadir: number
+    sesi_tidak_hadir: number
+    sesi_tersisa: number | null    // total_sesi - (hadir + tidak_hadir)
+    status: 0 | 1
+}
+
+export interface ISiswaMonitoringEntry {
+    id_siswa: string
+    nama_siswa: string
+    email: string | null
+    telepon: string | null
+    kelas: ISiswaMonitoringKelasItem[]
+}
+
+export interface ISiswaMonitoring {
+    berhenti: ISiswaMonitoringEntry[]    // kelas status=0
+    akan_habis: ISiswaMonitoringEntry[]  // sesi_tersisa <= threshold
 }
 
 export interface ISiswaTunggakan {
@@ -344,8 +384,9 @@ export interface ITagihan {
     id_diskon: string | null
     nama_diskon: string | null
     persen_diskon: number | null
-    nominal_diskon: number | null
-    total_harga: number
+    nominal_harga: number          // total kotor (jumlah semua harga_akhir detail)
+    nominal_diskon: number | null  // potongan yang diterapkan
+    total_harga: number            // nominal_harga - nominal_diskon
     total_bayar: number
     status: 1 | 2 | 3 | 4
     deskripsi: string | null
@@ -486,11 +527,16 @@ export interface IPresensi {
 export type IPresensiWithDetail = IPresensi
 
 /** Response dari GET /kursus/presensi/siswa/:id_siswa */
-export interface IPresensiSiswaRiwayat {
-    siswa: IPresensiSiswaSub
-    total_sesi_hadir: number
-    presensi: IPresensi[]
+export interface IPresensiSiswaResponse {
+    success: boolean
+    message: string
+    data: IPresensi[]
+    sesi_terpakai: number
+    timestamp: string
 }
+
+/** @deprecated gunakan IPresensiSiswaResponse */
+export type IPresensiSiswaRiwayat = IPresensiSiswaResponse
 
 export interface ICreatePresensi {
     id_jadwal: string              // id_jadwal_kelas
@@ -517,6 +563,81 @@ export interface IUpdatePresensi {
     catatan?: string | null
 }
 
+// ─── Program Pengajaran ───────────────────────────────────────────────────────
+
+export interface IProgramPengajaran {
+    id_program: string
+    kode_program: string
+    nama_program: string
+    deskripsi: string | null
+    tingkat: 'PEMULA' | 'MENENGAH' | 'MAHIR' | null
+    durasi_menit: number | null
+    aktif: number
+    dibuat_pada: string
+    diubah_pada: string | null
+}
+
+export interface ICreateProgramPengajaran {
+    kode_program: string
+    nama_program: string
+    deskripsi?: string
+    tingkat?: 'PEMULA' | 'MENENGAH' | 'MAHIR'
+    durasi_menit?: number
+}
+
+export type IUpdateProgramPengajaran = Partial<ICreateProgramPengajaran> & { aktif?: 0 | 1 }
+
+// ─── Tarif ────────────────────────────────────────────────────────────────────
+
+export type JenisTarif = 'PER_SESI' | 'PAKET'
+
+export interface ITarif {
+    id_tarif: string
+    id_program: string
+    nama_program?: string
+    kode_program?: string
+    nama_tarif: string
+    jenis_tarif: JenisTarif
+    harga: string | number
+    jumlah_pertemuan: number | null
+    aktif: number
+    dibuat_pada: string
+    diubah_pada: string | null
+}
+
+export interface ICreateTarif {
+    id_program: string
+    nama_tarif: string
+    jenis_tarif: JenisTarif
+    harga: number
+    jumlah_pertemuan?: number
+}
+
+export type IUpdateTarif = Partial<ICreateTarif> & { aktif?: 0 | 1 }
+
+// ─── Tingkat Program ─────────────────────────────────────────────────────────
+// Table: kursus_tingkat_program | PK: id_tingkat (UUID)
+
+export interface ITingkatProgram {
+    id_tingkat: string
+    kode_tingkat: string
+    nama_tingkat: string
+    urutan: number | null
+    aktif: 0 | 1
+    dibuat_pada: string
+    diubah_pada: string | null
+}
+
+export interface ICreateTingkatProgram {
+    kode_tingkat: string
+    nama_tingkat: string
+    urutan?: number
+    aktif?: 0 | 1
+}
+
+export type IUpdateTingkatProgram = Partial<ICreateTingkatProgram>
+
+
 export interface IPresensiQuery {
     search?: string
     bulan?: string                 // "YYYY-MM"
@@ -537,11 +658,24 @@ export interface ICatatKelasSiswa {
     nama_siswa: string
     id_kelas: string
     nama_kelas: string
+    total_sesi: number | null      // target total sesi (dari sesi_pertemuan kategori umur)
     total_sesi_hadir: number       // status=1 (HADIR)
     total_sesi_tidak_hadir: number // status IN (2,3,4)
+    status: 0 | 1                  // 1=berjalan, 0=selesai
     aktif: number
     dibuat_pada: string
     diubah_pada: string | null
+}
+
+export interface ICreateCatatKelasSiswa {
+    id_siswa: string
+    id_kelas: string
+    total_sesi?: number
+}
+
+export interface IUpdateCatatKelasSiswa {
+    total_sesi?: number | null
+    status?: 0 | 1
 }
 
 // ─── Dashboard Kursus ─────────────────────────────────────────────────────────
@@ -564,7 +698,8 @@ export interface IKursusDashboardJadwal {
     hari: string
     jam_mulai: string
     jam_selesai: string
-    kuota: number
+    sesi_pertemuan: number
+    kuota: number | null
 }
 
 export interface IKursusDashboardPembayaran {

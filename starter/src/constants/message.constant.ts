@@ -43,4 +43,7 @@ export const ENTITY = {
     JABATAN: 'Jabatan',
     LOKASI_KANTOR: 'Lokasi Kantor',
     PRESENSI: 'Presensi',
+    TARIF: 'Tarif',
+    PROGRAM_PENGAJARAN: 'Program Pengajaran',
+    TINGKAT_PROGRAM: 'Tingkat Program',
 } as const

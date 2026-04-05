@@ -150,6 +150,7 @@ export const API_ENDPOINTS = {
             BASE: `${PROXY}/kursus/tagihan`,
             BY_ID: (id: string) => `${PROXY}/kursus/tagihan/${id}`,
             BY_SISWA: (idSiswa: string) => `${PROXY}/kursus/tagihan/siswa/${idSiswa}`,
+            BY_JADWAL: (idJadwal: string) => `${PROXY}/kursus/tagihan/jadwal-kelas/${idJadwal}`,
             ADD_DETAIL: (id: string) => `${PROXY}/kursus/tagihan/${id}/detail`,
             REMOVE_DETAIL: (id: string, idDetail: string) => `${PROXY}/kursus/tagihan/${id}/detail/${idDetail}`,
             CETAK: (id: string) => `${PROXY}/kursus/tagihan/${id}/cetak`,
@@ -158,6 +159,7 @@ export const API_ENDPOINTS = {
             BASE: `${PROXY}/kursus/pembayaran`,
             BY_ID: (id: string) => `${PROXY}/kursus/pembayaran/${id}`,
             BY_TAGIHAN: (idTagihan: string) => `${PROXY}/kursus/pembayaran/tagihan/${idTagihan}`,
+            BUKTI_BAYAR: (id: string) => `${PROXY}/kursus/pembayaran/${id}/bukti-bayar`,
         },
         PRESENSI: {
             BASE: `${PROXY}/kursus/presensi`,
@@ -169,8 +171,23 @@ export const API_ENDPOINTS = {
             BATCH: `${PROXY}/kursus/presensi/batch`,
         },
         CATAT_KELAS_SISWA: {
+            BASE: `${PROXY}/kursus/catat-kelas-siswa`,
+            BY_ID: (id: string) => `${PROXY}/kursus/catat-kelas-siswa/${id}`,
             BY_SISWA: (idSiswa: string) => `${PROXY}/kursus/catat-kelas-siswa/siswa/${idSiswa}`,
             BY_KELAS: (idKelas: string) => `${PROXY}/kursus/catat-kelas-siswa/kelas/${idKelas}`,
+        },
+        TINGKAT: {
+            BASE: `${PROXY}/kursus/tingkat-program`,
+            BY_ID: (id: string) => `${PROXY}/kursus/tingkat-program/${id}`,
+        },
+        PROGRAM: {
+            BASE: `${PROXY}/kursus/program-pengajaran`,
+            BY_ID: (id: string) => `${PROXY}/kursus/program-pengajaran/${id}`,
+        },
+        TARIF: {
+            BASE: `${PROXY}/kursus/tarif`,
+            BY_ID: (id: string) => `${PROXY}/kursus/tarif/${id}`,
+            BY_PROGRAM: (idProgram: string) => `${PROXY}/kursus/tarif/program/${idProgram}`,
         },
     },
 

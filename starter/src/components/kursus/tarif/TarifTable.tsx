@@ -75,7 +75,7 @@ const TarifTable = ({
                 size: 160,
                 cell: ({ row }: CellContext<ITarif, unknown>) => (
                     <span className="font-medium">
-                        {formatRupiah(parseFloat(row.original.harga))}
+                        {formatRupiah(Number(row.original.harga))}
                     </span>
                 ),
             },

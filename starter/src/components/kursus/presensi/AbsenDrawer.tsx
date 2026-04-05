@@ -59,11 +59,6 @@ const STATUS_BADGE: Record<StatusValue, string> = {
 
 /* ─── helpers ────────────────────────────────────────────── */
 
-function timeFromISO(iso: string): string {
-    const sep = iso.includes('T') ? 'T' : ' '
-    return iso.split(sep)[1]?.slice(0, 5) ?? '00:00'
-}
-
 function formatTanggal(tanggal: string): string {
     return new Date(tanggal + 'T00:00:00').toLocaleDateString('id-ID', {
         weekday: 'long',
@@ -137,7 +132,7 @@ const AbsenDrawer = ({
                 )
             })
             .finally(() => setLoading(false))
-    }, [open, jadwal, presensiId])
+    }, [open, jadwal, tanggal, presensiId])
 
     /* ── Handlers ── */
     const handleToggle = (id_siswa: string, status: StatusValue) => {

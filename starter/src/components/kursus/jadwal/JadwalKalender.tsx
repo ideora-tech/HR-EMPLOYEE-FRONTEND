@@ -77,11 +77,11 @@ const JadwalKalender = ({ refreshToken, onView, onEdit, onDelete }: JadwalKalend
             .finally(() => setLoading(false))
     }, [refreshToken])
 
-    /* ─── grouped: instruktur -> byHari ──────────────────── */
+    /* ─── grouped: Coach -> byHari ──────────────────── */
     const grouped = useMemo(() => {
         const map = new Map<string, { items: IJadwalKelas[]; byHari: Record<string, IJadwalKelas[]> }>()
         data.forEach((j) => {
-            const key = j.nama_karyawan?.trim() || '(Tanpa Instruktur)'
+            const key = j.nama_karyawan?.trim() || '(Tanpa Coach)'
             if (!map.has(key)) {
                 const byHari: Record<string, IJadwalKelas[]> = {}
                 HARI_LIST.forEach((h) => { byHari[h] = [] })
@@ -122,7 +122,7 @@ const JadwalKalender = ({ refreshToken, onView, onEdit, onDelete }: JadwalKalend
                             <div className="px-3 py-2.5 border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center">
                                 <Input
                                     size="sm"
-                                    placeholder="Cari instruktur..."
+                                    placeholder="Cari Coach..."
                                     prefix={<HiOutlineSearch className="text-gray-400" />}
                                     suffix={
                                         searchQuery ? (
@@ -155,7 +155,7 @@ const JadwalKalender = ({ refreshToken, onView, onEdit, onDelete }: JadwalKalend
                             filteredKeys.map((karyawan) => {
                                 const group = grouped.get(karyawan)!
                                 const initials = karyawan.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-                                const isTanpa = karyawan === '(Tanpa Instruktur)'
+                                const isTanpa = karyawan === '(Tanpa Coach)'
                                 return (
                                     <div
                                         key={karyawan}
@@ -165,8 +165,8 @@ const JadwalKalender = ({ refreshToken, onView, onEdit, onDelete }: JadwalKalend
                                         <div className="px-3 py-3 border-r border-gray-100 dark:border-gray-700 flex items-center gap-3 bg-white dark:bg-gray-900">
                                             <div
                                                 className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${isTanpa
-                                                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-400'
-                                                        : 'bg-primary/10 text-primary dark:bg-primary/20'
+                                                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                                                    : 'bg-primary/10 text-primary dark:bg-primary/20'
                                                     }`}
                                             >
                                                 {isTanpa ? '\u2014' : initials}

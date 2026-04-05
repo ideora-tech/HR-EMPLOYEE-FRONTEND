@@ -12,7 +12,7 @@ import {
 } from '@/components/ui'
 import BiayaService from '@/services/kursus/biaya.service'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
-import { formatNum } from '@/utils/formatNumber'
+import { formatNum, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 import type { ISiswa, IBiaya, IJadwalKelas, ITagihan, ICreateTagihan, IUpdateTagihan } from '@/@types/kursus.types'
 
 /* ─── option types ───────────────────────────────────────── */
@@ -35,14 +35,6 @@ const dateToMonth = (date: Date): string => {
     return `${y}-${m}`
 }
 
-const formatRupiahInput = (raw: string): string => {
-    const digits = raw.replace(/\D/g, '')
-    if (!digits) return ''
-    return formatNum(Number(digits))
-}
-
-const parseRupiah = (formatted: string): number =>
-    Number(formatted.replace(/\./g, '')) || 0
 
 /* ─── props ──────────────────────────────────────────────── */
 

@@ -14,7 +14,7 @@ import { HiArrowLeft } from 'react-icons/hi'
 import KelasService from '@/services/kursus/kelas.service'
 import PaketService from '@/services/kursus/paket.service'
 import KategoriUmurService from '@/services/kursus/kategori-umur.service'
-import { formatNum } from '@/utils/formatNumber'
+import { formatNum, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 import type { IBiaya, ICreateBiaya, IUpdateBiaya, JenisBiaya } from '@/@types/kursus.types'
 
 type SelectOption = { value: string; label: string }
@@ -61,14 +61,6 @@ const dateToMonth = (date: Date): string => {
     return `${y}-${m}`
 }
 
-const formatRupiahInput = (raw: string): string => {
-    const digits = raw.replace(/\D/g, '')
-    if (!digits) return ''
-    return formatNum(Number(digits))
-}
-
-const parseRupiah = (formatted: string): number =>
-    Number(formatted.replace(/\./g, '')) || 0
 
 const BiayaFormPage = ({
     editData,

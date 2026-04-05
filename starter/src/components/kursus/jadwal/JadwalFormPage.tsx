@@ -23,7 +23,7 @@ import type {
 /* ─── option types ─────────────────────────────────────── */
 
 type PaketOption = { value: string; label: string }
-type KelasOption = { value: string; label: string; idPaket: string | null }
+type KelasOption = { value: string; label: string }
 type KaryawanOption = { value: string; label: string }
 type KategoriOption = { value: string; label: string }
 type HariOption = { value: string; label: string }
@@ -39,21 +39,6 @@ const HARI_OPTIONS: HariOption[] = [
     { value: 'Sabtu', label: 'Sabtu' },
     { value: 'Minggu', label: 'Minggu' },
 ]
-
-const dateToYMD = (d: Date): string => {
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${dd}`
-}
-
-const ymdToDate = (s: string | null | undefined): Date | null => {
-    if (!s) return null
-    const dateOnly = s.substring(0, 10) // handle ISO datetime (2024-01-15T00:00:00Z) maupun YYYY-MM-DD
-    const [y, m, d] = dateOnly.split('-').map(Number)
-    if (!y || !m || !d) return null
-    return new Date(y, m - 1, d)
-}
 
 /* ─── props & state ────────────────────────────────────── */
 
@@ -101,18 +86,13 @@ const JadwalFormPage = ({
     const [form, setForm] = useState<FormState>(INITIAL_STATE)
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
 
-    const [allKelasOptions, setAllKelasOptions] = useState<KelasOption[]>([])
     const [paketOptions, setPaketOptions] = useState<PaketOption[]>([])
+    const [kelasOptions, setKelasOptions] = useState<KelasOption[]>([])
     const [karyawanOptions, setKaryawanOptions] = useState<KaryawanOption[]>([])
     const [kategoriOptions, setKategoriOptions] = useState<KategoriOption[]>([])
     const [loadingDropdowns, setLoadingDropdowns] = useState(false)
 
     const isEdit = !!editData
-
-    // kelas filtered by selected paket
-    const kelasOptions = form.id_paket
-        ? allKelasOptions.filter((k) => k.idPaket === form.id_paket)
-        : allKelasOptions
 
     /* ─── load all dropdowns on mount ─────────────── */
     const loadDropdowns = useCallback(async () => {
@@ -124,7 +104,7 @@ const JadwalFormPage = ({
                 PaketService.getAll({ aktif: 1, limit: 200 }),
             ])
             if (kelasRes.success)
-                setAllKelasOptions(kelasRes.data.map((k) => ({ value: k.id_kelas, label: k.nama_kelas, idPaket: k.id_paket })))
+                setKelasOptions(kelasRes.data.map((k) => ({ value: k.id_kelas, label: k.nama_kelas })))
             if (karyawanRes.success)
                 setKaryawanOptions(karyawanRes.data.map((k) => ({ value: k.id_karyawan, label: k.nama_karyawan })))
             if (paketRes.success)
@@ -154,10 +134,8 @@ const JadwalFormPage = ({
     useEffect(() => {
         if (editData) {
             loadKategori(editData.id_kelas)
-            // resolve paket from kelas after allKelasOptions loads
-            const kelasPaket = allKelasOptions.find((k) => k.value === editData.id_kelas)?.idPaket ?? ''
             setForm({
-                id_paket: kelasPaket,
+                id_paket: '',
                 id_kelas: editData.id_kelas,
                 id_karyawan: editData.id_karyawan,
                 id_kategori_umur: editData.id_kategori_umur,
@@ -173,12 +151,7 @@ const JadwalFormPage = ({
             setKategoriOptions([])
         }
         setErrors({})
-    }, [editData, loadKategori, allKelasOptions])
-
-    const handlePaketChange = (idPaket: string) => {
-        setForm((p) => ({ ...p, id_paket: idPaket, id_kelas: '', id_kategori_umur: '' }))
-        setKategoriOptions([])
-    }
+    }, [editData, loadKategori])
 
     const handleKelasChange = (idKelas: string) => {
         setForm((p) => ({ ...p, id_kelas: idKelas, id_kategori_umur: '' }))
@@ -189,7 +162,7 @@ const JadwalFormPage = ({
     const validate = (): boolean => {
         const e: Partial<Record<keyof FormState, string>> = {}
         if (!form.id_kelas) e.id_kelas = 'Kelas wajib dipilih'
-        if (!form.id_karyawan) e.id_karyawan = 'Instruktur wajib dipilih'
+        if (!form.id_karyawan) e.id_karyawan = 'Coach wajib dipilih'
         if (!form.id_kategori_umur) e.id_kategori_umur = 'Kategori umur wajib dipilih'
         if (!form.hari) e.hari = 'Hari wajib dipilih'
         if (!form.jam_mulai) e.jam_mulai = 'Jam mulai wajib diisi'
@@ -264,7 +237,7 @@ const JadwalFormPage = ({
                                     isLoading={loadingDropdowns}
                                     isClearable
                                     value={paketOptions.find((o) => o.value === form.id_paket) ?? null}
-                                    onChange={(opt) => handlePaketChange(opt ? (opt as PaketOption).value : '')}
+                                    onChange={(opt) => setForm((p) => ({ ...p, id_paket: opt ? (opt as PaketOption).value : '' }))}
                                 />
                             </FormItem>
 
@@ -284,13 +257,13 @@ const JadwalFormPage = ({
                             </FormItem>
 
                             <FormItem
-                                label="Instruktur"
+                                label="Coach"
                                 asterisk
                                 invalid={!!errors.id_karyawan}
                                 errorMessage={errors.id_karyawan}
                             >
                                 <Select<KaryawanOption>
-                                    placeholder="— Pilih Instruktur —"
+                                    placeholder="— Pilih Coach —"
                                     options={karyawanOptions}
                                     isLoading={loadingDropdowns}
                                     value={karyawanOptions.find((o) => o.value === form.id_karyawan) ?? null}
@@ -380,7 +353,6 @@ const JadwalFormPage = ({
                                     onChange={(e) => setForm((p) => ({ ...p, jam_selesai: e.target.value }))}
                                 />
                             </FormItem>
-
                         </div>
                     </div>
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Tag, Tooltip } from '@/components/ui'
+import { Tooltip } from '@/components/ui'
 import { HiOutlineEye, HiOutlineTrash, HiOutlineCash, HiOutlineDocumentDownload } from 'react-icons/hi'
 import DataTable from '@/components/shared/DataTable'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'

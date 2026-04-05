@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Button, DatePicker, Dialog, FormItem, Input, Select, Notification, toast } from '@/components/ui'
 import BiayaService from '@/services/kursus/biaya.service'
 import TagihanService from '@/services/kursus/tagihan.service'
-import { formatNum } from '@/utils/formatNumber'
+import { formatNum, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 import { parseApiError } from '@/utils/parseApiError'
 import type { IBiaya, ITagihan } from '@/@types/kursus.types'
 
@@ -26,14 +26,6 @@ const dateToMonth = (date: Date): string => {
     return `${y}-${m}`
 }
 
-const formatRupiahInput = (raw: string): string => {
-    const digits = raw.replace(/\D/g, '')
-    if (!digits) return ''
-    return formatNum(Number(digits))
-}
-
-const parseRupiah = (formatted: string): number =>
-    Number(formatted.replace(/\./g, '')) || 0
 
 /* ─── props ──────────────────────────────────────────────── */
 

@@ -1385,6 +1385,7 @@ Detail satu karyawan. Response sama seperti satu item di atas.
 Tambah karyawan baru. Hanya untuk company user.
 
 > **Auto-create akun pengguna:** Setiap karyawan baru otomatis dibuatkan akun `pengguna` dengan role `EMPLOYEE` dan password default `Karyawan@123`. Flag `harus_ganti_password = 1` di-set otomatis — karyawan **wajib ganti password** saat login pertama.
+> **Operasi ini atomik:** insert karyawan dan insert pengguna dilakukan dalam satu database transaction. Jika salah satu gagal, seluruh operasi di-rollback otomatis.
 
 **Request Body:**
 ```json
@@ -2264,13 +2265,29 @@ Daftar siswa dengan pagination, search, dan filter status pendaftaran.
         "aktif": 1,
         "status_pendaftaran": 1,
         "dibuat_pada": "2026-04-01T00:00:00.000Z",
-        "diubah_pada": null
+        "diubah_pada": null,
+        "kelas": [
+          {
+            "id_catat": "uuid-catat",
+            "id_kelas": "uuid-kelas",
+            "nama_kelas": "Ballet",
+            "total_sesi": 16,
+            "total_sesi_hadir": 8,
+            "total_sesi_tidak_hadir": 2,
+            "aktif": 1,
+            "status": 1,
+            "mulai_kelas": "2026-04-01T00:00:00.000Z",
+            "diubah_pada": "2026-04-03T08:30:00.000Z"
+          }
+        ]
       }
     ],
     "meta": { "page": 1, "limit": 10, "total": 50, "totalPages": 5 }
   }
 }
 ```
+
+> `kelas` berisi semua kelas yang diikuti siswa (tidak dihapus). Field `status`: `1`=kelas masih berjalan, `0`=selesai/sesi habis. Field `aktif` pada kelas: `1`=tidak dihapus, `0`=dihapus.
 
 **Enum `status_pendaftaran`:**
 
@@ -2413,6 +2430,7 @@ Soft delete.
 
 > Table: `kursus_tagihan` (header) + `kursus_tagihan_detail` (baris per biaya) | PK: `id_tagihan` (UUID)
 > Status: `1`=MENUNGGU, `2`=SEBAGIAN, `3`=LUNAS, `4`=DIBATALKAN
+> **Semua mutasi tagihan (create, add detail, remove detail) bersifat atomik** — dibungkus dalam database transaction. Jika langkah apapun gagal, seluruh perubahan di-rollback.
 
 Struktur tagihan terdiri dari **1 header** (total + diskon) dan **N baris detail** (1 per biaya).
 Tagihan dibuat otomatis via `POST /kursus/siswa/daftar` — tidak perlu dibuat manual.
@@ -2446,6 +2464,7 @@ Detail satu tagihan header beserta semua baris detail.
     "id_diskon": "uuid-diskon",
     "nama_diskon": "Promo April",
     "persen_diskon": 15,
+    "nominal_harga": 500000,
     "nominal_diskon": 75000,
     "total_harga": 425000,
     "total_bayar": 250000,
@@ -2498,6 +2517,8 @@ Detail satu tagihan header beserta semua baris detail.
 ```
 
 > `harga_dasar` = harga asli dari master biaya. `harga_akhir` = harga setelah diskon diterapkan.
+> `nominal_harga` = total kotor (jumlah semua `harga_akhir` detail). `nominal_diskon` = potongan yang diterapkan. `total_harga` = `nominal_harga - nominal_diskon`.
+> Prioritas diskon: **persentase** (`persen_diskon`) selalu menang atas **harga flat** (`nominal_diskon`) jika keduanya ada.
 
 ### `PATCH /kursus/tagihan/:id`
 
@@ -2538,6 +2559,7 @@ Tambah satu baris detail ke tagihan yang sudah ada. Info kelas, paket, kategori 
     "id_diskon": null,
     "nama_diskon": null,
     "persen_diskon": null,
+    "nominal_harga": 850000,
     "nominal_diskon": 0,
     "total_harga": 850000,
     "total_bayar": 250000,
@@ -2618,6 +2640,7 @@ Hapus satu baris detail dari tagihan. `total_harga` header otomatis di-recalcula
 
 > Table: `kursus_pembayaran` | PK: `id_pembayaran` (UUID)
 > Metode: `TUNAI` / `TRANSFER` / `QRIS`
+> **Create dan delete pembayaran bersifat atomik** — insert/delete pembayaran dan recalculate status tagihan dilakukan dalam satu database transaction.
 
 Setelah create/delete pembayaran, **status tagihan otomatis di-recalculate**:
 - `total_bayar = 0` maka status `1` (MENUNGGU)
@@ -2645,7 +2668,7 @@ Detail satu pembayaran.
 |-------|-------|------------|
 | `id_tagihan` | YES | UUID tagihan |
 | `jumlah` | YES | Decimal (Rupiah), min `1` |
-| `tanggal_bayar` | YES | YYYY-MM-DD |
+| `tanggal_bayar` | YES | YYYY-MM-DD — disimpan di DB sebagai datetime (jam = waktu server saat insert) |
 | `metode` | YES | `TUNAI` / `TRANSFER` / `QRIS` |
 | `referensi` | NO | No. referensi / nota transfer |
 | `deskripsi` | NO | Keterangan tambahan |
@@ -2658,7 +2681,7 @@ Detail satu pembayaran.
     "id_pembayaran": "uuid",
     "id_tagihan": "uuid",
     "jumlah": 250000,
-    "tanggal_bayar": "2026-04-01",
+    "tanggal_bayar": "2026-04-01T14:30:22.000Z",
     "metode": "TRANSFER",
     "referensi": "TRF-20260401-001",
     "deskripsi": "DP pertama",
@@ -2960,15 +2983,26 @@ Soft delete presensi. `total_sesi_hadir` dan `total_sesi_tidak_hadir` otomatis d
 
 > **Auth:** Bearer Token wajib di semua endpoint
 
-Tabel pencatatan otomatis yang merekam **berapa sesi siswa sudah hadir dan tidak hadir** per kelas. Data ini diperbarui otomatis setiap ada perubahan presensi — tidak perlu diisi manual.
+Tabel pencatatan yang merekam **berapa sesi siswa sudah hadir, tidak hadir, dan target total sesi** per kelas. Data ini diperbarui otomatis setiap ada perubahan presensi — tidak perlu diisi manual.
+
+`total_sesi` diambil dari `sesi_pertemuan` pada kategori umur yang dipilih saat pendaftaran. Jika biaya yang didaftarkan tidak memiliki kategori umur, nilainya akan `null`.
 
 **Satu record = satu kombinasi (siswa, kelas).** Jika siswa ikut 2 kelas, akan ada 2 record.
+
+**Kolom penting:**
+
+| Kolom | Keterangan |
+|-------|------------|
+| `aktif` | `1` = record tidak dihapus, `0` = dihapus (soft-delete flag) |
+| `status` | `1` = kelas masih berjalan, `0` = selesai (sesi habis / diset manual) |
+
+`status` di-set otomatis ke `0` ketika `total_sesi_hadir >= total_sesi`. Admin bisa set manual via `PATCH`.
 
 ---
 
 ### `GET /kursus/catat-kelas-siswa/siswa/:id_siswa`
 
-Daftar semua kelas yang diikuti siswa beserta total sesi yang sudah dihadiri.
+Daftar semua kelas yang diikuti siswa (tidak dihapus). Termasuk kelas yang sudah selesai (`status=0`).
 
 **Response `200`:**
 ```json
@@ -2981,9 +3015,11 @@ Daftar semua kelas yang diikuti siswa beserta total sesi yang sudah dihadiri.
       "nama_siswa": "Budi Santoso",
       "id_kelas": "uuid-kelas",
       "nama_kelas": "COREO",
-      "total_sesi_hadir": 8,
+      "total_sesi": 16,
+      "total_sesi_hadir": 16,
       "total_sesi_tidak_hadir": 2,
       "aktif": 1,
+      "status": 0,
       "dibuat_pada": "2026-04-01T00:00:00.000Z",
       "diubah_pada": "2026-04-03T08:30:00.000Z"
     },
@@ -2993,9 +3029,11 @@ Daftar semua kelas yang diikuti siswa beserta total sesi yang sudah dihadiri.
       "nama_siswa": "Budi Santoso",
       "id_kelas": "uuid-kelas-2",
       "nama_kelas": "K-POP",
+      "total_sesi": 8,
       "total_sesi_hadir": 3,
       "total_sesi_tidak_hadir": 0,
       "aktif": 1,
+      "status": 1,
       "dibuat_pada": "2026-04-01T00:00:00.000Z",
       "diubah_pada": "2026-04-02T09:00:00.000Z"
     }
@@ -3007,7 +3045,7 @@ Daftar semua kelas yang diikuti siswa beserta total sesi yang sudah dihadiri.
 
 ### `GET /kursus/catat-kelas-siswa/kelas/:id_kelas`
 
-Daftar semua siswa yang pernah hadir di kelas beserta total sesi masing-masing.
+Daftar semua siswa di kelas (tidak dihapus). Termasuk siswa yang kelasnya sudah selesai (`status=0`).
 
 **Response `200`:**
 ```json
@@ -3020,9 +3058,11 @@ Daftar semua siswa yang pernah hadir di kelas beserta total sesi masing-masing.
       "nama_siswa": "Budi Santoso",
       "id_kelas": "uuid-kelas",
       "nama_kelas": "COREO",
+      "total_sesi": 16,
       "total_sesi_hadir": 8,
       "total_sesi_tidak_hadir": 2,
       "aktif": 1,
+      "status": 1,
       "dibuat_pada": "2026-04-01T00:00:00.000Z",
       "diubah_pada": "2026-04-03T08:30:00.000Z"
     },
@@ -3032,9 +3072,11 @@ Daftar semua siswa yang pernah hadir di kelas beserta total sesi masing-masing.
       "nama_siswa": "Ani Wijaya",
       "id_kelas": "uuid-kelas",
       "nama_kelas": "COREO",
+      "total_sesi": 16,
       "total_sesi_hadir": 5,
       "total_sesi_tidak_hadir": 1,
       "aktif": 1,
+      "status": 1,
       "dibuat_pada": "2026-04-01T00:00:00.000Z",
       "diubah_pada": "2026-04-02T09:00:00.000Z"
     }
@@ -3042,9 +3084,71 @@ Daftar semua siswa yang pernah hadir di kelas beserta total sesi masing-masing.
 }
 ```
 
+> `total_sesi` diambil dari `sesi_pertemuan` kategori umur saat pendaftaran. `null` jika tidak ada kategori umur.
 > `total_sesi_hadir` dihitung dari jumlah presensi dengan `status = 1 (HADIR)` yang tidak dihapus.
 > `total_sesi_tidak_hadir` dihitung dari `status IN (2, 3, 4)` — mencakup TIDAK_HADIR, SAKIT, dan IZIN.
 > Kedua nilai selalu sinkron — diperbarui otomatis setiap `POST`, `PATCH`, atau `DELETE` presensi.
+
+---
+
+### `POST /kursus/catat-kelas-siswa`
+
+Input kelas ke siswa secara manual (untuk siswa yang belum memilih kelas saat pendaftaran).
+
+> `nama_siswa`, `nama_kelas`, dan `total_sesi` diambil otomatis dari DB jika tidak disediakan. Jika sudah ada record (id_siswa + id_kelas) akan return `409 Conflict`.
+
+**Request Body:**
+| Field | Wajib | Keterangan |
+|-------|-------|------------|
+| `id_siswa` | YES | UUID siswa |
+| `id_kelas` | YES | UUID kelas |
+| `total_sesi` | NO | Override kuota sesi; default diambil dari kategori umur tagihan |
+
+**Response `201`:**
+```json
+{
+  "message": "Berhasil menambahkan kelas siswa",
+  "data": {
+    "id_catat": "uuid-...",
+    "id_siswa": "uuid-siswa",
+    "nama_siswa": "Budi Santoso",
+    "id_kelas": "uuid-kelas",
+    "nama_kelas": "Ballet",
+    "total_sesi": 16,
+    "total_sesi_hadir": 0,
+    "total_sesi_tidak_hadir": 0,
+    "aktif": 1,
+    "status": 1,
+    "dibuat_pada": "2026-04-05T10:00:00.000Z",
+    "diubah_pada": null
+  }
+}
+```
+
+---
+
+### `PATCH /kursus/catat-kelas-siswa/:id_catat`
+
+Edit data kelas siswa. Admin bisa mengubah kuota sesi atau status kelas secara manual.
+
+**Request Body:**
+| Field | Keterangan |
+|-------|------------|
+| `total_sesi` | Override kuota sesi (int ≥ 0, atau `null` untuk hapus kuota) |
+| `status` | `1`=aktif berjalan, `0`=selesai (set manual oleh admin) |
+
+**Response `200`:** Objek catat kelas siswa terbaru (sama dengan format GET).
+
+---
+
+### `DELETE /kursus/catat-kelas-siswa/:id_catat`
+
+Soft delete record kelas siswa. Field `aktif` menjadi `0`, `dihapus_pada` dan `dihapus_oleh` terisi. Record tidak akan muncul lagi di GET.
+
+**Response `200`:**
+```json
+{ "message": "Berhasil menghapus data kelas siswa" }
+```
 
 ---
 
