@@ -6,6 +6,7 @@ import type {
     IUpdateTagihan,
     ITagihanQuery,
     IAddDetailTagihan,
+    ICreateTagihanBulk,
     ApiResponse,
     ApiPaginatedResponse,
 } from '@/@types/kursus.types'
@@ -86,6 +87,15 @@ const TagihanService = {
         })
     },
 
+    async cetak(id: string): Promise<void> {
+        const res = await ApiService.fetchDataWithAxios<ApiResponse<{ url: string; filename: string }>>({
+            url: API_ENDPOINTS.KURSUS.TAGIHAN.CETAK(id),
+            method: 'GET',
+        })
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:4005'
+        window.open(`${backendUrl}${res.data.url}`, '_blank')
+    },
+
     async addDetail(id: string, payload: IAddDetailTagihan): Promise<ApiResponse<ITagihan>> {
         const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>, IAddDetailTagihan>({
             url: API_ENDPOINTS.KURSUS.TAGIHAN.ADD_DETAIL(id),
@@ -110,6 +120,50 @@ const TagihanService = {
             method: 'DELETE',
         })
         return { ...res, data: normalizeTagihan(res.data) }
+    },
+
+    async createBulk(payload: ICreateTagihanBulk): Promise<ApiResponse<ITagihan>> {
+        const [firstItem, ...restItems] = payload.items
+
+        const created = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>, ICreateTagihan>({
+            url: API_ENDPOINTS.KURSUS.TAGIHAN.BASE,
+            method: 'POST',
+            data: {
+                id_siswa: payload.id_siswa,
+                id_biaya: firstItem.id_biaya,
+                ...(firstItem.id_jadwal_kelas ? { id_jadwal_kelas: firstItem.id_jadwal_kelas } : {}),
+                ...(firstItem.periode ? { periode: firstItem.periode } : {}),
+            },
+        })
+
+        const id = created.data.id_tagihan
+        let latestRes = created
+
+        for (const item of restItems) {
+            latestRes = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>, IAddDetailTagihan>({
+                url: API_ENDPOINTS.KURSUS.TAGIHAN.ADD_DETAIL(id),
+                method: 'POST',
+                data: {
+                    id_biaya: item.id_biaya,
+                    ...(item.id_jadwal_kelas ? { id_jadwal_kelas: item.id_jadwal_kelas } : {}),
+                    ...(item.periode ? { periode: item.periode } : {}),
+                },
+            })
+        }
+
+        if (payload.id_diskon || payload.kode_diskon) {
+            const diskonPayload: Pick<IUpdateTagihan, 'id_diskon' | 'kode_diskon'> = {}
+            if (payload.id_diskon) diskonPayload.id_diskon = payload.id_diskon
+            if (payload.kode_diskon) diskonPayload.kode_diskon = payload.kode_diskon
+            const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>, typeof diskonPayload>({
+                url: API_ENDPOINTS.KURSUS.TAGIHAN.BY_ID(id),
+                method: 'PATCH',
+                data: diskonPayload,
+            })
+            return { ...res, data: normalizeTagihan(res.data) }
+        }
+
+        return { ...latestRes, data: normalizeTagihan(latestRes.data) }
     },
 }
 

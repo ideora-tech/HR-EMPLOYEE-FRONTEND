@@ -365,6 +365,19 @@ export interface ICreateTagihan {
     aktif?: 0 | 1
 }
 
+export interface ICreateTagihanBulkItem {
+    id_biaya: string
+    id_jadwal_kelas?: string
+    periode?: string
+}
+
+export interface ICreateTagihanBulk {
+    id_siswa: string
+    items: ICreateTagihanBulkItem[]
+    id_diskon?: string
+    kode_diskon?: string
+}
+
 export interface IUpdateTagihan {
     periode?: string | null
     total_harga?: number

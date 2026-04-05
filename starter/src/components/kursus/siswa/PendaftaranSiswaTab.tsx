@@ -182,6 +182,13 @@ const PendaftaranSiswaTab = ({ pendingAdd, onPendingAddHandled }: PendaftaranSis
                     router.push(`${ROUTES.KURSUS_TAGIHAN_CATAT_PEMBAYARAN}?id=${item.id_tagihan}`)
                 }
                 onDelete={setDeleteTarget}
+                onCetak={async (item) => {
+                    try {
+                        await TagihanService.cetak(item.id_tagihan)
+                    } catch {
+                        toast.push(<Notification type="danger" title="Gagal mengunduh invoice" />)
+                    }
+                }}
             />
 
             <TagihanForm

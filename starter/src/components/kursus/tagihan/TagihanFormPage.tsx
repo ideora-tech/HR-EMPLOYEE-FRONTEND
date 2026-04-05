@@ -11,21 +11,22 @@ import {
     Select,
     toast,
 } from '@/components/ui'
-import { HiArrowLeft, HiOutlinePlus, HiOutlineTrash, HiOutlineDocumentText, HiOutlineCalendar, HiOutlineCollection } from 'react-icons/hi'
+import {
+    HiArrowLeft,
+    HiOutlinePlus,
+    HiOutlineTrash,
+    HiOutlineDocumentText,
+    HiOutlineCalendar,
+    HiOutlineCollection,
+} from 'react-icons/hi'
 import BiayaService from '@/services/kursus/biaya.service'
 import DiskonService from '@/services/kursus/diskon.service'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
+import SiswaService from '@/services/kursus/siswa.service'
 import { formatRupiah } from '@/utils/formatNumber'
-import type { IBiaya, IDiskon, IJadwalKelas, IDaftarSiswa, IDaftarSiswaItem } from '@/@types/kursus.types'
+import type { IBiaya, IDiskon, IJadwalKelas, ISiswa, ICreateTagihanBulk } from '@/@types/kursus.types'
 
 type SelectOption = { value: string; label: string }
-type JKOption = { value: '' | '1' | '2'; label: string }
-
-const JK_OPTIONS: JKOption[] = [
-    { value: '', label: '- Tidak diisi -' },
-    { value: '1', label: 'Laki-laki' },
-    { value: '2', label: 'Perempuan' },
-]
 
 interface TagihanItem {
     _key: string
@@ -35,28 +36,10 @@ interface TagihanItem {
     periode: string
 }
 
-interface FormState {
-    nama_siswa: string
-    email: string
-    telepon: string
-    tanggal_lahir: Date | null
-    alamat: string
-    jenis_kelamin: '' | '1' | '2'
-}
-
-interface PendaftaranFormPageProps {
+interface TagihanFormPageProps {
     submitting?: boolean
-    onSubmit: (payload: IDaftarSiswa) => void
+    onSubmit: (payload: ICreateTagihanBulk) => void
     onCancel: () => void
-}
-
-const INITIAL_FORM: FormState = {
-    nama_siswa: '',
-    email: '',
-    telepon: '',
-    tanggal_lahir: null,
-    alamat: '',
-    jenis_kelamin: '',
 }
 
 const newTagihanItem = (): TagihanItem => {
@@ -72,25 +55,20 @@ const newTagihanItem = (): TagihanItem => {
     }
 }
 
-const dateToString = (date: Date): string => {
-    const y = date.getFullYear()
-    const m = String(date.getMonth() + 1).padStart(2, '0')
-    const d = String(date.getDate()).padStart(2, '0')
-    return `${y}-${m}-${d}`
-}
-
 const dateToMonth = (date: Date): string => {
     const y = date.getFullYear()
     const m = String(date.getMonth() + 1).padStart(2, '0')
     return `${y}-${m}`
 }
 
-const PendaftaranFormPage = ({
+const TagihanFormPage = ({
     submitting = false,
     onSubmit,
     onCancel,
-}: PendaftaranFormPageProps) => {
-    const [form, setForm] = useState<FormState>(INITIAL_FORM)
+}: TagihanFormPageProps) => {
+    const [selectedSiswa, setSelectedSiswa] = useState<SelectOption | null>(null)
+    const [siswaOptions, setSiswaOptions] = useState<SelectOption[]>([])
+    const [loadingSiswa, setLoadingSiswa] = useState(false)
     const [errors, setErrors] = useState<Record<string, string>>({})
 
     const [tagihanRows, setTagihanRows] = useState<TagihanItem[]>([newTagihanItem()])
@@ -106,6 +84,25 @@ const PendaftaranFormPage = ({
     const [jadwalOptions, setJadwalOptions] = useState<SelectOption[]>([])
     const [loadingBiaya, setLoadingBiaya] = useState(false)
     const [loadingJadwal, setLoadingJadwal] = useState(false)
+
+    const loadSiswa = useCallback(async () => {
+        setLoadingSiswa(true)
+        try {
+            const res = await SiswaService.getAll({ aktif: 1, limit: 500 })
+            if (res.success) {
+                setSiswaOptions(
+                    res.data.map((s: ISiswa) => ({
+                        value: s.id_siswa,
+                        label: s.nama_siswa + (s.telepon ? ` (${s.telepon})` : ''),
+                    })),
+                )
+            }
+        } catch {
+            //
+        } finally {
+            setLoadingSiswa(false)
+        }
+    }, [])
 
     const loadBiaya = useCallback(async () => {
         setLoadingBiaya(true)
@@ -168,10 +165,11 @@ const PendaftaranFormPage = ({
     }, [])
 
     useEffect(() => {
+        loadSiswa()
         loadBiaya()
         loadJadwal()
         loadDiskon()
-    }, [loadBiaya, loadJadwal, loadDiskon])
+    }, [loadSiswa, loadBiaya, loadJadwal, loadDiskon])
 
     const handleAddTagihan = () => {
         setTagihanRows((prev) => [...prev, newTagihanItem()])
@@ -181,7 +179,11 @@ const PendaftaranFormPage = ({
         setTagihanRows((prev) => prev.filter((r) => r._key !== key))
     }
 
-    const handleTagihanChange = (key: string, field: keyof Omit<TagihanItem, '_key' | 'periodeDate'>, value: string) => {
+    const handleTagihanChange = (
+        key: string,
+        field: keyof Omit<TagihanItem, '_key' | 'periodeDate'>,
+        value: string,
+    ) => {
         setTagihanRows((prev) =>
             prev.map((r) => (r._key === key ? { ...r, [field]: value } : r)),
         )
@@ -200,7 +202,7 @@ const PendaftaranFormPage = ({
     const validate = (): boolean => {
         const e: Record<string, string> = {}
 
-        if (!form.nama_siswa.trim()) e.nama_siswa = 'Nama siswa wajib diisi'
+        if (!selectedSiswa) e.id_siswa = 'Siswa wajib dipilih'
 
         tagihanRows.forEach((row, idx) => {
             if (!row.id_biaya) e[`tagihan_${idx}_biaya`] = 'Pilih biaya'
@@ -225,20 +227,13 @@ const PendaftaranFormPage = ({
             return
         }
 
-        const tagihan: IDaftarSiswaItem[] = tagihanRows.map((row) => ({
-            id_biaya: row.id_biaya,
-            ...(row.id_jadwal_kelas && { id_jadwal_kelas: row.id_jadwal_kelas }),
-            ...(row.periode.trim() && { periode: row.periode.trim() }),
-        }))
-
-        const payload: IDaftarSiswa = {
-            nama_siswa: form.nama_siswa.trim(),
-            ...(form.email.trim() && { email: form.email.trim() }),
-            ...(form.telepon.trim() && { telepon: form.telepon.trim() }),
-            ...(form.tanggal_lahir && { tanggal_lahir: dateToString(form.tanggal_lahir) }),
-            ...(form.alamat.trim() && { alamat: form.alamat.trim() }),
-            ...(form.jenis_kelamin && { jenis_kelamin: Number(form.jenis_kelamin) as 1 | 2 }),
-            tagihan,
+        const payload: ICreateTagihanBulk = {
+            id_siswa: selectedSiswa!.value,
+            items: tagihanRows.map((row) => ({
+                id_biaya: row.id_biaya,
+                ...(row.id_jadwal_kelas && { id_jadwal_kelas: row.id_jadwal_kelas }),
+                ...(row.periode.trim() && { periode: row.periode.trim() }),
+            })),
             ...(diskonMode === 'dropdown' && selectedDiskon && { id_diskon: selectedDiskon.value }),
             ...(diskonMode === 'kode' && kodeDiskon.trim() && { kode_diskon: kodeDiskon.trim() }),
         }
@@ -269,9 +264,9 @@ const PendaftaranFormPage = ({
                     <HiArrowLeft className="text-xl" />
                 </button>
                 <div>
-                    <h3 className="font-bold">Pendaftaran Siswa Baru</h3>
+                    <h3 className="font-bold">Buat Tagihan</h3>
                     <p className="text-gray-500 text-sm mt-0.5">
-                        Daftarkan siswa sekaligus buat tagihan dalam satu langkah
+                        Buat tagihan untuk siswa yang sudah terdaftar
                     </p>
                 </div>
             </div>
@@ -279,96 +274,30 @@ const PendaftaranFormPage = ({
             <Card>
                 <div className="flex flex-col gap-1">
 
-                    {/* Section: Identitas Siswa */}
+                    {/* Section: Pilih Siswa */}
                     <div>
                         <div className="mb-3">
-                            <h5 className="font-semibold">Identitas Siswa</h5>
+                            <h5 className="font-semibold">Pilih Siswa</h5>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                            <FormItem
-                                label="Nama Siswa"
-                                asterisk
-                                invalid={!!errors.nama_siswa}
-                                errorMessage={errors.nama_siswa}
-                            >
-                                <Input
-                                    placeholder="Nama lengkap siswa"
-                                    value={form.nama_siswa}
-                                    invalid={!!errors.nama_siswa}
-                                    onChange={(e) => setForm((p) => ({ ...p, nama_siswa: e.target.value }))}
-                                />
-                            </FormItem>
-
-                            <FormItem label="Jenis Kelamin">
-                                <Select<JKOption>
-                                    options={JK_OPTIONS}
-                                    value={JK_OPTIONS.find((o) => o.value === form.jenis_kelamin) ?? JK_OPTIONS[0]}
-                                    onChange={(opt) =>
-                                        setForm((p) => ({ ...p, jenis_kelamin: (opt as JKOption).value }))
-                                    }
-                                />
-                            </FormItem>
-                        </div>
-                    </div>
-
-                    <div className="border-t border-gray-100 dark:border-gray-700" />
-
-                    {/* Section: Kontak & Data Pribadi */}
-                    <div>
-                        <div className="mb-3">
-                            <h5 className="font-semibold">Kontak & Data Pribadi</h5>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                            <FormItem label="Email">
-                                <Input
-                                    type="email"
-                                    placeholder="budi@email.com"
-                                    value={form.email}
-                                    onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                                />
-                            </FormItem>
-
-                            <FormItem label="Telepon">
-                                <Input
-                                    placeholder="08xx-xxxx-xxxx"
-                                    value={form.telepon}
-                                    onChange={(e) => setForm((p) => ({ ...p, telepon: e.target.value }))}
-                                />
-                            </FormItem>
-
-                            <FormItem label="Tanggal Lahir">
-                                <DatePicker
-                                    value={form.tanggal_lahir}
-                                    inputFormat="DD MMMM YYYY"
-                                    placeholder="Pilih tanggal lahir"
-                                    clearable
-                                    onChange={(date) =>
-                                        setForm((p) => ({ ...p, tanggal_lahir: date as Date | null }))
-                                    }
-                                />
-                            </FormItem>
-                        </div>
-                    </div>
-
-                    <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
-
-                    {/* Section: Alamat */}
-                    <div>
-                        <div className="mb-3">
-                            <h5 className="font-semibold">Alamat</h5>
-                        </div>
-                        <FormItem label="Alamat Lengkap">
-                            <Input
-                                textArea
-                                rows={3}
-                                placeholder="Jl. Contoh No. 1, Kota, Provinsi"
-                                value={form.alamat}
-                                onChange={(e) => setForm((p) => ({ ...p, alamat: e.target.value }))}
+                        <FormItem
+                            label="Siswa"
+                            asterisk
+                            invalid={!!errors.id_siswa}
+                            errorMessage={errors.id_siswa}
+                        >
+                            <Select<SelectOption>
+                                placeholder="— Cari nama siswa —"
+                                options={siswaOptions}
+                                isLoading={loadingSiswa}
+                                value={selectedSiswa}
+                                onChange={(opt) => setSelectedSiswa(opt as SelectOption | null)}
+                                isClearable
+                                isSearchable
                             />
                         </FormItem>
                     </div>
-                    br
-                    <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
+
+                    <div className="border-t border-gray-100 dark:border-gray-700" />
 
                     {/* Section: Diskon */}
                     <div>
@@ -377,7 +306,6 @@ const PendaftaranFormPage = ({
                         </div>
 
                         <div className="flex flex-col gap-3">
-                            {/* Mode selector */}
                             <div className="flex gap-2">
                                 {(['none', 'dropdown', 'kode'] as const).map((mode) => (
                                     <button
@@ -387,43 +315,50 @@ const PendaftaranFormPage = ({
                                             setDiskonMode(mode)
                                             setSelectedDiskon(null)
                                             setKodeDiskon('')
-                                            setErrors((p) => { const n = { ...p }; delete n.diskon; return n })
+                                            setErrors((p) => {
+                                                const n = { ...p }
+                                                delete n.diskon
+                                                return n
+                                            })
                                         }}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${diskonMode === mode
-                                            ? 'bg-[#E9F3FF] text-[#2a85ff] border-[#d0e6ff] dark:bg-[#E9F3FF]/10 dark:border-[#E9F3FF]/20 dark:text-[#7BB8FF]'
-                                            : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                                            }`}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                                            diskonMode === mode
+                                                ? 'bg-[#E9F3FF] text-[#2a85ff] border-[#d0e6ff] dark:bg-[#E9F3FF]/10 dark:border-[#E9F3FF]/20 dark:text-[#7BB8FF]'
+                                                : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                        }`}
                                     >
-                                        {mode === 'none' ? 'Tanpa Diskon' : mode === 'dropdown' ? 'Pilih Diskon' : 'Kode Promo'}
+                                        {mode === 'none'
+                                            ? 'Tanpa Diskon'
+                                            : mode === 'dropdown'
+                                              ? 'Pilih Diskon'
+                                              : 'Kode Promo'}
                                     </button>
                                 ))}
                             </div>
 
                             {diskonMode === 'dropdown' && (
-                                <FormItem
-                                    invalid={!!errors.diskon}
-                                    errorMessage={errors.diskon}
-                                >
+                                <FormItem invalid={!!errors.diskon} errorMessage={errors.diskon}>
                                     <Select<SelectOption>
                                         placeholder="— Pilih diskon aktif —"
                                         options={diskonOptions}
                                         isLoading={loadingDiskon}
                                         isClearable
                                         value={selectedDiskon}
-                                        onChange={(opt) => setSelectedDiskon(opt as SelectOption | null)}
+                                        onChange={(opt) =>
+                                            setSelectedDiskon(opt as SelectOption | null)
+                                        }
                                     />
                                 </FormItem>
                             )}
 
                             {diskonMode === 'kode' && (
-                                <FormItem
-                                    invalid={!!errors.diskon}
-                                    errorMessage={errors.diskon}
-                                >
+                                <FormItem invalid={!!errors.diskon} errorMessage={errors.diskon}>
                                     <Input
                                         placeholder="Masukkan kode promo"
                                         value={kodeDiskon}
-                                        onChange={(e) => setKodeDiskon(e.target.value.toUpperCase())}
+                                        onChange={(e) =>
+                                            setKodeDiskon(e.target.value.toUpperCase())
+                                        }
                                     />
                                 </FormItem>
                             )}
@@ -443,7 +378,9 @@ const PendaftaranFormPage = ({
                             <div className="flex items-center justify-between px-5 py-3 bg-[#E9F3FF] dark:bg-[#E9F3FF]/10 border-b border-[#d0e6ff] dark:border-[#E9F3FF]/20">
                                 <div className="flex items-center gap-2">
                                     <HiOutlineDocumentText className="text-[#2a85ff] text-base shrink-0" />
-                                    <span className="text-xs font-semibold text-[#2a85ff] dark:text-[#7BB8FF] uppercase tracking-wide">Tagihan</span>
+                                    <span className="text-xs font-semibold text-[#2a85ff] dark:text-[#7BB8FF] uppercase tracking-wide">
+                                        Tagihan
+                                    </span>
                                     <span className="text-xs font-semibold text-[#2a85ff] dark:text-[#7BB8FF] bg-white dark:bg-[#E9F3FF]/10 border border-[#d0e6ff] dark:border-[#E9F3FF]/20 px-2 py-0.5 rounded-full">
                                         {tagihanRows.length} item
                                     </span>
@@ -466,10 +403,15 @@ const PendaftaranFormPage = ({
                                 {tagihanRows.map((row, idx) => {
                                     const biaya = row.id_biaya ? biayaMap[row.id_biaya] : null
                                     return (
-                                        <div key={row._key} className="flex items-start gap-3 px-5 py-4 bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors">
+                                        <div
+                                            key={row._key}
+                                            className="flex items-start gap-3 px-5 py-4 bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors"
+                                        >
                                             {/* Nomor */}
                                             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#E9F3FF] dark:bg-[#E9F3FF]/10 shrink-0 mt-1">
-                                                <span className="text-xs font-bold text-[#2a85ff] dark:text-[#7BB8FF]">{idx + 1}</span>
+                                                <span className="text-xs font-bold text-[#2a85ff] dark:text-[#7BB8FF]">
+                                                    {idx + 1}
+                                                </span>
                                             </div>
 
                                             {/* Fields */}
@@ -485,23 +427,41 @@ const PendaftaranFormPage = ({
                                                         placeholder="Pilih biaya..."
                                                         options={biayaOptions}
                                                         isLoading={loadingBiaya}
-                                                        value={biayaOptions.find((o) => o.value === row.id_biaya) ?? null}
-                                                        onChange={(opt) =>
-                                                            handleTagihanChange(row._key, 'id_biaya', opt ? (opt as SelectOption).value : '')
+                                                        value={
+                                                            biayaOptions.find(
+                                                                (o) => o.value === row.id_biaya,
+                                                            ) ?? null
                                                         }
-                                                        menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                                                        onChange={(opt) =>
+                                                            handleTagihanChange(
+                                                                row._key,
+                                                                'id_biaya',
+                                                                opt ? (opt as SelectOption).value : '',
+                                                            )
+                                                        }
+                                                        menuPortalTarget={
+                                                            typeof document !== 'undefined'
+                                                                ? document.body
+                                                                : undefined
+                                                        }
                                                         menuPosition="fixed"
                                                     />
                                                     {errors[`tagihan_${idx}_biaya`] && (
-                                                        <p className="text-red-500 text-xs mt-1">{errors[`tagihan_${idx}_biaya`]}</p>
+                                                        <p className="text-red-500 text-xs mt-1">
+                                                            {errors[`tagihan_${idx}_biaya`]}
+                                                        </p>
                                                     )}
                                                     {biaya && (
                                                         <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 flex-wrap">
-                                                            <span className="font-medium">{biaya.jenis_biaya}</span>
+                                                            <span className="font-medium">
+                                                                {biaya.jenis_biaya}
+                                                            </span>
                                                             <span className="text-gray-300">·</span>
                                                             <span>{biaya.nama_kelas ?? '-'}</span>
                                                             <span className="text-gray-300">·</span>
-                                                            <span className="font-semibold">{formatRupiah(biaya.harga_biaya)}</span>
+                                                            <span className="font-semibold">
+                                                                {formatRupiah(biaya.harga_biaya)}
+                                                            </span>
                                                         </p>
                                                     )}
                                                 </div>
@@ -517,11 +477,23 @@ const PendaftaranFormPage = ({
                                                         placeholder="- Pilih jadwal -"
                                                         options={jadwalOptions}
                                                         isLoading={loadingJadwal}
-                                                        value={jadwalOptions.find((o) => o.value === row.id_jadwal_kelas) ?? null}
-                                                        onChange={(opt) =>
-                                                            handleTagihanChange(row._key, 'id_jadwal_kelas', opt ? (opt as SelectOption).value : '')
+                                                        value={
+                                                            jadwalOptions.find(
+                                                                (o) => o.value === row.id_jadwal_kelas,
+                                                            ) ?? null
                                                         }
-                                                        menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                                                        onChange={(opt) =>
+                                                            handleTagihanChange(
+                                                                row._key,
+                                                                'id_jadwal_kelas',
+                                                                opt ? (opt as SelectOption).value : '',
+                                                            )
+                                                        }
+                                                        menuPortalTarget={
+                                                            typeof document !== 'undefined'
+                                                                ? document.body
+                                                                : undefined
+                                                        }
                                                         menuPosition="fixed"
                                                     />
                                                 </div>
@@ -538,7 +510,10 @@ const PendaftaranFormPage = ({
                                                         clearable
                                                         value={row.periodeDate}
                                                         onChange={(date) =>
-                                                            handlePeriodeChange(row._key, date as Date | null)
+                                                            handlePeriodeChange(
+                                                                row._key,
+                                                                date as Date | null,
+                                                            )
                                                         }
                                                     />
                                                 </div>
@@ -563,7 +538,9 @@ const PendaftaranFormPage = ({
                             {/* Estimasi total */}
                             {estimasiTotal > 0 && (
                                 <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-100 dark:border-gray-700">
-                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Estimasi Total</span>
+                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                        Estimasi Total
+                                    </span>
                                     <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
                                         {formatRupiah(estimasiTotal)}
                                     </span>
@@ -582,19 +559,14 @@ const PendaftaranFormPage = ({
                         >
                             Batal
                         </Button>
-                        <Button
-                            type="submit"
-                            variant="solid"
-                            loading={submitting}
-                        >
-                            Daftarkan Siswa
+                        <Button type="submit" variant="solid" loading={submitting}>
+                            Buat Tagihan
                         </Button>
                     </div>
-
                 </div>
             </Card>
         </form>
     )
 }
 
-export default PendaftaranFormPage
+export default TagihanFormPage

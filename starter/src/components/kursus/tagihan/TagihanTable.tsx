@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { Tag, Tooltip } from '@/components/ui'
-import { HiOutlineEye, HiOutlineTrash, HiOutlineCash } from 'react-icons/hi'
+import { HiOutlineEye, HiOutlineTrash, HiOutlineCash, HiOutlineDocumentDownload } from 'react-icons/hi'
 import DataTable from '@/components/shared/DataTable'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
 import { formatRupiah } from '@/utils/formatNumber'
@@ -40,6 +40,7 @@ interface TagihanTableProps {
     onDetail: (item: ITagihan) => void
     onBayar: (item: ITagihan) => void
     onDelete: (item: ITagihan) => void
+    onCetak: (item: ITagihan) => void
 }
 
 /* ─── component ──────────────────────────────────────────── */
@@ -53,6 +54,7 @@ const TagihanTable = ({
     onDetail,
     onBayar,
     onDelete,
+    onCetak,
 }: TagihanTableProps) => {
     const columns: ColumnDef<ITagihan>[] = useMemo(
         () => [
@@ -137,6 +139,15 @@ const TagihanTable = ({
                     const belumLunas = row.original.status !== 3 && row.original.status !== 4
                     return (
                         <div className="flex items-center justify-end gap-1">
+
+                            <Tooltip title="Download Invoice PDF">
+                                <span
+                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-100 dark:bg-purple-500/20 dark:text-purple-300 dark:hover:bg-purple-500/30 transition-colors"
+                                    onClick={() => onCetak(row.original)}
+                                >
+                                    <HiOutlineDocumentDownload className="text-lg" />
+                                </span>
+                            </Tooltip>
                             {belumLunas && (
                                 <Tooltip title="Catat Pembayaran">
                                     <span
@@ -168,7 +179,7 @@ const TagihanTable = ({
                 },
             },
         ],
-        [pagingData.pageIndex, pagingData.pageSize],
+        [pagingData.pageIndex, pagingData.pageSize, onCetak, onBayar, onDetail, onDelete],
     )
 
     return (

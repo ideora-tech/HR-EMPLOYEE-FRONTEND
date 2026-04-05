@@ -152,6 +152,7 @@ export const API_ENDPOINTS = {
             BY_SISWA: (idSiswa: string) => `${PROXY}/kursus/tagihan/siswa/${idSiswa}`,
             ADD_DETAIL: (id: string) => `${PROXY}/kursus/tagihan/${id}/detail`,
             REMOVE_DETAIL: (id: string, idDetail: string) => `${PROXY}/kursus/tagihan/${id}/detail/${idDetail}`,
+            CETAK: (id: string) => `${PROXY}/kursus/tagihan/${id}/cetak`,
         },
         PEMBAYARAN: {
             BASE: `${PROXY}/kursus/pembayaran`,

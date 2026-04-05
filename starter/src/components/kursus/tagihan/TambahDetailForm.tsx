@@ -88,9 +88,11 @@ const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormP
 
     useEffect(() => {
         if (open) {
-            setForm(INITIAL_STATE)
+            const now = new Date()
+            const periodeNow = dateToMonth(now)
+            setForm({ ...INITIAL_STATE, periode: periodeNow })
             setErrors({})
-            setPeriodeDate(null)
+            setPeriodeDate(now)
             loadBiaya()
         }
     }, [open, loadBiaya])

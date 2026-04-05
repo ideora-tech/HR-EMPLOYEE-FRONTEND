@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -12,20 +12,17 @@ import {
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import TagihanTable from '@/components/kursus/tagihan/TagihanTable'
-import TagihanForm from '@/components/kursus/tagihan/TagihanForm'
 import TagihanDetailDrawer from '@/components/kursus/tagihan/TagihanDetailDrawer'
 import TagihanService from '@/services/kursus/tagihan.service'
-import SiswaService from '@/services/kursus/siswa.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import { ROUTES } from '@/constants/route.constant'
-import type { ITagihan, ICreateTagihan, IUpdateTagihan, ISiswa } from '@/@types/kursus.types'
+import type { ITagihan } from '@/@types/kursus.types'
 
 const TagihanPage = () => {
     const router = useRouter()
 
     const [list, setList] = useState<ITagihan[]>([])
-    const [siswaList, setSiswaList] = useState<ISiswa[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
 
@@ -35,17 +32,8 @@ const TagihanPage = () => {
     const [pageSize, setPageSize] = useState(10)
     const [total, setTotal] = useState(0)
 
-    const [formOpen, setFormOpen] = useState(false)
-    const [editTarget, setEditTarget] = useState<ITagihan | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<ITagihan | null>(null)
     const [drawerTarget, setDrawerTarget] = useState<ITagihan | null>(null)
-
-    /* Load siswa list for form dropdown (once) */
-    useEffect(() => {
-        SiswaService.getAll({ aktif: 1, limit: 200 })
-            .then((res) => { if (res.success) setSiswaList(res.data) })
-            .catch(() => { })
-    }, [])
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -85,33 +73,6 @@ const TagihanPage = () => {
         setCurrentPage(1)
     }
 
-    const handleSubmit = async (payload: ICreateTagihan | IUpdateTagihan) => {
-        setSubmitting(true)
-        try {
-            if (editTarget) {
-                await TagihanService.update(editTarget.id_tagihan, payload as IUpdateTagihan)
-                toast.push(<Notification type="success" title={MESSAGES.SUCCESS.UPDATED(ENTITY.TAGIHAN)} />)
-            } else {
-                await TagihanService.create(payload as ICreateTagihan)
-                toast.push(<Notification type="success" title={MESSAGES.SUCCESS.CREATED(ENTITY.TAGIHAN)} />)
-            }
-            setFormOpen(false)
-            setEditTarget(null)
-            fetchData()
-        } catch (err) {
-            toast.push(
-                <Notification
-                    type="danger"
-                    title={editTarget ? MESSAGES.ERROR.UPDATE(ENTITY.TAGIHAN) : MESSAGES.ERROR.CREATE(ENTITY.TAGIHAN)}
-                >
-                    {parseApiError(err)}
-                </Notification>,
-            )
-        } finally {
-            setSubmitting(false)
-        }
-    }
-
     const handleDelete = async () => {
         if (!deleteTarget) return
         setSubmitting(true)
@@ -131,7 +92,14 @@ const TagihanPage = () => {
         }
     }
 
-    /* When a payment is recorded/deleted inside the drawer, refresh both list and drawer data */
+    const handleCetak = async (item: ITagihan) => {
+        try {
+            await TagihanService.cetak(item.id_tagihan)
+        } catch {
+            toast.push(<Notification type="danger" title="Gagal mengunduh invoice" />)
+        }
+    }
+
     const handleDrawerChanged = () => {
         fetchData()
         if (drawerTarget) {
@@ -152,7 +120,7 @@ const TagihanPage = () => {
                             size="sm"
                             customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                             icon={<HiPlusCircle />}
-                            onClick={() => { setEditTarget(null); setFormOpen(true) }}
+                            onClick={() => router.push(ROUTES.KURSUS_TAGIHAN_BUAT)}
                         >
                             Buat Tagihan
                         </Button>
@@ -195,18 +163,9 @@ const TagihanPage = () => {
                         router.push(`${ROUTES.KURSUS_TAGIHAN_CATAT_PEMBAYARAN}?id=${item.id_tagihan}`)
                     }
                     onDelete={setDeleteTarget}
+                    onCetak={handleCetak}
                 />
             </Card>
-
-            {/* Create / Edit form */}
-            <TagihanForm
-                open={formOpen}
-                editData={editTarget}
-                siswaList={siswaList}
-                submitting={submitting}
-                onClose={() => { setFormOpen(false); setEditTarget(null) }}
-                onSubmit={handleSubmit}
-            />
 
             {/* Detail & payment drawer */}
             {drawerTarget && (
@@ -246,4 +205,3 @@ const TagihanPage = () => {
 }
 
 export default TagihanPage
-

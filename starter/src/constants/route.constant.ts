@@ -39,6 +39,7 @@ export const ROUTES = {
     KURSUS_BIAYA_TAMBAH: '/kursus/biaya/tambah',
     KURSUS_BIAYA_EDIT: (id: string) => `/kursus/biaya/${id}/edit`,
     KURSUS_TAGIHAN: '/kursus/tagihan',
+    KURSUS_TAGIHAN_BUAT: '/kursus/tagihan/buat',
     KURSUS_TAGIHAN_CATAT_PEMBAYARAN: '/kursus/tagihan/catat-pembayaran',
     KURSUS_PEMBAYARAN: '/kursus/pembayaran',
 
