@@ -14,7 +14,6 @@ import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { HiPlusCircle, HiOutlineSearch, HiOutlineX, HiOutlineUpload, HiOutlineDownload } from 'react-icons/hi'
 import SiswaTable from '@/components/kursus/siswa/SiswaTable'
 import SiswaImportModal from '@/components/kursus/siswa/SiswaImportModal'
-import SiswaMonitoring from '@/components/kursus/siswa/SiswaMonitoring'
 import PendaftaranSiswaTab from '@/components/kursus/siswa/PendaftaranSiswaTab'
 import AssignKelasModal from '@/components/kursus/siswa/AssignKelasModal'
 import SiswaKelasDrawer from '@/components/kursus/siswa/SiswaKelasDrawer'
@@ -24,14 +23,13 @@ import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { ISiswa } from '@/@types/kursus.types'
 import { ROUTES } from '@/constants/route.constant'
 
-type ActiveTab = 'pendaftaran' | 'siswa' | 'monitoring'
+type ActiveTab = 'pendaftaran' | 'siswa'
 
 type AktifOption = { value: '' | '1' | '0'; label: string }
 
 const TABS: { key: ActiveTab; label: string }[] = [
     { key: 'pendaftaran', label: 'Pendaftaran Siswa' },
     { key: 'siswa', label: 'Siswa' },
-    { key: 'monitoring', label: 'Monitoring' },
 ]
 
 const AKTIF_OPTIONS: AktifOption[] = [
@@ -150,17 +148,15 @@ const SiswaPage = () => {
             <Card bodyClass="p-0">
                 <div className="flex items-center justify-between px-4 pt-4 pb-0">
                     <h4>Manajemen Siswa</h4>
-                    {activeTab !== 'monitoring' && (
-                        <Button
-                            variant="solid"
-                            size="sm"
-                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
-                            icon={<HiPlusCircle />}
-                            onClick={handleAddClick}
-                        >
-                            {activeTab === 'pendaftaran' ? 'Daftarkan Siswa' : 'Tambah Siswa'}
-                        </Button>
-                    )}
+                    <Button
+                        variant="solid"
+                        size="sm"
+                        customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                        icon={<HiPlusCircle />}
+                        onClick={handleAddClick}
+                    >
+                        {activeTab === 'pendaftaran' ? 'Daftarkan Siswa' : 'Tambah Siswa'}
+                    </Button>
                 </div>
 
                 <div className="px-4 pt-3 border-b border-gray-100 dark:border-gray-700">
@@ -257,7 +253,6 @@ const SiswaPage = () => {
                         </>
                     )}
 
-                    {activeTab === 'monitoring' && <SiswaMonitoring />}
                 </div>
             </Card>
 
