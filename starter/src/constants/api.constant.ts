@@ -208,6 +208,10 @@ export const API_ENDPOINTS = {
         KURSUS_EVENTS: {
             STREAM: `${PROXY}/kursus/admin/events`,
         },
+        REMINDER: {
+            BASE: `${PROXY}/kursus/reminder`,
+            TANDAI: (idCatat: string) => `${PROXY}/kursus/reminder/${idCatat}/tandai`,
+        },
     },
 
     // Struktur Organisasi

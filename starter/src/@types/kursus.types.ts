@@ -883,3 +883,21 @@ export interface IAbsensiCoachQuery {
     limit?: number
     id_coach?: string
 }
+
+// ── Reminder Perpanjangan Kursus ──────────────────────────────────────────────
+
+export interface IReminderItem {
+    id_catat: string
+    id_siswa: string
+    nama_siswa: string
+    no_hp: string | null
+    id_kelas: string
+    nama_kelas: string
+    total_sesi: number
+    total_sesi_hadir: number
+    total_sesi_tidak_hadir: number
+    sesi_tersisa: number
+    status_reminder: 0 | 1
+    reminder_dihubungi_pada: string | null
+    reminder_dihubungi_oleh: string | null
+}
