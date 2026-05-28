@@ -336,6 +336,8 @@ const ReminderTable = () => {
                     onClose={handleCloseDrawer}
                     idSiswa={selectedItem.id_siswa}
                     namaSiswa={selectedItem.nama_siswa}
+                    idKelas={selectedItem.id_kelas}
+                    namaKelas={selectedItem.nama_kelas}
                     onSuccess={() => {
                         handleCloseDrawer()
                         fetchData()
