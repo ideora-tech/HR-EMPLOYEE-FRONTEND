@@ -1,3 +1,5 @@
+'use client'
+
 import { Card } from '@/components/ui'
 import ReminderTable from '@/components/kursus/reminder/ReminderTable'
 

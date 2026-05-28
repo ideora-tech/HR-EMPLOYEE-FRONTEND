@@ -900,4 +900,5 @@ export interface IReminderItem {
     status_reminder: 0 | 1
     reminder_dihubungi_pada: string | null
     reminder_dihubungi_oleh: string | null
+    kategori: 'sesi_habis' | 'akan_habis'
 }
