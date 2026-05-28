@@ -263,6 +263,7 @@ const PerusahaanForm = ({
                 </Button>
                 <Button
                     variant="solid"
+                    customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                     loading={submitting}
                     onClick={handleSubmit}
                 >

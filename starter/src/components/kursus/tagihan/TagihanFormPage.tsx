@@ -389,6 +389,7 @@ const TagihanFormPage = ({
                                     type="button"
                                     size="xs"
                                     variant="solid"
+                                    customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                                     className="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500"
                                     icon={<HiOutlinePlus />}
                                     onClick={handleAddTagihan}
@@ -559,7 +560,7 @@ const TagihanFormPage = ({
                         >
                             Batal
                         </Button>
-                        <Button type="submit" variant="solid" loading={submitting}>
+                        <Button type="submit" variant="solid" customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'} loading={submitting}>
                             Buat Tagihan
                         </Button>
                     </div>

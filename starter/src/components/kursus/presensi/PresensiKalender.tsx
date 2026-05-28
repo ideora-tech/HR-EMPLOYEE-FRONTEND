@@ -162,9 +162,9 @@ const PresensiKalender = ({ refreshToken, onClickJadwal }: PresensiKalenderProps
         return keys.filter((k) => k.toLowerCase().includes(q))
     }, [grouped, searchQuery])
 
-    /* --- presensi map: id_jadwal_kelas::tanggal → { hadir, tidakHadir, firstId } --- */
+    /* --- presensi map: id_jadwal_kelas::tanggal → { hadir, tidakHadir, total, firstId } --- */
     const presensiMap = useMemo(() => {
-        type S = { hadir: number; tidakHadir: number; firstId: string }
+        type S = { hadir: number; tidakHadir: number; total: number; firstId: string }
         const m = new Map<string, S>()
         presensiData.forEach((p) => {
             if (!p.tanggal) return
@@ -173,10 +173,12 @@ const PresensiKalender = ({ refreshToken, onClickJadwal }: PresensiKalenderProps
             if (ex) {
                 if (p.status === 1) ex.hadir++
                 else if (p.status === 2) ex.tidakHadir++
+                ex.total++
             } else {
                 m.set(key, {
                     hadir: p.status === 1 ? 1 : 0,
                     tidakHadir: p.status === 2 ? 1 : 0,
+                    total: 1,
                     firstId: p.id_presensi,
                 })
             }
@@ -346,11 +348,14 @@ const PresensiKalender = ({ refreshToken, onClickJadwal }: PresensiKalenderProps
                                                         const presensiKey = `${jadwal.id_jadwal_kelas}::${tanggalStr}`
                                                         const summary = presensiMap.get(presensiKey) ?? null
                                                         const presensiId = summary?.firstId ?? null
+                                                        const enrolled = jadwal.kuota_terpakai ?? 0
                                                         const sessionStatus = !summary
                                                             ? 'none'
                                                             : summary.tidakHadir > 0
                                                                 ? 'absent'
-                                                                : 'full'
+                                                                : enrolled > 0 && summary.total < enrolled
+                                                                    ? 'none'
+                                                                    : 'full'
                                                         const style = getShiftStyle(jadwal.jam_mulai)
                                                         return (
                                                             <div

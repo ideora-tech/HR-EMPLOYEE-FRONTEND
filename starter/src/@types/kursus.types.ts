@@ -206,6 +206,7 @@ export interface IJadwalKelas {
     tanggal_mulai: string          // "YYYY-MM-DD"
     tanggal_selesai: string        // "YYYY-MM-DD"
     kuota: number
+    kuota_terpakai: number
     deskripsi: string | null
     aktif: number
     dibuat_pada?: string
@@ -246,12 +247,18 @@ export interface ISiswaKelasItem {
 export interface ISiswa {
     id_siswa: string
     nama_siswa: string
+    nama_panggilan: string | null
     email: string | null
     telepon: string | null
     tanggal_lahir: string | null   // "YYYY-MM-DD"
     alamat: string | null
     jenis_kelamin: number | null   // 1 = Laki-laki, 2 = Perempuan
     foto_url: string | null
+    pendidikan: string | null
+    sekolah_pekerjaan: string | null
+    instagram: string | null
+    kontak_utama_nama: string | null
+    kontak_utama_relasi: string | null
     aktif: number
     status_pendaftaran?: number
     dibuat_pada: string
@@ -295,12 +302,18 @@ export interface ISiswaTunggakan {
 
 export interface ICreateSiswa {
     nama_siswa: string
+    nama_panggilan?: string
     email?: string
     telepon?: string
     tanggal_lahir?: string         // "YYYY-MM-DD"
     alamat?: string
     jenis_kelamin?: 1 | 2
     foto_url?: string
+    pendidikan?: string
+    sekolah_pekerjaan?: string
+    instagram?: string
+    kontak_utama_nama?: string
+    kontak_utama_relasi?: string
 }
 
 export type IUpdateSiswa = Partial<ICreateSiswa> & { aktif?: 0 | 1; status_pendaftaran?: number }
@@ -314,12 +327,18 @@ export interface IDaftarSiswaItem {
 
 export interface IDaftarSiswa {
     nama_siswa: string
+    nama_panggilan?: string
     email?: string
     telepon?: string
     tanggal_lahir?: string         // "YYYY-MM-DD"
     alamat?: string
     jenis_kelamin?: 1 | 2
     foto_url?: string
+    pendidikan?: string
+    sekolah_pekerjaan?: string
+    instagram?: string
+    kontak_utama_nama?: string
+    kontak_utama_relasi?: string
     tagihan: IDaftarSiswaItem[]
     id_diskon?: string
     kode_diskon?: string
@@ -366,8 +385,12 @@ export interface IAddDetailTagihan {
 
 export interface ITagihan {
     id_tagihan: string
+    nomor_kwitansi: string | null
     id_siswa: string
     nama_siswa: string
+    nama_tagihan: string | null
+    periode_bulan: number | null
+    periode_label: string | null
     id_biaya: string
     nama_biaya: string
     id_kategori_umur: string
@@ -378,15 +401,15 @@ export interface ITagihan {
     nama_kelas: string
     id_jadwal_kelas: string | null
     hari_jadwal: string | null
-    jam_jadwal: string | null      // "HH:MM-HH:MM"
+    jam_jadwal: string | null
     nama_instruktur: string | null
-    periode: string | null         // "YYYY-MM"
+    periode: string | null
     id_diskon: string | null
     nama_diskon: string | null
     persen_diskon: number | null
-    nominal_harga: number          // total kotor (jumlah semua harga_akhir detail)
-    nominal_diskon: number | null  // potongan yang diterapkan
-    total_harga: number            // nominal_harga - nominal_diskon
+    nominal_harga: number
+    nominal_diskon: number | null
+    total_harga: number
     total_bayar: number
     status: 1 | 2 | 3 | 4
     deskripsi: string | null
@@ -432,6 +455,7 @@ export interface IUpdateTagihan {
 export interface ITagihanQuery {
     search?: string
     aktif?: number
+    status?: number
     page?: number
     limit?: number
 }
@@ -444,11 +468,15 @@ export interface IPembayaran {
     id_pembayaran: string
     id_tagihan: string
     jumlah: number
-    tanggal_bayar: string          // "YYYY-MM-DD"
+    tanggal_bayar: string
     metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
     referensi: string | null
     deskripsi: string | null
     bukti_bayar: string | null
+    status_konfirmasi: 0 | 1 | 2   // 0=PENDING, 1=DIKONFIRMASI, 2=DITOLAK
+    dikonfirmasi_oleh: string | null
+    dikonfirmasi_at: string | null
+    catatan_tolak: string | null
     aktif: number
     dibuat_pada: string
     diubah_pada: string | null
@@ -669,7 +697,7 @@ export interface ICatatKelasSiswa {
 
 export interface ICreateCatatKelasSiswa {
     id_siswa: string
-    id_kelas: string
+    id_jadwal_kelas: string
     total_sesi?: number
 }
 
@@ -721,3 +749,137 @@ export interface IKursusDashboard {
     pembayaran_terbaru: IKursusDashboardPembayaran[]
 }
 
+// ── Coach ────────────────────────────────────────────────────────────────────
+
+export interface ICoachPublic {
+    id_coach: string
+    id_karyawan: string
+    nama_karyawan: string
+    telepon: string | null
+    tarif_per_sesi: number | null
+    no_rekening: string | null
+    nama_bank: string | null
+    bio: string | null
+    foto_url: string | null
+    spesialisasi: string | null
+    aktif: number
+    dibuat_pada: string | null
+    diubah_pada: string | null
+}
+
+export interface ICreateCoach {
+    id_karyawan: string
+    password: string
+    tarif_per_sesi?: number
+    no_rekening?: string
+    nama_bank?: string
+    bio?: string
+    foto_url?: string
+    spesialisasi?: string
+}
+
+export interface IUpdateCoach {
+    tarif_per_sesi?: number
+    no_rekening?: string
+    nama_bank?: string
+    bio?: string
+    foto_url?: string
+    spesialisasi?: string
+    aktif?: 0 | 1
+}
+
+export interface ICoachQuery {
+    page?: number
+    limit?: number
+    search?: string
+    aktif?: 0 | 1
+}
+
+// ── JadwalRequest ─────────────────────────────────────────────────────────────
+
+export interface IJadwalRequestCoachSub {
+    id_coach: string
+    nama_karyawan: string
+    telepon: string | null
+    spesialisasi: string | null
+}
+
+export interface IJadwalRequestJadwalSub {
+    id_jadwal_kelas: string
+    nama_kelas: string
+    hari: string
+    jam_mulai: string
+    jam_selesai: string
+}
+
+export interface IJadwalRequestPublic {
+    id_request: string
+    id_jadwal_kelas: string
+    id_coach: string
+    status: 1 | 2 | 3
+    catatan_coach: string | null
+    catatan_admin: string | null
+    ditangani_oleh: string | null
+    ditangani_pada: string | null
+    aktif: number
+    dibuat_pada: string | null
+    diubah_pada: string | null
+    coach: IJadwalRequestCoachSub
+    jadwal: IJadwalRequestJadwalSub
+}
+
+export interface ICreateJadwalRequest {
+    id_jadwal_kelas: string
+    catatan_coach?: string
+}
+
+export interface IApproveJadwalRequest {
+    status: 2 | 3
+    catatan_admin?: string
+}
+
+export interface IJadwalRequestQuery {
+    page?: number
+    limit?: number
+    status?: 1 | 2 | 3
+}
+
+// ── AbsensiCoach ──────────────────────────────────────────────────────────────
+
+export interface IAbsensiCoachCoachSub {
+    id_coach: string
+    nama_karyawan: string
+}
+
+export interface IAbsensiCoachJadwalSub {
+    id_jadwal_kelas: string
+    nama_kelas: string
+    hari: string
+}
+
+export interface IAbsensiCoachPublic {
+    id_absensi: string
+    id_jadwal_kelas: string
+    id_coach: string
+    tanggal: string
+    waktu_checkin: string | null
+    waktu_checkout: string | null
+    status: 1 | 2 | 3
+    catatan: string | null
+    aktif: number
+    dibuat_pada: string | null
+    diubah_pada: string | null
+    coach: IAbsensiCoachCoachSub
+    jadwal: IAbsensiCoachJadwalSub
+}
+
+export interface ICheckinAbsensiCoach {
+    id_jadwal_kelas: string
+    tanggal: string
+}
+
+export interface IAbsensiCoachQuery {
+    page?: number
+    limit?: number
+    id_coach?: string
+}

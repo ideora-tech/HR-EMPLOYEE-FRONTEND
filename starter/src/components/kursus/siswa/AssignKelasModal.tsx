@@ -4,8 +4,9 @@ import { useState, useEffect, useMemo } from 'react'
 import { Button, Dialog, FormItem, Input, Select } from '@/components/ui'
 import KelasService from '@/services/kursus/kelas.service'
 import KategoriUmurService from '@/services/kursus/kategori-umur.service'
+import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
 import CatatKelasSiswaService from '@/services/kursus/catat-kelas-siswa.service'
-import type { ISiswa, IKelas, IKategoriUmur } from '@/@types/kursus.types'
+import type { ISiswa, IKelas, IKategoriUmur, IJadwalKelas } from '@/@types/kursus.types'
 
 interface AssignKelasModalProps {
     isOpen: boolean
@@ -18,9 +19,11 @@ type SelectOption = { value: string; label: string }
 
 const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModalProps) => {
     const [kelasList, setKelasList] = useState<SelectOption[]>([])
+    const [jadwalList, setJadwalList] = useState<IJadwalKelas[]>([])
     const [kategoriList, setKategoriList] = useState<IKategoriUmur[]>([])
 
     const [selectedKelas, setSelectedKelas] = useState<SelectOption | null>(null)
+    const [selectedJadwal, setSelectedJadwal] = useState<SelectOption | null>(null)
     const [selectedPaket, setSelectedPaket] = useState<SelectOption | null>(null)
     const [selectedKategori, setSelectedKategori] = useState<SelectOption | null>(null)
     const [totalSesi, setTotalSesi] = useState('')
@@ -33,8 +36,10 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
     useEffect(() => {
         if (!isOpen) return
         setSelectedKelas(null)
+        setSelectedJadwal(null)
         setSelectedPaket(null)
         setSelectedKategori(null)
+        setJadwalList([])
         setKategoriList([])
         setTotalSesi('')
         setTotalSesiAutoFilled(false)
@@ -45,23 +50,37 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
         }).catch(() => { })
     }, [isOpen])
 
-    // When kelas changes → load kategori umur, reset paket & kategori
+    // When kelas changes → load jadwal & kategori umur, reset selects
     const handleKelasChange = async (opt: SelectOption | null) => {
         setSelectedKelas(opt)
+        setSelectedJadwal(null)
         setSelectedPaket(null)
         setSelectedKategori(null)
+        setJadwalList([])
         setKategoriList([])
         setTotalSesi('')
         setTotalSesiAutoFilled(false)
         setError('')
         if (!opt) return
         try {
-            const res = await KategoriUmurService.getByKelas(opt.value)
-            setKategoriList(res.data)
+            const [jadwalRes, kategoriRes] = await Promise.allSettled([
+                JadwalKelasService.getByKelas(opt.value),
+                KategoriUmurService.getByKelas(opt.value),
+            ])
+            if (jadwalRes.status === 'fulfilled') setJadwalList(jadwalRes.value.data.filter((j) => j.aktif === 1))
+            if (kategoriRes.status === 'fulfilled') setKategoriList(kategoriRes.value.data)
         } catch {
-            // kategori umur tidak tersedia — tetap bisa submit
+            // lanjutkan meski gagal
         }
     }
+
+    // Jadwal options for selected kelas
+    const jadwalOptions = useMemo<SelectOption[]>(() => {
+        return jadwalList.map((j) => ({
+            value: j.id_jadwal_kelas,
+            label: `${j.hari}, ${j.jam_mulai}–${j.jam_selesai}${j.nama_karyawan ? ` · ${j.nama_karyawan}` : ''}`,
+        }))
+    }, [jadwalList])
 
     // Derive unique paket options from loaded kategori umur
     const paketOptions = useMemo<SelectOption[]>(() => {
@@ -103,12 +122,16 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
             setError('Pilih kelas terlebih dahulu')
             return
         }
+        if (!selectedJadwal) {
+            setError('Pilih jadwal / jam kelas terlebih dahulu')
+            return
+        }
         setSubmitting(true)
         setError('')
         try {
             await CatatKelasSiswaService.create({
                 id_siswa: siswa.id_siswa,
-                id_kelas: selectedKelas.value,
+                id_jadwal_kelas: selectedJadwal.value,
                 ...(totalSesi !== '' ? { total_sesi: Number(totalSesi) } : {}),
             })
             onSuccess()
@@ -150,6 +173,28 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
                         onChange={(opt) => handleKelasChange(opt as SelectOption | null)}
                     />
                 </FormItem>
+
+                {/* Jadwal / Jam Kelas — muncul setelah kelas dipilih */}
+                {selectedKelas && (
+                    <FormItem
+                        label="Jadwal / Jam Kelas"
+                        asterisk
+                        extra="Pilih jadwal kelas yang akan diikuti"
+                        invalid={!!error && !!selectedKelas && !selectedJadwal}
+                        errorMessage={selectedKelas && !selectedJadwal ? error : ''}
+                    >
+                        <Select
+                            placeholder={jadwalList.length === 0 ? 'Tidak ada jadwal tersedia' : 'Pilih jadwal...'}
+                            options={jadwalOptions}
+                            value={selectedJadwal}
+                            isDisabled={jadwalList.length === 0}
+                            onChange={(opt) => {
+                                setSelectedJadwal(opt as SelectOption | null)
+                                setError('')
+                            }}
+                        />
+                    </FormItem>
+                )}
 
                 {/* Paket — muncul setelah kelas dipilih dan ada paket tersedia */}
                 {selectedKelas && paketOptions.length > 0 && (
@@ -213,7 +258,7 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
                 <Button variant="plain" onClick={onClose} disabled={submitting}>
                     Batal
                 </Button>
-                <Button variant="solid" loading={submitting} onClick={handleSubmit}>
+                <Button variant="solid" customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'} loading={submitting} onClick={handleSubmit}>
                     Assign
                 </Button>
             </div>

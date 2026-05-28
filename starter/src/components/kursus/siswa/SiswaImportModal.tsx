@@ -102,6 +102,7 @@ const SiswaImportModal = ({ open, onClose, onSuccess }: SiswaImportModalProps) =
                         </Button>
                         <Button
                             variant="solid"
+                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                             icon={<HiOutlineUpload />}
                             loading={uploading}
                             disabled={fileList.length === 0}
@@ -154,7 +155,7 @@ const SiswaImportModal = ({ open, onClose, onSuccess }: SiswaImportModalProps) =
                         >
                             Import Lagi
                         </Button>
-                        <Button variant="solid" onClick={handleClose}>
+                        <Button variant="solid" customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'} onClick={handleClose}>
                             Selesai
                         </Button>
                     </div>

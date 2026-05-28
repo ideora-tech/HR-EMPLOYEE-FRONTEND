@@ -215,7 +215,7 @@ const LokasiKantorForm = ({
                 <Button variant="plain" onClick={onClose} disabled={submitting}>
                     Batal
                 </Button>
-                <Button variant="solid" loading={submitting} onClick={handleSubmit}>
+                <Button variant="solid" customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'} loading={submitting} onClick={handleSubmit}>
                     {isEdit ? 'Simpan Perubahan' : 'Tambah Lokasi'}
                 </Button>
             </div>

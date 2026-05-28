@@ -400,6 +400,7 @@ const AbsenDrawer = ({
                     <div className="px-4 py-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0">
                         <Button
                             variant="solid"
+                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                             className="w-full"
                             icon={<HiOutlineSave />}
                             loading={saving}

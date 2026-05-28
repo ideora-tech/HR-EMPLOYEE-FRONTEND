@@ -46,4 +46,5 @@ export const ENTITY = {
     TARIF: 'Tarif',
     PROGRAM_PENGAJARAN: 'Program Pengajaran',
     TINGKAT_PROGRAM: 'Tingkat Program',
+    COACH: 'Coach',
 } as const

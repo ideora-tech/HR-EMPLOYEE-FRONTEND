@@ -37,11 +37,17 @@ interface TagihanItem {
 
 interface FormState {
     nama_siswa: string
+    nama_panggilan: string
     email: string
     telepon: string
     tanggal_lahir: Date | null
     alamat: string
     jenis_kelamin: '' | '1' | '2'
+    pendidikan: string
+    sekolah_pekerjaan: string
+    instagram: string
+    kontak_utama_nama: string
+    kontak_utama_relasi: string
 }
 
 interface PendaftaranFormPageProps {
@@ -52,11 +58,17 @@ interface PendaftaranFormPageProps {
 
 const INITIAL_FORM: FormState = {
     nama_siswa: '',
+    nama_panggilan: '',
     email: '',
     telepon: '',
     tanggal_lahir: null,
     alamat: '',
     jenis_kelamin: '',
+    pendidikan: '',
+    sekolah_pekerjaan: '',
+    instagram: '',
+    kontak_utama_nama: '',
+    kontak_utama_relasi: '',
 }
 
 const newTagihanItem = (): TagihanItem => {
@@ -233,11 +245,17 @@ const PendaftaranFormPage = ({
 
         const payload: IDaftarSiswa = {
             nama_siswa: form.nama_siswa.trim(),
+            ...(form.nama_panggilan.trim() && { nama_panggilan: form.nama_panggilan.trim() }),
             ...(form.email.trim() && { email: form.email.trim() }),
             ...(form.telepon.trim() && { telepon: form.telepon.trim() }),
             ...(form.tanggal_lahir && { tanggal_lahir: dateToString(form.tanggal_lahir) }),
             ...(form.alamat.trim() && { alamat: form.alamat.trim() }),
             ...(form.jenis_kelamin && { jenis_kelamin: Number(form.jenis_kelamin) as 1 | 2 }),
+            ...(form.pendidikan.trim() && { pendidikan: form.pendidikan.trim() }),
+            ...(form.sekolah_pekerjaan.trim() && { sekolah_pekerjaan: form.sekolah_pekerjaan.trim() }),
+            ...(form.instagram.trim() && { instagram: form.instagram.trim() }),
+            ...(form.kontak_utama_nama.trim() && { kontak_utama_nama: form.kontak_utama_nama.trim() }),
+            ...(form.kontak_utama_relasi.trim() && { kontak_utama_relasi: form.kontak_utama_relasi.trim() }),
             tagihan,
             ...(diskonMode === 'dropdown' && selectedDiskon && { id_diskon: selectedDiskon.value }),
             ...(diskonMode === 'kode' && kodeDiskon.trim() && { kode_diskon: kodeDiskon.trim() }),
@@ -296,6 +314,14 @@ const PendaftaranFormPage = ({
                                     value={form.nama_siswa}
                                     invalid={!!errors.nama_siswa}
                                     onChange={(e) => setForm((p) => ({ ...p, nama_siswa: e.target.value }))}
+                                />
+                            </FormItem>
+
+                            <FormItem label="Nama Panggilan">
+                                <Input
+                                    placeholder="Nama panggilan"
+                                    value={form.nama_panggilan}
+                                    onChange={(e) => setForm((p) => ({ ...p, nama_panggilan: e.target.value }))}
                                 />
                             </FormItem>
 
@@ -367,6 +393,66 @@ const PendaftaranFormPage = ({
                             />
                         </FormItem>
                     </div>
+                    <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
+
+                    {/* Section: Pendidikan & Sosmed */}
+                    <div>
+                        <div className="mb-3">
+                            <h5 className="font-semibold">Pendidikan &amp; Sosmed</h5>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                            <FormItem label="Pendidikan">
+                                <Input
+                                    placeholder="SMA / Kuliah / dll"
+                                    value={form.pendidikan}
+                                    onChange={(e) => setForm((p) => ({ ...p, pendidikan: e.target.value }))}
+                                />
+                            </FormItem>
+
+                            <FormItem label="Sekolah / Pekerjaan">
+                                <Input
+                                    placeholder="SMAN 1 Jakarta"
+                                    value={form.sekolah_pekerjaan}
+                                    onChange={(e) => setForm((p) => ({ ...p, sekolah_pekerjaan: e.target.value }))}
+                                />
+                            </FormItem>
+
+                            <FormItem label="Instagram">
+                                <Input
+                                    placeholder="@username"
+                                    value={form.instagram}
+                                    onChange={(e) => setForm((p) => ({ ...p, instagram: e.target.value }))}
+                                />
+                            </FormItem>
+                        </div>
+                    </div>
+
+                    <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
+
+                    {/* Section: Kontak Utama */}
+                    <div>
+                        <div className="mb-3">
+                            <h5 className="font-semibold">Kontak Utama</h5>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                            <FormItem label="Nama Kontak">
+                                <Input
+                                    placeholder="Nama orang tua / wali"
+                                    value={form.kontak_utama_nama}
+                                    onChange={(e) => setForm((p) => ({ ...p, kontak_utama_nama: e.target.value }))}
+                                />
+                            </FormItem>
+
+                            <FormItem label="Relasi">
+                                <Input
+                                    placeholder="Ayah / Ibu / Kakak / dll"
+                                    value={form.kontak_utama_relasi}
+                                    onChange={(e) => setForm((p) => ({ ...p, kontak_utama_relasi: e.target.value }))}
+                                />
+                            </FormItem>
+                        </div>
+                    </div>
+
                     <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
 
                     {/* Section: Diskon */}
@@ -451,6 +537,7 @@ const PendaftaranFormPage = ({
                                     type="button"
                                     size="xs"
                                     variant="solid"
+                                    customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                                     className="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500"
                                     icon={<HiOutlinePlus />}
                                     onClick={handleAddTagihan}
@@ -584,6 +671,7 @@ const PendaftaranFormPage = ({
                         <Button
                             type="submit"
                             variant="solid"
+                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                             loading={submitting}
                         >
                             Daftarkan Siswa

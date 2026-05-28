@@ -367,6 +367,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                                     type="button"
                                                     size="xs"
                                                     variant="solid"
+                                                    customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                                                     className="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500"
                                                     icon={<HiOutlinePlus />}
                                                     onClick={() => setDetailFormOpen(true)}
@@ -608,6 +609,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                                 <Button
                                                     type="button"
                                                     variant="solid"
+                                                    customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                                                     size="sm"
                                                     className="bg-[#2a85ff] hover:bg-[#0069f6] text-white border-[#2a85ff] shrink-0"
                                                     loading={applyingDiskon}
@@ -631,6 +633,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                                 <Button
                                                     type="button"
                                                     variant="solid"
+                                                    customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                                                     size="sm"
                                                     className="bg-[#2a85ff] hover:bg-[#0069f6] text-white border-[#2a85ff] shrink-0"
                                                     loading={applyingDiskon}
@@ -739,7 +742,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                             >
                                 Batal
                             </Button>
-                            <Button type="submit" variant="solid" loading={submitting}>
+                            <Button type="submit" variant="solid" customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'} loading={submitting}>
                                 Simpan Pembayaran
                             </Button>
                         </div>
@@ -780,6 +783,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                         <Button
                             type="button"
                             variant="solid"
+                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                             color="red"
                             loading={deletingDetail}
                             onClick={handleDeleteDetailConfirm}

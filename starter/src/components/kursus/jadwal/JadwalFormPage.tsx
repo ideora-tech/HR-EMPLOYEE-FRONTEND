@@ -10,7 +10,7 @@ import {
     Switcher,
 } from '@/components/ui'
 import { HiArrowLeft } from 'react-icons/hi'
-import KaryawanService from '@/services/karyawan.service'
+import CoachService from '@/services/kursus/coach.service'
 import KelasService from '@/services/kursus/kelas.service'
 import KategoriUmurService from '@/services/kursus/kategori-umur.service'
 import PaketService from '@/services/kursus/paket.service'
@@ -100,7 +100,7 @@ const JadwalFormPage = ({
         try {
             const [kelasRes, karyawanRes, paketRes] = await Promise.all([
                 KelasService.getAll({ aktif: 1, limit: 200 }),
-                KaryawanService.getAll({ aktif: 1, limit: 200 }),
+                CoachService.getAll({ aktif: 1, limit: 200 }),
                 PaketService.getAll({ aktif: 1, limit: 200 }),
             ])
             if (kelasRes.success)
@@ -416,7 +416,7 @@ const JadwalFormPage = ({
                         >
                             Batal
                         </Button>
-                        <Button type="submit" variant="solid" loading={submitting}>
+                        <Button type="submit" variant="solid" customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'} loading={submitting}>
                             {isEdit ? 'Simpan Perubahan' : 'Tambah Jadwal'}
                         </Button>
                     </div>

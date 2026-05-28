@@ -87,6 +87,21 @@ const PembayaranService = {
             headers: { 'Content-Type': 'multipart/form-data' },
         })
     },
+
+    async konfirmasi(id: string): Promise<ApiResponse<IPembayaran>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<IPembayaran>>({
+            url: API_ENDPOINTS.KURSUS.PEMBAYARAN.KONFIRMASI(id),
+            method: 'PATCH',
+        })
+    },
+
+    async tolak(id: string, catatanTolak: string): Promise<ApiResponse<IPembayaran>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<IPembayaran>>({
+            url: API_ENDPOINTS.KURSUS.PEMBAYARAN.TOLAK(id),
+            method: 'PATCH',
+            data: { catatan_tolak: catatanTolak },
+        })
+    },
 }
 
 export default PembayaranService

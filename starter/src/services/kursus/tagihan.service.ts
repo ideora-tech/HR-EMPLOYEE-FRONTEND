@@ -38,6 +38,7 @@ const TagihanService = {
         const params = new URLSearchParams()
         if (query?.search) params.append('search', query.search)
         if (query?.aktif !== undefined) params.append('aktif', String(query.aktif))
+        if (query?.status !== undefined) params.append('status', String(query.status))
         if (query?.page) params.append('page', String(query.page))
         if (query?.limit) params.append('limit', String(query.limit))
         const qs = params.toString()
@@ -92,7 +93,7 @@ const TagihanService = {
             url: API_ENDPOINTS.KURSUS.TAGIHAN.CETAK(id),
             method: 'GET',
         })
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:4005'
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:4011'
         window.open(`${backendUrl}${res.data.url}`, '_blank')
     },
 
@@ -118,6 +119,21 @@ const TagihanService = {
         const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>>({
             url: API_ENDPOINTS.KURSUS.TAGIHAN.REMOVE_DETAIL(id, idDetail),
             method: 'DELETE',
+        })
+        return { ...res, data: normalizeTagihan(res.data) }
+    },
+
+    async getKwitansi(id: string): Promise<ApiResponse<ITagihan & { siswa_detail: { nama_siswa: string; telepon: string | null; alamat: string | null } }>> {
+        return ApiService.fetchDataWithAxios({
+            url: API_ENDPOINTS.KURSUS.TAGIHAN.KWITANSI(id),
+            method: 'GET',
+        })
+    },
+
+    async batalkan(id: string): Promise<ApiResponse<ITagihan>> {
+        const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>>({
+            url: API_ENDPOINTS.KURSUS.TAGIHAN.BATALKAN(id),
+            method: 'PATCH',
         })
         return { ...res, data: normalizeTagihan(res.data) }
     },

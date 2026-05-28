@@ -126,11 +126,11 @@ const BiayaFormPage = ({
 
     useEffect(() => {
         if (editData) {
-            loadKategori(editData.id_paket)
+            loadKategori(editData.id_paket ?? '')
             setForm({
-                id_kelas: editData.id_kelas,
-                id_paket: editData.id_paket,
-                id_kategori_umur: editData.id_kategori_umur,
+                id_kelas: editData.id_kelas ?? '',
+                id_paket: editData.id_paket ?? '',
+                id_kategori_umur: editData.id_kategori_umur ?? '',
                 jenis_biaya: editData.jenis_biaya,
                 nama_biaya: editData.nama_biaya,
                 harga_biaya: formatNum(editData.harga_biaya),
@@ -401,7 +401,7 @@ const BiayaFormPage = ({
                         >
                             Batal
                         </Button>
-                        <Button type="submit" variant="solid" loading={submitting}>
+                        <Button type="submit" variant="solid" customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'} loading={submitting}>
                             {isEdit ? 'Simpan Perubahan' : 'Tambah Biaya'}
                         </Button>
                     </div>

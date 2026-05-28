@@ -154,12 +154,17 @@ export const API_ENDPOINTS = {
             ADD_DETAIL: (id: string) => `${PROXY}/kursus/tagihan/${id}/detail`,
             REMOVE_DETAIL: (id: string, idDetail: string) => `${PROXY}/kursus/tagihan/${id}/detail/${idDetail}`,
             CETAK: (id: string) => `${PROXY}/kursus/tagihan/${id}/cetak`,
+            KWITANSI: (id: string) => `${PROXY}/kursus/tagihan/${id}/kwitansi`,
+            NON_PAKET: `${PROXY}/kursus/tagihan/non-paket`,
+            BATALKAN: (id: string) => `${PROXY}/kursus/tagihan/${id}/batalkan`,
         },
         PEMBAYARAN: {
             BASE: `${PROXY}/kursus/pembayaran`,
             BY_ID: (id: string) => `${PROXY}/kursus/pembayaran/${id}`,
             BY_TAGIHAN: (idTagihan: string) => `${PROXY}/kursus/pembayaran/tagihan/${idTagihan}`,
             BUKTI_BAYAR: (id: string) => `${PROXY}/kursus/pembayaran/${id}/bukti-bayar`,
+            KONFIRMASI: (id: string) => `${PROXY}/kursus/pembayaran/${id}/konfirmasi`,
+            TOLAK: (id: string) => `${PROXY}/kursus/pembayaran/${id}/tolak`,
         },
         PRESENSI: {
             BASE: `${PROXY}/kursus/presensi`,
@@ -188,6 +193,20 @@ export const API_ENDPOINTS = {
             BASE: `${PROXY}/kursus/tarif`,
             BY_ID: (id: string) => `${PROXY}/kursus/tarif/${id}`,
             BY_PROGRAM: (idProgram: string) => `${PROXY}/kursus/tarif/program/${idProgram}`,
+        },
+        COACH: {
+            BASE: `${PROXY}/kursus/admin/coach`,
+            BY_ID: (id: string) => `${PROXY}/kursus/admin/coach/${id}`,
+        },
+        JADWAL_REQUEST_ADMIN: {
+            BASE: `${PROXY}/kursus/admin/jadwal-request`,
+            BY_ID: (id: string) => `${PROXY}/kursus/admin/jadwal-request/${id}`,
+        },
+        ABSENSI_COACH_ADMIN: {
+            BASE: `${PROXY}/kursus/admin/absensi-coach`,
+        },
+        KURSUS_EVENTS: {
+            STREAM: `${PROXY}/kursus/admin/events`,
         },
     },
 

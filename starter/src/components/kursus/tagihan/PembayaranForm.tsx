@@ -262,7 +262,7 @@ const PembayaranForm = ({ open, tagihan, onClose, onSaved }: PembayaranFormProps
                 <Button variant="plain" onClick={onClose} disabled={saving}>
                     Batal
                 </Button>
-                <Button variant="solid" loading={saving} onClick={handleSubmit}>
+                <Button variant="solid" customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'} loading={saving} onClick={handleSubmit}>
                     Simpan
                 </Button>
             </div>

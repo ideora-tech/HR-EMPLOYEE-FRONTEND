@@ -1,13 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button, Drawer, Notification, toast, Dialog } from '@/components/ui'
-import { HiOutlinePlus, HiOutlineTrash, HiOutlineCash, HiOutlineUser, HiOutlineTag } from 'react-icons/hi'
+import { HiOutlinePlus, HiOutlineTrash, HiOutlineCash, HiOutlineUser, HiOutlineTag, HiOutlinePrinter, HiOutlineX } from 'react-icons/hi'
 import PembayaranService from '@/services/kursus/pembayaran.service'
+import TagihanService from '@/services/kursus/tagihan.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { ITagihan, IPembayaran } from '@/@types/kursus.types'
 import PembayaranForm from './PembayaranForm'
+import KonfirmasiPanel from './KonfirmasiPanel'
+import KwitansiPrint from './KwitansiPrint'
 
 /* ─── helpers ────────────────────────────────────────────── */
 
@@ -18,20 +21,8 @@ const STATUS_MAP: Record<number, { label: string; class: string }> = {
     4: { label: 'Dibatalkan', class: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400' },
 }
 
-const METODE_CLASS: Record<string, string> = {
-    TUNAI: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400',
-    TRANSFER: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400',
-    QRIS: 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400',
-}
-
 function formatRupiah(n: number) {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
-}
-
-function formatTanggal(s: string) {
-    return new Date(s + 'T00:00:00').toLocaleDateString('id-ID', {
-        day: 'numeric', month: 'long', year: 'numeric',
-    })
 }
 
 /* ─── props ──────────────────────────────────────────────── */
@@ -53,11 +44,17 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState(false)
     const [deleting, setDeleting] = useState(false)
+    const [batalkanConfirm, setBatalkanConfirm] = useState(false)
+    const [batalkanLoading, setBatalkanLoading] = useState(false)
+    const [kwitansiData, setKwitansiData] = useState<(ITagihan & { siswa_detail?: { nama_siswa: string; telepon: string | null; alamat: string | null } }) | null>(null)
+    const [kwitansiLoading, setKwitansiLoading] = useState(false)
+    const kwitansiRef = useRef<HTMLDivElement>(null)
 
     /* ── Load riwayat pembayaran ── */
     useEffect(() => {
         if (!open || !tagihan) {
             setPayments([])
+            setKwitansiData(null)
             return
         }
         setLoading(true)
@@ -67,8 +64,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
             .finally(() => setLoading(false))
     }, [open, tagihan])
 
-    const handleFormSaved = async () => {
-        setFormOpen(false)
+    const reloadPayments = async () => {
         if (!tagihan) return
         setLoading(true)
         try {
@@ -78,6 +74,11 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
             setLoading(false)
         }
         onChanged()
+    }
+
+    const handleFormSaved = async () => {
+        setFormOpen(false)
+        await reloadPayments()
     }
 
     const handleDeleteClick = (id: string) => {
@@ -95,7 +96,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
             )
             setDeleteConfirm(false)
             setDeletingId(null)
-            handleFormSaved()
+            await reloadPayments()
         } catch (err) {
             toast.push(
                 <Notification type="danger" title={MESSAGES.ERROR.DELETE(ENTITY.PEMBAYARAN)}>
@@ -104,6 +105,42 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
             )
         } finally {
             setDeleting(false)
+        }
+    }
+
+    const handleBatalkan = async () => {
+        if (!tagihan) return
+        setBatalkanLoading(true)
+        try {
+            await TagihanService.batalkan(tagihan.id_tagihan)
+            toast.push(<Notification type="success" title="Tagihan berhasil dibatalkan" />)
+            setBatalkanConfirm(false)
+            onChanged()
+            onClose()
+        } catch (err) {
+            toast.push(
+                <Notification type="danger" title="Gagal membatalkan tagihan">
+                    {parseApiError(err)}
+                </Notification>,
+            )
+        } finally {
+            setBatalkanLoading(false)
+        }
+    }
+
+    const handleCetakKwitansi = async () => {
+        if (!tagihan) return
+        setKwitansiLoading(true)
+        try {
+            const res = await TagihanService.getKwitansi(tagihan.id_tagihan)
+            const data = { ...res.data, pembayaran: payments }
+            setKwitansiData(data)
+            // Print after state settles
+            setTimeout(() => window.print(), 100)
+        } catch {
+            toast.push(<Notification type="danger" title="Gagal mengambil data kwitansi" />)
+        } finally {
+            setKwitansiLoading(false)
         }
     }
 
@@ -209,6 +246,32 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                             {tagihan.deskripsi && (
                                 <p className="text-sm text-gray-400 italic">&quot;{tagihan.deskripsi}&quot;</p>
                             )}
+
+                            {/* Action buttons */}
+                            {!readOnly && (
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                    <Button
+                                        size="xs"
+                                        variant="default"
+                                        icon={<HiOutlinePrinter />}
+                                        loading={kwitansiLoading}
+                                        onClick={handleCetakKwitansi}
+                                    >
+                                        Cetak Kwitansi
+                                    </Button>
+                                    {tagihan.status !== 4 && (
+                                        <Button
+                                            size="xs"
+                                            variant="plain"
+                                            className="text-red-500 hover:text-red-600"
+                                            icon={<HiOutlineX />}
+                                            onClick={() => setBatalkanConfirm(true)}
+                                        >
+                                            Batalkan Tagihan
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -221,6 +284,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                             <Button
                                 size="xs"
                                 variant="solid"
+                                customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                                 icon={<HiOutlinePlus />}
                                 onClick={() => setFormOpen(true)}
                             >
@@ -233,7 +297,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                         {loading ? (
                             <div className="p-4 space-y-3">
                                 {Array.from({ length: 3 }).map((_, i) => (
-                                    <div key={i} className="h-16 bg-gray-100 dark:bg-gray-700 animate-pulse rounded-lg" />
+                                    <div key={i} className="h-20 bg-gray-100 dark:bg-gray-700 animate-pulse rounded-xl" />
                                 ))}
                             </div>
                         ) : payments.length === 0 ? (
@@ -241,34 +305,23 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                                 Belum ada pembayaran tercatat.
                             </div>
                         ) : (
-                            <div className="divide-y divide-gray-50 dark:divide-gray-800">
+                            <div className="flex flex-col gap-3 p-4">
                                 {payments.map((p) => (
-                                    <div key={p.id_pembayaran} className="flex items-center justify-between gap-3 px-4 py-3">
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-semibold text-gray-800 dark:text-gray-100">
-                                                    {formatRupiah(p.jumlah)}
-                                                </span>
-                                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${METODE_CLASS[p.metode] ?? ''}`}>
-                                                    {p.metode}
-                                                </span>
-                                            </div>
-                                            <p className="text-xs text-gray-400 mt-0.5">
-                                                {formatTanggal(p.tanggal_bayar)}
-                                                {p.referensi && ` · ${p.referensi}`}
-                                            </p>
-                                            {p.deskripsi && (
-                                                <p className="text-xs text-gray-400 italic">{p.deskripsi}</p>
-                                            )}
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDeleteClick(p.id_pembayaran)}
-                                            className="shrink-0 p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                                            title="Hapus pembayaran"
-                                        >
-                                            <HiOutlineTrash className="text-base" />
-                                        </button>
+                                    <div key={p.id_pembayaran} className="relative">
+                                        <KonfirmasiPanel
+                                            pembayaran={p}
+                                            onUpdated={reloadPayments}
+                                        />
+                                        {!readOnly && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteClick(p.id_pembayaran)}
+                                                className="absolute top-3 right-3 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                                                title="Hapus pembayaran"
+                                            >
+                                                <HiOutlineTrash className="text-base" />
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -287,7 +340,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                 />
             )}
 
-            {/* ── Konfirmasi hapus ── */}
+            {/* ── Konfirmasi hapus pembayaran ── */}
             <Dialog
                 isOpen={deleteConfirm}
                 onClose={() => setDeleteConfirm(false)}
@@ -308,6 +361,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                         </Button>
                         <Button
                             variant="solid"
+                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                             color="red"
                             loading={deleting}
                             onClick={handleDeleteConfirm}
@@ -317,6 +371,47 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                     </div>
                 </div>
             </Dialog>
+
+            {/* ── Konfirmasi batalkan tagihan ── */}
+            <Dialog
+                isOpen={batalkanConfirm}
+                onClose={() => setBatalkanConfirm(false)}
+                onRequestClose={() => setBatalkanConfirm(false)}
+            >
+                <div className="flex flex-col gap-4">
+                    <h5 className="font-semibold">Batalkan Tagihan</h5>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Tagihan akan dibatalkan (status = Dibatalkan). Tindakan ini hanya bisa dilakukan
+                        jika belum ada pembayaran yang dikonfirmasi. Lanjutkan?
+                    </p>
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            variant="plain"
+                            onClick={() => setBatalkanConfirm(false)}
+                            disabled={batalkanLoading}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            variant="solid"
+                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                            color="red"
+                            loading={batalkanLoading}
+                            onClick={handleBatalkan}
+                        >
+                            Ya, Batalkan
+                        </Button>
+                    </div>
+                </div>
+            </Dialog>
+
+            {/* ── Kwitansi print (hidden, triggered by window.print()) ── */}
+            {kwitansiData && (
+                <KwitansiPrint
+                    ref={kwitansiRef}
+                    data={{ ...kwitansiData, pembayaran: payments }}
+                />
+            )}
         </>
     )
 }

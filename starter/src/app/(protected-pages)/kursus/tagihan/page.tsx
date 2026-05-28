@@ -19,6 +19,14 @@ import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import { ROUTES } from '@/constants/route.constant'
 import type { ITagihan } from '@/@types/kursus.types'
 
+const STATUS_FILTERS: { label: string; value: number | null; activeClass: string }[] = [
+    { label: 'Semua', value: null, activeClass: 'bg-gray-700 text-white border-gray-700 dark:bg-gray-200 dark:text-gray-800 dark:border-gray-200' },
+    { label: 'Menunggu', value: 1, activeClass: 'bg-gray-600 text-white border-gray-600' },
+    { label: 'Sebagian', value: 2, activeClass: 'bg-amber-500 text-white border-amber-500' },
+    { label: 'Lunas', value: 3, activeClass: 'bg-emerald-500 text-white border-emerald-500' },
+    { label: 'Dibatalkan', value: 4, activeClass: 'bg-red-500 text-white border-red-500' },
+]
+
 const TagihanPage = () => {
     const router = useRouter()
 
@@ -28,6 +36,7 @@ const TagihanPage = () => {
 
     const [searchInput, setSearchInput] = useState('')
     const [search, setSearch] = useState('')
+    const [filterStatus, setFilterStatus] = useState<number | null>(null)
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
     const [total, setTotal] = useState(0)
@@ -40,6 +49,7 @@ const TagihanPage = () => {
         try {
             const res = await TagihanService.getAll({
                 search: search || undefined,
+                status: filterStatus ?? undefined,
                 page: currentPage,
                 limit: pageSize,
             })
@@ -56,7 +66,7 @@ const TagihanPage = () => {
         } finally {
             setLoading(false)
         }
-    }, [search, currentPage, pageSize])
+    }, [search, filterStatus, currentPage, pageSize])
 
     useEffect(() => {
         fetchData()
@@ -70,6 +80,11 @@ const TagihanPage = () => {
     const handleSearchClear = () => {
         setSearchInput('')
         setSearch('')
+        setCurrentPage(1)
+    }
+
+    const handleFilterStatus = (status: number | null) => {
+        setFilterStatus(status)
         setCurrentPage(1)
     }
 
@@ -129,7 +144,7 @@ const TagihanPage = () => {
                 }}
                 bodyClass="p-0"
             >
-                <div className="flex items-center gap-3 px-4 pb-3">
+                <div className="flex flex-col gap-3 px-4 pb-3">
                     <Input
                         className="flex-1"
                         placeholder="Cari nama siswa... (tekan Enter)"
@@ -150,6 +165,21 @@ const TagihanPage = () => {
                         onChange={(e) => setSearchInput(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit() }}
                     />
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {STATUS_FILTERS.map((f) => (
+                            <button
+                                key={f.value ?? 'all'}
+                                onClick={() => handleFilterStatus(f.value)}
+                                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                                    filterStatus === f.value
+                                        ? f.activeClass
+                                        : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600'
+                                }`}
+                            >
+                                {f.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 <TagihanTable
