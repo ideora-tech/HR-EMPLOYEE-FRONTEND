@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { Card, Input, Select, Button, Notification, toast } from '@/components/ui'
+import { useState, useEffect, useCallback } from 'react'
+import { Card, Input, Select, Button, Notification, toast, DatePicker } from '@/components/ui'
 import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import type { ColumnDef } from '@tanstack/react-table'
 import DataTable from '@/components/shared/DataTable'
@@ -31,6 +31,12 @@ const METODE_CLS: Record<string, string> = {
     QRIS: 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300',
 }
 
+/* ─── helpers ────────────────────────────────────────────────── */
+
+const toDate = (s: string): Date | null => (s ? new Date(s) : null)
+const toStr = (d: Date | null): string =>
+    d ? d.toISOString().split('T')[0] : ''
+
 /* ─── component ──────────────────────────────────────────────── */
 
 const PembayaranListPage = () => {
@@ -46,8 +52,6 @@ const PembayaranListPage = () => {
     const [metode, setMetode] = useState('')
     const [tanggalMulai, setTanggalMulai] = useState('')
     const [tanggalSelesai, setTanggalSelesai] = useState('')
-
-    const searchRef = useRef<HTMLInputElement>(null)
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -188,50 +192,59 @@ const PembayaranListPage = () => {
             >
                 {/* Filters */}
                 <div className="flex flex-wrap items-end gap-3 px-4 pt-4 pb-3">
-                    {/* Search */}
-                    <div className="flex gap-1.5 min-w-[220px]">
-                        <Input
-                            ref={searchRef}
-                            placeholder="Cari nama siswa..."
-                            prefix={<HiOutlineSearch className="text-gray-400" />}
-                            value={searchInput}
-                            onChange={e => setSearchInput(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && commitSearch()}
-                            suffix={
-                                searchInput
-                                    ? <HiOutlineX className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => { setSearchInput(''); setSearch(''); setCurrentPage(1) }} />
-                                    : null
-                            }
-                        />
-                        <Button size="sm" onClick={commitSearch}>Cari</Button>
-                    </div>
+                    {/* Search — trigger on Enter */}
+                    <Input
+                        className="min-w-[220px]"
+                        placeholder="Cari nama siswa... (Enter)"
+                        prefix={<HiOutlineSearch className="text-gray-400" />}
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && commitSearch()}
+                        suffix={
+                            searchInput ? (
+                                <HiOutlineX
+                                    className="cursor-pointer text-gray-400 hover:text-gray-600"
+                                    onClick={() => { setSearchInput(''); setSearch(''); setCurrentPage(1) }}
+                                />
+                            ) : null
+                        }
+                    />
 
                     {/* Metode */}
                     <Select
                         className="min-w-[160px]"
                         options={METODE_OPTIONS}
-                        value={METODE_OPTIONS.find(o => o.value === metode)}
-                        onChange={opt => { setMetode((opt as { value: string })?.value ?? ''); setCurrentPage(1) }}
+                        value={METODE_OPTIONS.find((o) => o.value === metode)}
+                        onChange={(opt) => {
+                            setMetode((opt as { value: string })?.value ?? '')
+                            setCurrentPage(1)
+                        }}
                     />
 
-                    {/* Date range */}
+                    {/* Date range — DatePicker */}
                     <div className="flex items-center gap-2">
-                        <input
-                            type="date"
-                            value={tanggalMulai}
-                            onChange={e => { setTanggalMulai(e.target.value); setCurrentPage(1) }}
-                            className="h-9 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        <DatePicker
+                            value={toDate(tanggalMulai)}
+                            placeholder="Tanggal mulai"
+                            onChange={(date) => {
+                                setTanggalMulai(toStr(date))
+                                setCurrentPage(1)
+                            }}
+                            inputFormat="DD/MM/YYYY"
                         />
                         <span className="text-gray-400 text-sm">—</span>
-                        <input
-                            type="date"
-                            value={tanggalSelesai}
-                            onChange={e => { setTanggalSelesai(e.target.value); setCurrentPage(1) }}
-                            className="h-9 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        <DatePicker
+                            value={toDate(tanggalSelesai)}
+                            placeholder="Tanggal selesai"
+                            onChange={(date) => {
+                                setTanggalSelesai(toStr(date))
+                                setCurrentPage(1)
+                            }}
+                            inputFormat="DD/MM/YYYY"
                         />
                     </div>
 
-                    {/* Clear */}
+                    {/* Reset filter */}
                     {hasFilter && (
                         <Button size="sm" variant="plain" onClick={clearFilters} icon={<HiOutlineX />}>
                             Reset Filter
@@ -245,7 +258,7 @@ const PembayaranListPage = () => {
                     loading={loading}
                     pagingData={{ total, pageIndex: currentPage, pageSize }}
                     onPaginationChange={setCurrentPage}
-                    onSelectChange={size => { setPageSize(size); setCurrentPage(1) }}
+                    onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
                 />
             </Card>
         </div>
