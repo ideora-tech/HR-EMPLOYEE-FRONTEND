@@ -7,6 +7,27 @@ import type { NavigationTree } from '@/@types/navigation'
 
 const navigationConfig: NavigationTree[] = [
     {
+        key: 'kursus',
+        path: '',
+        title: 'Kursus',
+        translateKey: 'nav.kursus',
+        icon: 'kursus',
+        type: NAV_ITEM_TYPE_COLLAPSE,
+        authority: [],
+        subMenu: [
+            {
+                key: 'kursus.reminders',
+                path: '/kursus/reminders',
+                title: 'Reminder Perpanjangan',
+                translateKey: 'nav.kursus.reminders',
+                icon: 'kursusReminder',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            },
+        ],
+    },
+    {
         key: 'organisasi',
         path: '',
         title: 'Struktur Organisasi',

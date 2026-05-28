@@ -29,6 +29,8 @@ import {
     PiUsersThreeDuotone,
     PiChartLineDuotone,
     PiStorefrontDuotone,
+    PiGraduationCapDuotone,
+    PiBellDuotone,
 } from 'react-icons/pi'
 import type { JSX } from 'react'
 
@@ -94,6 +96,8 @@ const navigationIcon: NavigationIcons = {
     'chart-line': <PiChartLineDuotone />,
     chartLine: <PiChartLineDuotone />,
     storefront: <PiStorefrontDuotone />,
+    kursus: <PiGraduationCapDuotone />,
+    kursusReminder: <PiBellDuotone />,
 }
 
 export default navigationIcon
