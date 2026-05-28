@@ -890,7 +890,7 @@ export interface IReminderItem {
     id_catat: string
     id_siswa: string
     nama_siswa: string
-    no_hp: string | null
+    telepon: string | null
     id_kelas: string
     nama_kelas: string
     total_sesi: number

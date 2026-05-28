@@ -134,7 +134,7 @@ export default function ReminderTable() {
                     <td className="px-4 py-3 text-gray-500">{idx + 1}</td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900 dark:text-gray-100">{item.nama_siswa}</div>
-                      {item.no_hp && <div className="text-xs text-gray-400">{item.no_hp}</div>}
+                      {item.telepon && <div className="text-xs text-gray-400">{item.telepon}</div>}
                     </td>
                     <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{item.nama_kelas}</td>
                     <td className="px-4 py-3"><SesiLabel sesi={item.sesi_tersisa} /></td>
