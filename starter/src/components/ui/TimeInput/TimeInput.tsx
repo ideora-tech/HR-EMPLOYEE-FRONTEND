@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useRef } from 'react'
 import useMergedRef from '../hooks/useMergeRef'
 import useDidUpdate from '../hooks/useDidUpdate'
