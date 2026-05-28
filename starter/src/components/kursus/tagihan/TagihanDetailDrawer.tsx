@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Button, Drawer, Notification, toast, Dialog } from '@/components/ui'
-import { HiOutlinePlus, HiOutlineTrash, HiOutlineCash, HiOutlineUser, HiOutlineTag, HiOutlinePrinter, HiOutlineX } from 'react-icons/hi'
+import { HiOutlinePlus, HiOutlineTrash, HiOutlineCash, HiOutlineUser, HiOutlineTag, HiOutlineDocumentDownload, HiOutlineX } from 'react-icons/hi'
 import PembayaranService from '@/services/kursus/pembayaran.service'
 import TagihanService from '@/services/kursus/tagihan.service'
 import { parseApiError } from '@/utils/parseApiError'
+import { downloadPdf } from '@/utils/downloadPdf'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { ITagihan, IPembayaran } from '@/@types/kursus.types'
 import PembayaranForm from './PembayaranForm'
 import KonfirmasiPanel from './KonfirmasiPanel'
-import KwitansiPrint from './KwitansiPrint'
 
 /* ─── helpers ────────────────────────────────────────────── */
 
@@ -46,9 +46,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
     const [deleting, setDeleting] = useState(false)
     const [batalkanConfirm, setBatalkanConfirm] = useState(false)
     const [batalkanLoading, setBatalkanLoading] = useState(false)
-    const [kwitansiData, setKwitansiData] = useState<(ITagihan & { siswa_detail?: { nama_siswa: string; telepon: string | null; alamat: string | null } }) | null>(null)
     const [kwitansiLoading, setKwitansiLoading] = useState(false)
-    const kwitansiRef = useRef<HTMLDivElement>(null)
 
     /* ── Load riwayat pembayaran ── */
     useEffect(() => {
@@ -133,12 +131,15 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
         setKwitansiLoading(true)
         try {
             const res = await TagihanService.getKwitansi(tagihan.id_tagihan)
-            const data = { ...res.data, pembayaran: payments }
-            setKwitansiData(data)
-            // Print after state settles
-            setTimeout(() => window.print(), 100)
+            const kwitansiData = { ...res.data, pembayaran: payments }
+            const { default: KwitansiPDF } = await import('./KwitansiPDF')
+            const { createElement } = await import('react')
+            await downloadPdf(
+                createElement(KwitansiPDF, { data: kwitansiData }),
+                `kwitansi-${tagihan.nomor_kwitansi ?? tagihan.id_tagihan.slice(0, 8)}.pdf`,
+            )
         } catch {
-            toast.push(<Notification type="danger" title="Gagal mengambil data kwitansi" />)
+            toast.push(<Notification type="danger" title="Gagal membuat PDF kwitansi" />)
         } finally {
             setKwitansiLoading(false)
         }
@@ -253,7 +254,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                                     <Button
                                         size="xs"
                                         variant="default"
-                                        icon={<HiOutlinePrinter />}
+                                        icon={<HiOutlineDocumentDownload />}
                                         loading={kwitansiLoading}
                                         onClick={handleCetakKwitansi}
                                     >
@@ -405,13 +406,6 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                 </div>
             </Dialog>
 
-            {/* ── Kwitansi print (hidden, triggered by window.print()) ── */}
-            {kwitansiData && (
-                <KwitansiPrint
-                    ref={kwitansiRef}
-                    data={{ ...kwitansiData, pembayaran: payments }}
-                />
-            )}
         </>
     )
 }

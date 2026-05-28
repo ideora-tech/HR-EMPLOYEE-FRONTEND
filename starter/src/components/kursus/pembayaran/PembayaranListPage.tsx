@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Card, Input, Select, Button, Notification, toast, DatePicker } from '@/components/ui'
-import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
+import { Card, Input, Select, Button, Notification, toast, DatePicker, Tooltip } from '@/components/ui'
+import { HiOutlineSearch, HiOutlineX, HiOutlineDocumentDownload } from 'react-icons/hi'
 import type { ColumnDef } from '@tanstack/react-table'
 import DataTable from '@/components/shared/DataTable'
 import PembayaranService from '@/services/kursus/pembayaran.service'
 import { formatRupiah } from '@/utils/formatNumber'
 import { parseApiError } from '@/utils/parseApiError'
+import { downloadPdf } from '@/utils/downloadPdf'
 import type { IPembayaran } from '@/@types/kursus.types'
 
 /* ─── constants ──────────────────────────────────────────────── */
@@ -46,6 +47,8 @@ const PembayaranListPage = () => {
     const [totalJumlah, setTotalJumlah] = useState(0)
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
+
+    const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null)
 
     const [searchInput, setSearchInput] = useState('')
     const [search, setSearch] = useState('')
@@ -93,6 +96,22 @@ const PembayaranListPage = () => {
     }
 
     const hasFilter = !!(search || metode || tanggalMulai || tanggalSelesai)
+
+    const handleDownloadPdf = async (item: IPembayaran) => {
+        setPdfLoadingId(item.id_pembayaran)
+        try {
+            const { default: BuktiBayarPDF } = await import('./BuktiBayarPDF')
+            const { createElement } = await import('react')
+            await downloadPdf(
+                createElement(BuktiBayarPDF, { data: item }),
+                `bukti-bayar-${item.id_pembayaran.slice(0, 8)}.pdf`,
+            )
+        } catch {
+            toast.push(<Notification type="danger" title="Gagal membuat PDF" />)
+        } finally {
+            setPdfLoadingId(null)
+        }
+    }
 
     /* ─── columns ─────────────────────────────────────────────── */
     const columns: ColumnDef<IPembayaran>[] = [
@@ -162,6 +181,30 @@ const PembayaranListPage = () => {
                     {row.original.referensi ?? '—'}
                 </span>
             ),
+        },
+        {
+            header: '',
+            id: 'action',
+            size: 60,
+            cell: ({ row }) => {
+                const isLoading = pdfLoadingId === row.original.id_pembayaran
+                return (
+                    <div className="flex items-center justify-end">
+                        <Tooltip title="Download Bukti Bayar (PDF)">
+                            <span
+                                className={`cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                                    isLoading
+                                        ? 'opacity-50 cursor-wait bg-gray-100'
+                                        : 'bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-500/20 dark:text-violet-300 dark:hover:bg-violet-500/30'
+                                }`}
+                                onClick={() => !isLoading && handleDownloadPdf(row.original)}
+                            >
+                                <HiOutlineDocumentDownload className="text-lg" />
+                            </span>
+                        </Tooltip>
+                    </div>
+                )
+            },
         },
     ]
 
