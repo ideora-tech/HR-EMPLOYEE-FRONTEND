@@ -1,0 +1,270 @@
+'use client'
+
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Button, Card, Input, Select, Notification, toast } from '@/components/ui'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
+import KaryawanKursusTable from '@/components/kursus/karyawan/KaryawanKursusTable'
+import KaryawanKursusForm from '@/components/kursus/karyawan/KaryawanKursusForm'
+import KaryawanService from '@/services/karyawan.service'
+import ApiService from '@/services/ApiService'
+import { API_ENDPOINTS } from '@/constants/api.constant'
+import { parseApiError } from '@/utils/parseApiError'
+import type { IKaryawan, ICreateKaryawan, IUpdateKaryawan } from '@/@types/karyawan.types'
+import type { IJabatan } from '@/@types/organisasi.types'
+import type { ApiPaginatedResponse } from '@/@types/karyawan.types'
+
+type AktifOption = { value: '' | '1' | '0'; label: string }
+type JabatanOption = { value: string; label: string }
+
+const AKTIF_OPTIONS: AktifOption[] = [
+    { value: '', label: 'Semua Status' },
+    { value: '1', label: 'Aktif' },
+    { value: '0', label: 'Nonaktif' },
+]
+
+const ALL_JABATAN: JabatanOption = { value: '', label: 'Semua Jabatan' }
+
+const KaryawanKursusPage = () => {
+    /* ── Data state ───────────────────────────────────────── */
+    const [karyawanList, setKaryawanList] = useState<IKaryawan[]>([])
+    const [loading, setLoading] = useState(false)
+    const [submitting, setSubmitting] = useState(false)
+
+    /* ── Filter state ─────────────────────────────────────── */
+    const [searchInput, setSearchInput] = useState('')
+    const [search, setSearch] = useState('')
+    const [aktifFilter, setAktifFilter] = useState<'' | '1' | '0'>('')
+    const [jabatanFilter, setJabatanFilter] = useState('')
+    const [jabatanOptions, setJabatanOptions] = useState<JabatanOption[]>([ALL_JABATAN])
+
+    /* ── Pagination state ─────────────────────────────────── */
+    const [page, setPage] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+    const [total, setTotal] = useState(0)
+
+    /* ── Modal state ──────────────────────────────────────── */
+    const [formOpen, setFormOpen] = useState(false)
+    const [editTarget, setEditTarget] = useState<IKaryawan | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<IKaryawan | null>(null)
+
+    /* ── Fetch jabatan options ────────────────────────────── */
+    useEffect(() => {
+        const fetchJabatan = async () => {
+            try {
+                const res = await ApiService.fetchDataWithAxios<ApiPaginatedResponse<IJabatan>>({
+                    url: `${API_ENDPOINTS.ORGANISASI.JABATAN.BASE}?limit=200`,
+                    method: 'GET',
+                })
+                if (res.success) {
+                    setJabatanOptions([
+                        ALL_JABATAN,
+                        ...res.data.map((j) => ({ value: j.id_jabatan, label: j.nama_jabatan })),
+                    ])
+                }
+            } catch {
+                /* silent */
+            }
+        }
+        fetchJabatan()
+    }, [])
+
+    /* ── Fetch karyawan list ──────────────────────────────── */
+    const fetchKaryawan = useCallback(async () => {
+        setLoading(true)
+        try {
+            const res = await KaryawanService.getAll({
+                search: search || undefined,
+                aktif: aktifFilter !== '' ? Number(aktifFilter) : undefined,
+                page,
+                limit: pageSize,
+            })
+            if (res.success) {
+                setKaryawanList(res.data)
+                setTotal(res.meta?.total ?? 0)
+            }
+        } catch (err) {
+            toast.push(
+                <Notification type="danger" title="Gagal memuat data karyawan">
+                    {parseApiError(err)}
+                </Notification>,
+            )
+        } finally {
+            setLoading(false)
+        }
+    }, [search, aktifFilter, page, pageSize])
+
+    useEffect(() => {
+        fetchKaryawan()
+    }, [fetchKaryawan])
+
+    /* ── Client-side jabatan filter ───────────────────────── */
+    const filteredList = useMemo(() => {
+        if (!jabatanFilter) return karyawanList
+        return karyawanList.filter((k) => k.jabatan?.id_jabatan === jabatanFilter)
+    }, [karyawanList, jabatanFilter])
+
+    /* ── Handlers ─────────────────────────────────────────── */
+    const handleSearchSubmit = () => { setSearch(searchInput); setPage(1) }
+    const handleSearchClear = () => { setSearchInput(''); setSearch(''); setPage(1) }
+
+    const handleOpenAdd = () => { setEditTarget(null); setFormOpen(true) }
+    const handleOpenEdit = (row: IKaryawan) => { setEditTarget(row); setFormOpen(true) }
+    const handleFormClose = () => { setFormOpen(false); setEditTarget(null) }
+
+    const handleSubmit = async (payload: ICreateKaryawan | IUpdateKaryawan) => {
+        setSubmitting(true)
+        try {
+            if (editTarget) {
+                await KaryawanService.update(editTarget.id_karyawan, payload as IUpdateKaryawan)
+                toast.push(<Notification type="success" title="Karyawan berhasil diperbarui" />)
+            } else {
+                await KaryawanService.create(payload as ICreateKaryawan)
+                toast.push(<Notification type="success" title="Karyawan berhasil ditambahkan" />)
+            }
+            handleFormClose()
+            fetchKaryawan()
+        } catch (err) {
+            toast.push(
+                <Notification
+                    type="danger"
+                    title={editTarget ? 'Gagal memperbarui karyawan' : 'Gagal menambahkan karyawan'}
+                >
+                    {parseApiError(err)}
+                </Notification>,
+            )
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!deleteTarget) return
+        setSubmitting(true)
+        try {
+            await KaryawanService.remove(deleteTarget.id_karyawan)
+            toast.push(<Notification type="success" title="Karyawan berhasil dihapus" />)
+            setDeleteTarget(null)
+            fetchKaryawan()
+        } catch (err) {
+            toast.push(
+                <Notification type="danger" title="Gagal menghapus karyawan">
+                    {parseApiError(err)}
+                </Notification>,
+            )
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    /* ── Render ───────────────────────────────────────────── */
+    return (
+        <div className="flex flex-col gap-4">
+            <Card
+                header={{
+                    content: <h4>Data Karyawan</h4>,
+                    extra: (
+                        <Button
+                            variant="solid"
+                            size="sm"
+                            icon={<HiPlusCircle />}
+                            onClick={handleOpenAdd}
+                        >
+                            Tambah Karyawan
+                        </Button>
+                    ),
+                    bordered: false,
+                }}
+                bodyClass="p-0"
+            >
+                {/* Filter Bar */}
+                <div className="flex items-center gap-3 px-4 pb-3">
+                    <Input
+                        className="flex-1"
+                        placeholder="Cari nama atau email... (tekan Enter)"
+                        suffix={
+                            searchInput ? (
+                                <HiOutlineX
+                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                    onClick={handleSearchClear}
+                                />
+                            ) : (
+                                <HiOutlineSearch
+                                    className="text-gray-400 text-lg cursor-pointer hover:text-gray-600"
+                                    onClick={handleSearchSubmit}
+                                />
+                            )
+                        }
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit() }}
+                    />
+                    <div className="w-40 shrink-0">
+                        <Select<AktifOption>
+                            options={AKTIF_OPTIONS}
+                            value={AKTIF_OPTIONS.find((o) => o.value === aktifFilter) ?? AKTIF_OPTIONS[0]}
+                            onChange={(opt) => {
+                                setAktifFilter((opt as AktifOption).value)
+                                setPage(1)
+                            }}
+                        />
+                    </div>
+                    <div className="w-48 shrink-0">
+                        <Select<JabatanOption>
+                            options={jabatanOptions}
+                            value={jabatanOptions.find((o) => o.value === jabatanFilter) ?? ALL_JABATAN}
+                            onChange={(opt) => setJabatanFilter((opt as JabatanOption).value)}
+                        />
+                    </div>
+                </div>
+
+                {/* Table */}
+                <KaryawanKursusTable
+                    data={filteredList}
+                    loading={loading}
+                    pagingData={{ total, pageIndex: page, pageSize }}
+                    onPageChange={setPage}
+                    onPageSizeChange={(size) => { setPageSize(size); setPage(1) }}
+                    onEdit={handleOpenEdit}
+                    onDelete={setDeleteTarget}
+                />
+            </Card>
+
+            {/* Form Dialog */}
+            <KaryawanKursusForm
+                open={formOpen}
+                editData={editTarget}
+                submitting={submitting}
+                onClose={handleFormClose}
+                onSubmit={handleSubmit}
+            />
+
+            {/* Delete Confirmation */}
+            <ConfirmDialog
+                isOpen={!!deleteTarget}
+                type="danger"
+                title="Hapus Karyawan?"
+                confirmText="Ya, Hapus"
+                cancelText="Batal"
+                confirmButtonProps={{
+                    loading: submitting,
+                    customColorClass: () =>
+                        'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white border-red-500',
+                }}
+                onClose={() => setDeleteTarget(null)}
+                onCancel={() => setDeleteTarget(null)}
+                onConfirm={handleDelete}
+            >
+                <p className="text-sm">
+                    Data karyawan{' '}
+                    <span className="font-semibold">
+                        &ldquo;{deleteTarget?.nama_karyawan}&rdquo;
+                    </span>{' '}
+                    akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
+                </p>
+            </ConfirmDialog>
+        </div>
+    )
+}
+
+export default KaryawanKursusPage
