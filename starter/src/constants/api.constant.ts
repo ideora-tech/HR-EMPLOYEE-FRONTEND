@@ -102,7 +102,11 @@ export const API_ENDPOINTS = {
     // Kursus Dansa
     KURSUS: {
         DASHBOARD: {
-            BASE: `${PROXY}/kursus/dashboard`,
+            BASE:        `${PROXY}/kursus/dashboard`,
+            SUMMARY:     `${PROXY}/kursus/dashboard/summary`,
+            KEUANGAN:    `${PROXY}/kursus/dashboard/keuangan`,
+            SISWA:       `${PROXY}/kursus/dashboard/siswa`,
+            OPERASIONAL: `${PROXY}/kursus/dashboard/operasional`,
         },
         KELAS: {
             BASE: `${PROXY}/kursus/kelas`,
@@ -136,6 +140,25 @@ export const API_ENDPOINTS = {
             BY_ID: (id: string) => `${PROXY}/kursus/jadwal-kelas/${id}`,
             BY_KELAS: (idKelas: string) => `${PROXY}/kursus/jadwal-kelas/kelas/${idKelas}`,
             EXPORT_EXCEL: `${PROXY}/kursus/jadwal-kelas/export/excel`,
+            KALENDER: `${PROXY}/kursus/jadwal-kelas/kalender`,
+        },
+        LIBUR_JADWAL: {
+            BASE: `${PROXY}/kursus/libur-jadwal`,
+            BY_ID: (id: string) => `${PROXY}/kursus/libur-jadwal/${id}`,
+        },
+        CANCEL_KELAS: {
+            BASE: `${PROXY}/kursus/cancel-kelas`,
+            BY_ID: (id: string) => `${PROXY}/kursus/cancel-kelas/${id}`,
+            KONFIRMASI_PENGGANTI: (id: string) => `${PROXY}/kursus/cancel-kelas/pengganti/${id}/konfirmasi`,
+            BATAL_PENGGANTI: (id: string) => `${PROXY}/kursus/cancel-kelas/pengganti/${id}/batal`,
+        },
+        SISWA_SESI_PENGGANTI: {
+            BASE: `${PROXY}/kursus/siswa-sesi-pengganti`,
+            BY_ID: (id: string) => `${PROXY}/kursus/siswa-sesi-pengganti/${id}`,
+        },
+        JADWAL_KELAS: {
+            BASE: `${PROXY}/kursus/jadwal-kelas`,
+            BY_ID: (id: string) => `${PROXY}/kursus/jadwal-kelas/${id}`,
         },
         SISWA: {
             BASE: `${PROXY}/kursus/siswa`,
@@ -180,6 +203,8 @@ export const API_ENDPOINTS = {
             BY_ID: (id: string) => `${PROXY}/kursus/catat-kelas-siswa/${id}`,
             BY_SISWA: (idSiswa: string) => `${PROXY}/kursus/catat-kelas-siswa/siswa/${idSiswa}`,
             BY_KELAS: (idKelas: string) => `${PROXY}/kursus/catat-kelas-siswa/kelas/${idKelas}`,
+            BY_JADWAL: (idJadwalKelas: string) => `${PROXY}/kursus/catat-kelas-siswa/jadwal/${idJadwalKelas}`,
+            CONVERT: (id: string) => `${PROXY}/kursus/catat-kelas-siswa/${id}/convert`,
         },
         TINGKAT: {
             BASE: `${PROXY}/kursus/tingkat-program`,

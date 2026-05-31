@@ -12,6 +12,8 @@ export interface IPaginationMeta {
     page: number
     limit: number
     totalPages?: number
+    sum_total_harga?: number
+    sum_total_bayar?: number
 }
 
 export interface ApiPaginatedResponse<T> {
@@ -241,7 +243,12 @@ export interface ISiswaKelasItem {
     total_sesi_tidak_hadir: number
     aktif: number
     status: 0 | 1                  // 1=berjalan, 0=selesai/sesi habis
+    is_trial: number               // 0=reguler, 1=trial
     mulai_kelas: string | null
+    hari: string | null
+    jam_mulai: string | null
+    jam_selesai: string | null
+    nama_karyawan: string | null
 }
 
 export interface ISiswa {
@@ -339,14 +346,16 @@ export interface IDaftarSiswa {
     instagram?: string
     kontak_utama_nama?: string
     kontak_utama_relasi?: string
-    tagihan: IDaftarSiswaItem[]
+    tagihan?: IDaftarSiswaItem[]
     id_diskon?: string
     kode_diskon?: string
+    is_trial?: number
+    id_jadwal_kelas_trial?: string
 }
 
 export interface IDaftarSiswaResponse {
     siswa: ISiswa
-    tagihan: ITagihan[]
+    tagihan: ITagihan | null
     diskon_diterapkan: boolean
     total_sebelum_diskon: number
     total_setelah_diskon: number
@@ -392,7 +401,7 @@ export interface ITagihan {
     periode_bulan: number | null
     periode_label: string | null
     id_biaya: string
-    nama_biaya: string
+    nama_biaya: string | null
     id_kategori_umur: string
     nama_kategori_umur: string
     id_paket: string
@@ -467,6 +476,8 @@ export interface ITagihanQuery {
 export interface IPembayaran {
     id_pembayaran: string
     id_tagihan: string
+    id_siswa: string | null
+    nama_siswa: string | null
     jumlah: number
     tanggal_bayar: string
     metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
@@ -504,6 +515,17 @@ export interface IPembayaranQuery {
     search?: string
     page?: number
     limit?: number
+    tanggal_mulai?: string
+    tanggal_selesai?: string
+    metode?: 'TUNAI' | 'TRANSFER' | 'QRIS'
+}
+
+export interface IPembayaranMeta {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+    total_jumlah: number
 }
 
 // ─── Presensi ─────────────────────────────────────────────────────────────────
@@ -534,6 +556,8 @@ export interface IPresensiJadwalEntry {
         catatan: string | null
         waktu_mulai_kelas: string
     } | null
+    is_pengganti: boolean
+    id_siswa_sesi_pengganti?: string
 }
 
 export interface IPresensi {
@@ -578,6 +602,7 @@ export interface ICreateBatchPresensiItem {
     id_siswa: string
     status: 1 | 2 | 3 | 4
     catatan?: string | null
+    id_siswa_sesi_pengganti?: string
 }
 
 export interface ICreateBatchPresensi {
@@ -686,6 +711,8 @@ export interface ICatatKelasSiswa {
     nama_siswa: string
     id_kelas: string
     nama_kelas: string
+    id_jadwal_kelas: string
+    is_trial: number               // 0=reguler, 1=trial
     total_sesi: number | null      // target total sesi (dari sesi_pertemuan kategori umur)
     total_sesi_hadir: number       // status=1 (HADIR)
     total_sesi_tidak_hadir: number // status IN (2,3,4)
@@ -699,6 +726,12 @@ export interface ICreateCatatKelasSiswa {
     id_siswa: string
     id_jadwal_kelas: string
     total_sesi?: number
+    is_trial?: number
+}
+
+export interface IConvertTrialPayload {
+    id_jadwal_kelas: string
+    total_sesi?: number | null
 }
 
 export interface IUpdateCatatKelasSiswa {
@@ -740,6 +773,7 @@ export interface IKursusDashboardPembayaran {
 
 export interface IKursusDashboard {
     siswa_aktif: number
+    kelas_aktif: number
     kelas_hari_ini: number
     pendapatan_bulan_ini: number
     tagihan_belum_lunas: number
@@ -747,6 +781,89 @@ export interface IKursusDashboard {
     siswa_per_kelas: IKursusDashboardSiswaKelas[]
     jadwal_hari_ini: IKursusDashboardJadwal[]
     pembayaran_terbaru: IKursusDashboardPembayaran[]
+}
+
+// ── Dashboard Keuangan ────────────────────────────────────────────────────────
+
+export interface IKursusDashboardKeuangan {
+    tagihan_lunas: number
+    tagihan_sebagian: number
+    tagihan_menunggu: number
+    pembayaran_pending_konfirmasi: number
+    nominal_lunas: number
+    nominal_sebagian_sisa: number
+    nominal_menunggu: number
+    revenue_12_bulan: IKursusDashboardPendapatan[]
+    metode_pembayaran: { metode: string; jumlah: number }[]
+    pending_konfirmasi: {
+        id_pembayaran: string
+        nama_siswa: string
+        jumlah: number
+        metode: string
+        tanggal_bayar: string
+    }[]
+}
+
+// ── Dashboard Siswa ───────────────────────────────────────────────────────────
+
+export interface IKursusDashboardSiswa {
+    siswa_baru_bulan_ini: number
+    siswa_aktif: number
+    siswa_selesai: number
+    siswa_dengan_tunggakan: number
+    nominal_total_tunggakan: number
+    per_kelas: IKursusDashboardSiswaKelas[]
+    per_status: { status_pendaftaran: number; jumlah: number }[]
+    tunggakan_list: {
+        id_siswa: string
+        nama_siswa: string
+        nama_kelas: string
+        nominal: number
+        status_tagihan: number
+    }[]
+    reminder_sesi: {
+        id_siswa: string
+        nama_siswa: string
+        nama_kelas: string
+        jadwal_label: string
+        sesi_tersisa: number
+    }[]
+}
+
+// ── Dashboard Operasional ─────────────────────────────────────────────────────
+
+export interface IKursusDashboardJadwalOperasional {
+    id_jadwal_kelas: string
+    nama_kelas: string
+    nama_karyawan: string | null
+    jam_mulai: string
+    jam_selesai: string
+    kuota: number
+    kuota_terpakai: number
+}
+
+export interface IKursusDashboardOperasional {
+    jadwal_hari_ini: IKursusDashboardJadwalOperasional[]
+    kehadiran_minggu_ini: {
+        hari: string
+        hadir: number
+        tidak_hadir: number
+        sakit: number
+        izin: number
+    }[]
+    kehadiran_summary: {
+        pct_hadir: number
+        pct_tidak_hadir: number
+        pct_sakit: number
+        pct_izin: number
+        total_sesi: number
+    }
+    kelas_kehadiran_rendah: {
+        nama_kelas: string
+        nama_karyawan: string | null
+        jadwal_label: string
+        pct_hadir: number
+    }[]
 }
 
 // ── Coach ────────────────────────────────────────────────────────────────────
@@ -901,4 +1018,131 @@ export interface IReminderItem {
     reminder_dihubungi_pada: string | null
     reminder_dihubungi_oleh: string | null
     kategori: 'sesi_habis' | 'akan_habis'
+}
+
+// ─── Libur Jadwal ────────────────────────────────────────────────────────────
+
+export interface ILiburJadwal {
+    id_libur: string
+    tanggal: string                 // YYYY-MM-DD
+    keterangan: string
+    aktif: number
+    dibuat_pada: string | null
+    diubah_pada: string | null
+}
+
+export interface IKelasTerdampak {
+    id_jadwal_kelas: string
+    nama_kelas: string | null
+    nama_karyawan: string | null
+    jam_mulai: string | null
+    jam_selesai: string | null
+    id_cancel: string
+    id_sesi_pengganti: string | null
+    tanggal_pengganti: string | null
+    status_pengganti: number | null  // 1=MENUNGGU, 2=DIKONFIRMASI, 3=DIBATALKAN
+}
+
+export interface ILiburJadwalDetail extends ILiburJadwal {
+    kelas_terdampak: IKelasTerdampak[]
+}
+
+export interface ICreateLiburJadwal {
+    tanggal: string
+    keterangan: string
+}
+
+// ─── Cancel Kelas ────────────────────────────────────────────────────────────
+
+export interface ICancelKelas {
+    id_cancel: string
+    id_jadwal_kelas: string
+    id_libur: string | null
+    tanggal: string                 // YYYY-MM-DD
+    keterangan: string | null
+    status: 1 | 2                  // 1=DIBATALKAN, 2=ADA_PENGGANTI
+    aktif: number
+    nama_kelas: string | null
+    nama_karyawan: string | null
+    jam_mulai: string | null
+    jam_selesai: string | null
+    dibuat_pada: string | null
+    diubah_pada: string | null
+}
+
+export interface ISesiPengganti {
+    id_sesi_pengganti: string
+    id_cancel: string
+    id_jadwal_kelas: string
+    tanggal: string
+    jam_mulai: string | null
+    jam_selesai: string | null
+    keterangan: string | null
+    status: 1 | 2 | 3              // 1=MENUNGGU, 2=DIKONFIRMASI, 3=DIBATALKAN
+    nama_kelas: string | null
+    nama_karyawan: string | null
+    dibuat_pada: string | null
+    diubah_pada: string | null
+}
+
+export interface ISiswaTerdampak {
+    id_siswa: string
+    nama_siswa: string
+    telepon: string | null
+}
+
+// ─── Siswa Sesi Pengganti (Individual Student Makeup) ────────────────────
+
+export interface ISiswaSesiPengganti {
+    id_siswa_sesi_pengganti: string
+    id_presensi_asal: string
+    id_siswa: string
+    id_jadwal_kelas_asal: string
+    id_jadwal_kelas_tujuan: string
+    tanggal_pengganti: string       // YYYY-MM-DD
+    status: 1 | 2 | 3 | 4          // 1=DIJADWALKAN, 2=HADIR, 3=TIDAK_HADIR, 4=DIBATALKAN
+    keterangan: string | null
+    aktif: number
+    nama_siswa: string | null
+    nama_kelas_asal: string | null
+    nama_kelas_tujuan: string | null
+    jam_mulai_tujuan: string | null
+    jam_selesai_tujuan: string | null
+    nama_karyawan_tujuan: string | null
+    dibuat_pada: string | null
+    diubah_pada: string | null
+}
+
+export interface ICreateSiswaSesiPengganti {
+    id_presensi_asal: string
+    id_jadwal_kelas_tujuan: string
+    tanggal_pengganti: string       // YYYY-MM-DD
+    keterangan?: string
+}
+
+export interface ICancelKelasDetail extends ICancelKelas {
+    sesi_pengganti: ISesiPengganti | null
+    siswa_terdampak: ISiswaTerdampak[]
+}
+
+export interface ICreateCancelKelas {
+    id_jadwal_kelas: string
+    tanggal: string
+    keterangan?: string
+}
+
+export interface IKonfirmasiPengganti {
+    tanggal?: string
+    jam_mulai?: string
+    jam_selesai?: string
+    keterangan?: string
+}
+
+// ─── Kalender ────────────────────────────────────────────────────────────────
+
+export interface IJadwalKalenderResponse {
+    jadwal: IJadwalKelas[]
+    libur: ILiburJadwal[]
+    cancel: ICancelKelas[]
+    sesi_pengganti: ISesiPengganti[]
 }
