@@ -234,17 +234,22 @@ const KaryawanExitPage = () => {
                 title="Hapus Data Exit?"
                 confirmText="Ya, Hapus"
                 cancelText="Batal"
-                confirmButtonProps={{ loading: submitting }}
+                confirmButtonProps={{
+                    loading: submitting,
+                    customColorClass: () =>
+                        'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white border-red-500',
+                }}
                 onConfirm={handleDeleteConfirm}
                 onClose={() => setDeleteTarget(null)}
                 onCancel={() => setDeleteTarget(null)}
             >
-                <p>
+                <p className="text-sm">
                     Data exit karyawan{' '}
-                    <strong>
-                        {deleteTarget?.karyawan?.nama ?? ''}
-                    </strong>{' '}
-                    akan dihapus secara permanen. Lanjutkan?
+                    <span className="font-semibold">
+                        &ldquo;{deleteTarget?.karyawan?.nama ?? ''}&rdquo;
+                    </span>{' '}
+                    akan dihapus secara permanen. Tindakan ini tidak dapat
+                    dibatalkan.
                 </p>
             </ConfirmDialog>
         </div>

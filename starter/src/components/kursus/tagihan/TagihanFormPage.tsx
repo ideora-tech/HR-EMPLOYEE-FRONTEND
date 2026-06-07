@@ -38,6 +38,8 @@ interface TagihanItem {
 
 interface TagihanFormPageProps {
     submitting?: boolean
+    initialSiswaId?: string
+    initialJadwalId?: string
     onSubmit: (payload: ICreateTagihanBulk) => void
     onCancel: () => void
 }
@@ -63,6 +65,8 @@ const dateToMonth = (date: Date): string => {
 
 const TagihanFormPage = ({
     submitting = false,
+    initialSiswaId,
+    initialJadwalId,
     onSubmit,
     onCancel,
 }: TagihanFormPageProps) => {
@@ -170,6 +174,23 @@ const TagihanFormPage = ({
         loadJadwal()
         loadDiskon()
     }, [loadSiswa, loadBiaya, loadJadwal, loadDiskon])
+
+    // Pre-fill siswa dari initialSiswaId setelah options loaded
+    useEffect(() => {
+        if (!initialSiswaId || !siswaOptions.length || selectedSiswa) return
+        const match = siswaOptions.find((o) => o.value === initialSiswaId)
+        if (match) setSelectedSiswa(match)
+    }, [initialSiswaId, siswaOptions, selectedSiswa])
+
+    // Pre-fill jadwal di row pertama dari initialJadwalId setelah options loaded
+    useEffect(() => {
+        if (!initialJadwalId || !jadwalOptions.length) return
+        setTagihanRows((prev) =>
+            prev.map((r, idx) =>
+                idx === 0 && !r.id_jadwal_kelas ? { ...r, id_jadwal_kelas: initialJadwalId } : r,
+            ),
+        )
+    }, [initialJadwalId, jadwalOptions])
 
     const handleAddTagihan = () => {
         setTagihanRows((prev) => [...prev, newTagihanItem()])

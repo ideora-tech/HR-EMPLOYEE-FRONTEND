@@ -3095,13 +3095,15 @@ Daftar semua siswa di kelas (tidak dihapus). Termasuk siswa yang kelasnya sudah 
 
 Input kelas ke siswa secara manual (untuk siswa yang belum memilih kelas saat pendaftaran).
 
-> `nama_siswa`, `nama_kelas`, dan `total_sesi` diambil otomatis dari DB jika tidak disediakan. Jika sudah ada record (id_siswa + id_kelas) akan return `409 Conflict`.
+> `nama_siswa`, `nama_kelas`, dan `total_sesi` diambil otomatis dari DB jika tidak disediakan. Jika sudah ada record (`id_siswa` + `id_jadwal_kelas`) akan return `409 Conflict`.
+
+> **Fallback tagihan**: Jika siswa pernah mendaftar tanpa memilih jadwal (`kursus_tagihan_detail.id_jadwal_kelas IS NULL`), sistem akan mencocokkan tagihan tersebut berdasarkan `id_kelas` (diambil otomatis dari `id_jadwal_kelas` yang dikirim) sehingga tagihan lama tetap terlink dengan benar.
 
 **Request Body:**
 | Field | Wajib | Keterangan |
 |-------|-------|------------|
 | `id_siswa` | YES | UUID siswa |
-| `id_kelas` | YES | UUID kelas |
+| `id_jadwal_kelas` | YES | UUID jadwal kelas yang akan diikuti |
 | `total_sesi` | NO | Override kuota sesi; default diambil dari kategori umur tagihan |
 
 **Response `201`:**

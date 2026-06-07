@@ -113,6 +113,7 @@ const ConfirmDialog = (props: ConfirmDialogProps) => {
                 <div className="flex justify-end items-center gap-2">
                     <Button
                         size="sm"
+                        variant="plain"
                         onClick={handleCancel}
                         {...cancelButtonProps}
                     >

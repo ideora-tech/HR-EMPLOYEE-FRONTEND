@@ -1,4 +1,6 @@
-# HR Employee Frontend — Panduan Claude
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Referensi Dokumen Penting
 
@@ -15,6 +17,22 @@ File-file berikut ada di `.claude/` dan wajib dibaca saat relevan:
 | `.claude/checklist-sql.md` | Saat review query SQL atau migration |
 | `.claude/logging-guide.md` | Saat menambah logging atau debug |
 | `.claude/module-access.md` | Saat mengatur permission atau akses modul |
+| `.claude/kursus.md` | Saat mengerjakan modul Kursus (sekolah tari) |
+
+---
+
+## Commands
+
+Semua perintah dijalankan dari direktori `starter/`:
+
+```bash
+npm run dev        # Start dev server (Next.js + Turbopack, port 3003)
+npm run build      # Production build
+npm run start      # Start production server (port 3003)
+npm run lint       # ESLint
+npm run prettier   # Check formatting
+npm run prettier:fix  # Auto-fix formatting
+```
 
 ---
 
@@ -22,12 +40,14 @@ File-file berikut ada di `.claude/` dan wajib dibaca saat relevan:
 
 - **Framework**: Next.js 15.3.1 App Router
 - **Auth**: NextAuth v5 (beta) — Credentials provider, JWT session
-- **Backend**: NestJS di `http://localhost:4005`, frontend di `http://localhost:3003`
+- **Backend**: NestJS di `http://localhost:4012`, frontend di `http://localhost:3003`
 - **UI**: Ecme template — komponen dari `@/components/ui` dan `@/components/shared`
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS 4
 - **HTTP Client**: Axios via `@/services/ApiService`, baseURL `/api`
 - **Table**: TanStack React Table via `@/components/shared/DataTable`
 - **Icons**: `react-icons/hi` (HeroIcons outline)
+- **Form**: React Hook Form + Zod validation
+- **i18n**: next-intl (multi-language)
 
 ---
 
@@ -40,11 +60,12 @@ Browser (Axios) → /api/proxy/<endpoint>
 → Route Handler: src/app/api/proxy/[...path]/route.ts
     auth() → baca JWT cookie (server-side, tanpa HTTP call)
     Authorization: Bearer <token>
-→ http://localhost:4005/<endpoint>
+→ http://localhost:4012/<endpoint>
 ```
 
 - Jangan gunakan `getSession()` dari client.
 - Jangan gunakan Next.js rewrites untuk proxy ke backend.
+- Jangan set header Authorization di Axios — sudah ditangani server-side oleh route handler.
 - Token dibaca server-side via `auth()` — tidak ada race condition.
 
 ### Mendaftarkan Endpoint Baru
@@ -65,7 +86,7 @@ export const API_ENDPOINTS = {
 ## Auth Flow
 
 ```
-Login   → validateCredential fetch POST http://localhost:4005/auth/login
+Login   → validateCredential fetch POST http://localhost:4012/auth/login
         → jwt callback simpan accessToken, refreshToken ke JWT cookie
         → redirect /home
 
@@ -74,7 +95,26 @@ Request → Axios /api/proxy/<endpoint>
         → Forward ke backend dengan Authorization: Bearer <accessToken>
 ```
 
-Error handling `handleSignIn.ts`: gunakan `error.type` (bukan `error.type.type`).
+- Error handling `handleSignIn.ts`: gunakan `error.type` (bukan `error.type.type`).
+- Session di server: `const session = await auth()`
+- Session di client: gunakan hook `useCurrentSession()`
+
+---
+
+## Routing & Proteksi Halaman
+
+App Router menggunakan route groups:
+
+```
+src/app/
+├── (auth-pages)/        ← sign-in, sign-up, forgot/reset-password
+├── (protected-pages)/   ← semua halaman yang butuh login
+│   └── layout.tsx       ← route guard: cek menu dari backend
+├── (public-pages)/      ← tanpa auth
+└── api/proxy/[...path]/ ← backend proxy handler
+```
+
+**Dynamic Access Control** — `(protected-pages)/layout.tsx` fetch menu tree dari backend saat load. Hanya path yang ada di menu (+ `ALWAYS_ALLOWED`) yang bisa diakses; selainnya redirect ke `/not-authorized`. Middleware di `middleware.ts` menangani redirect awal (login/logout).
 
 ---
 
@@ -83,7 +123,7 @@ Error handling `handleSignIn.ts`: gunakan `error.type` (bukan `error.type.type`)
 ```
 src/@types/<modul>.types.ts
 src/services/<modul>.service.ts
-src/constants/api.constant.ts
+src/constants/api.constant.ts       ← daftarkan endpoint di sini
 src/app/(protected-pages)/<modul>/page.tsx
 src/components/<modul>/
     ├── <Modul>Table.tsx
@@ -154,12 +194,6 @@ src/components/<modul>/
 </span>
 ```
 
-### Pagination Area (DataTable.tsx)
-
-```tsx
-<div className="flex items-center justify-between mt-4 px-4 pb-4">
-```
-
 ### Pagination Server-Side
 
 ```tsx
@@ -173,12 +207,14 @@ const handlePageSizeChange = useCallback((size: number) => {
 }, [])
 ```
 
+Pagination area di `DataTable.tsx`: `<div className="flex items-center justify-between mt-4 px-4 pb-4">`
+
 ---
 
 ## Design Pattern — Tag / Badge
 
 ```tsx
-// Status
+// Status aktif/nonaktif
 aktif === 1
     ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-100'
     : 'bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-100'
@@ -241,26 +277,15 @@ aktif === 1
 Selalu import dari `@/utils/formatNumber`:
 
 ```ts
-import { formatNum, formatRupiah } from '@/utils/formatNumber'
+import { formatNum, formatRupiah, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 
-formatNum(1500000)      // → "1.500.000"
-formatRupiah(150000)    // → "Rp 150.000"
+formatNum(1500000)           // → "1.500.000"
+formatRupiah(150000)         // → "Rp 150.000"
+formatRupiahInput("1500abc") // → "1.500" (untuk input field)
+parseRupiah("1.500.000")     // → 1500000 (parse kembali ke number)
 ```
 
-Input Rupiah di form — format saat user mengetik, parse saat submit:
-
-```ts
-// Format: strip non-digit → formatNum
-const formatRupiahInput = (raw: string): string => {
-    const digits = raw.replace(/\D/g, '')
-    if (!digits) return '0'
-    return formatNum(Number(digits))
-}
-
-// Parse: strip titik → Number
-const parseRupiah = (formatted: string): number =>
-    Number(formatted.replace(/\./g, '')) || 0
-```
+Input Rupiah di form:
 
 ```tsx
 <Input
@@ -268,6 +293,7 @@ const parseRupiah = (formatted: string): number =>
     value={form.harga}
     onChange={(e) => setForm(p => ({ ...p, harga: formatRupiahInput(e.target.value) }))}
 />
+// Saat submit: parseRupiah(form.harga) untuk dapat nilai number
 ```
 
 ---
@@ -284,7 +310,11 @@ toast.push(<Notification type="danger" title="Gagal menyimpan data" />)
 ## Environment Variables
 
 ```env
-BACKEND_API_URL=http://localhost:4005
+BACKEND_API_URL=http://localhost:4012
 NEXTAUTH_URL=http://localhost:3003/
-NEXTAUTH_SECRET=<secret>
+AUTH_SECRET=<secret>
+GOOGLE_AUTH_CLIENT_ID=<id>
+GOOGLE_AUTH_CLIENT_SECRET=<secret>
+GITHUB_AUTH_CLIENT_ID=<id>
+GITHUB_AUTH_CLIENT_SECRET=<secret>
 ```

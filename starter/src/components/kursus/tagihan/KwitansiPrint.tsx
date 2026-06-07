@@ -44,7 +44,7 @@ const KwitansiPrint = forwardRef<HTMLDivElement, KwitansiPrintProps>(
                         color: #000;
                         width: 148mm;
                     }
-                    .kw-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
+                    .kw-header { display: flex; flex-direction: column; align-items: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
                     .kw-header img { height: 56px; width: auto; object-fit: contain; margin-bottom: 2px; }
                     .kw-header p { font-size: 11px; margin: 0; }
                     .kw-nomor { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 11px; }

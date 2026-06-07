@@ -280,14 +280,18 @@ const JabatanPage = () => {
                 confirmButtonProps={{
                     loading: submitting,
                     customColorClass: () =>
-                        'border-error ring-1 ring-error text-error hover:border-error hover:ring-error hover:text-error bg-transparent',
+                        'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white border-red-500',
                 }}
                 onClose={() => setDeleteTarget(null)}
+                onCancel={() => setDeleteTarget(null)}
                 onConfirm={handleDelete}
             >
                 <p className="text-sm">
-                    Yakin ingin menghapus jabatan{' '}
-                    <strong>{deleteTarget?.nama_jabatan}</strong>? Tindakan ini tidak dapat
+                    Jabatan{' '}
+                    <span className="font-semibold">
+                        &ldquo;{deleteTarget?.nama_jabatan}&rdquo;
+                    </span>{' '}
+                    akan dihapus secara permanen. Tindakan ini tidak dapat
                     dibatalkan.
                 </p>
             </ConfirmDialog>

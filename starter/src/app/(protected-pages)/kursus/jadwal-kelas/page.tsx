@@ -1,66 +1,29 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Card, Input, Notification, toast } from '@/components/ui'
+import { Button, Card, Notification, toast } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import { HiPlusCircle, HiViewList, HiCalendar, HiDownload } from 'react-icons/hi'
-import JadwalTable from '@/components/kursus/jadwal/JadwalTable'
+import { HiPlusCircle, HiDownload, HiOutlineTable, HiOutlineCalendar } from 'react-icons/hi'
 import JadwalKalender from '@/components/kursus/jadwal/JadwalKalender'
 import JadwalDetailDrawer from '@/components/kursus/jadwal/JadwalDetailDrawer'
+import JadwalKalenderMingguan from '@/components/kursus/jadwal/JadwalKalenderMingguan'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import { ROUTES } from '@/constants/route.constant'
 import type { IJadwalKelas } from '@/@types/kursus.types'
 
-type ViewMode = 'list' | 'kalender'
-
 const JadwalKelasPage = () => {
     const router = useRouter()
 
-    const [viewMode, setViewMode] = useState<ViewMode>('list')
-
-    // list state
-    const [data, setData] = useState<IJadwalKelas[]>([])
-    const [loading, setLoading] = useState(false)
+    const [activeTab, setActiveTab] = useState<'tabel' | 'kalender'>('tabel')
     const [submitting, setSubmitting] = useState(false)
-    const [search, setSearch] = useState('')
-    const [currentPage, setCurrentPage] = useState(1)
-    const [pageSize, setPageSize] = useState(10)
-    const [total, setTotal] = useState(0)
     const [deleteTarget, setDeleteTarget] = useState<IJadwalKelas | null>(null)
     const [exporting, setExporting] = useState(false)
-
-    // kalender state
     const [kalenderRefresh, setKalenderRefresh] = useState(0)
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [drawerJadwal, setDrawerJadwal] = useState<IJadwalKelas | null>(null)
-
-    const fetchData = useCallback(async () => {
-        setLoading(true)
-        try {
-            const res = await JadwalKelasService.getAll({
-                page: currentPage,
-                limit: pageSize,
-                search,
-            })
-            setData(res.data)
-            setTotal(res.meta.total)
-        } catch (err) {
-            toast.push(
-                <Notification type="danger" title="Gagal memuat data jadwal kelas">
-                    {parseApiError(err)}
-                </Notification>,
-            )
-        } finally {
-            setLoading(false)
-        }
-    }, [currentPage, pageSize, search])
-
-    useEffect(() => {
-        if (viewMode === 'list') fetchData()
-    }, [fetchData, viewMode])
 
     const handleDelete = async () => {
         if (!deleteTarget) return
@@ -69,7 +32,6 @@ const JadwalKelasPage = () => {
             await JadwalKelasService.remove(deleteTarget.id_jadwal_kelas)
             toast.push(<Notification type="success" title={MESSAGES.SUCCESS.DELETED(ENTITY.JADWAL_KELAS)} />)
             setDeleteTarget(null)
-            fetchData()
             setKalenderRefresh((n) => n + 1)
         } catch (err) {
             toast.push(
@@ -81,15 +43,6 @@ const JadwalKelasPage = () => {
             setSubmitting(false)
         }
     }
-
-    const handlePageChange = useCallback((page: number) => setCurrentPage(page), [])
-    const handlePageSizeChange = useCallback((size: number) => {
-        setPageSize(size)
-        setCurrentPage(1)
-    }, [])
-
-    const handleSwitchToKalender = () => setViewMode('kalender')
-    const handleSwitchToList = () => setViewMode('list')
 
     const handleExportExcel = async () => {
         setExporting(true)
@@ -116,35 +69,37 @@ const JadwalKelasPage = () => {
         <div className="flex flex-col gap-4">
             <Card
                 header={{
-                    content: <h4>Jadwal Kelas</h4>,
-                    extra: (
-                        <div className="flex items-center gap-2">
-
-                            <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+                    content: (
+                        <div className="flex items-center gap-4">
+                            <h4>Jadwal Kelas</h4>
+                            <div className="flex gap-0.5 bg-gray-100 rounded-lg p-1">
                                 <button
-                                    type="button"
-                                    onClick={handleSwitchToList}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors ${viewMode === 'list'
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                    onClick={() => setActiveTab('tabel')}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all
+                                        ${activeTab === 'tabel'
+                                            ? 'bg-white text-gray-800 shadow-sm'
+                                            : 'text-gray-500 hover:text-gray-700'
                                         }`}
                                 >
-                                    <HiViewList className="text-base" />
-                                    <span>List</span>
+                                    <HiOutlineTable className="text-sm" />
+                                    Tabel
                                 </button>
                                 <button
-                                    type="button"
-                                    onClick={handleSwitchToKalender}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors ${viewMode === 'kalender'
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                    onClick={() => setActiveTab('kalender')}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all
+                                        ${activeTab === 'kalender'
+                                            ? 'bg-white text-gray-800 shadow-sm'
+                                            : 'text-gray-500 hover:text-gray-700'
                                         }`}
                                 >
-                                    <HiCalendar className="text-base" />
-                                    <span>Kalender</span>
+                                    <HiOutlineCalendar className="text-sm" />
+                                    Kalender
                                 </button>
                             </div>
-                            {/* Toggle list/kalender */}
+                        </div>
+                    ),
+                    extra: (
+                        <div className="flex items-center gap-2">
                             <Button
                                 variant="default"
                                 size="sm"
@@ -169,27 +124,7 @@ const JadwalKelasPage = () => {
                 }}
                 bodyClass="p-0"
             >
-                {viewMode === 'list' ? (
-                    <>
-                        <div className="flex items-center gap-3 px-4 pb-3">
-                            <Input
-                                placeholder="Cari jadwal kelas..."
-                                value={search}
-                                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1) }}
-                                className="max-w-xs"
-                            />
-                        </div>
-                        <JadwalTable
-                            data={data}
-                            loading={loading}
-                            pagingData={{ total, pageIndex: currentPage, pageSize }}
-                            onPaginationChange={handlePageChange}
-                            onSelectChange={handlePageSizeChange}
-                            onEdit={(item) => router.push(ROUTES.KURSUS_JADWAL_EDIT(item.id_jadwal_kelas))}
-                            onDelete={setDeleteTarget}
-                        />
-                    </>
-                ) : (
+                {activeTab === 'tabel' ? (
                     <div className="px-4 pb-4">
                         <JadwalKalender
                             refreshToken={kalenderRefresh}
@@ -198,6 +133,8 @@ const JadwalKelasPage = () => {
                             onDelete={setDeleteTarget}
                         />
                     </div>
+                ) : (
+                    <JadwalKalenderMingguan />
                 )}
             </Card>
 
@@ -206,7 +143,7 @@ const JadwalKelasPage = () => {
                 open={drawerOpen}
                 jadwal={drawerJadwal}
                 onClose={() => setDrawerOpen(false)}
-                onRefresh={() => { setKalenderRefresh((n) => n + 1); fetchData() }}
+                onRefresh={() => setKalenderRefresh((n) => n + 1)}
             />
 
             <ConfirmDialog

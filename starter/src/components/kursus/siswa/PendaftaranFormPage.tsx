@@ -107,6 +107,9 @@ const PendaftaranFormPage = ({
 
     const [tagihanRows, setTagihanRows] = useState<TagihanItem[]>([newTagihanItem()])
 
+    const [isTrial, setIsTrial] = useState(false)
+    const [selectedJadwalTrial, setSelectedJadwalTrial] = useState<SelectOption | null>(null)
+
     const [diskonMode, setDiskonMode] = useState<'none' | 'dropdown' | 'kode'>('none')
     const [selectedDiskon, setSelectedDiskon] = useState<SelectOption | null>(null)
     const [kodeDiskon, setKodeDiskon] = useState('')
@@ -149,7 +152,7 @@ const PendaftaranFormPage = ({
             if (res.success) {
                 const opts = res.data.map((j: IJadwalKelas) => ({
                     value: j.id_jadwal_kelas,
-                    label: `${j.nama_kelas} - ${j.hari} ${j.jam_mulai}-${j.jam_selesai} (${j.nama_kategori_umur})`,
+                    label: `${j.nama_kelas} - ${j.hari} ${j.jam_mulai}-${j.jam_selesai} (${j.nama_kategori_umur})${j.kuota > 0 ? ` · ${j.kuota_terpakai}/${j.kuota} terisi` : ''}`,
                 }))
                 setJadwalOptions(opts)
             }
@@ -214,17 +217,15 @@ const PendaftaranFormPage = ({
 
         if (!form.nama_siswa.trim()) e.nama_siswa = 'Nama siswa wajib diisi'
 
-        tagihanRows.forEach((row, idx) => {
-            if (!row.id_biaya) e[`tagihan_${idx}_biaya`] = 'Pilih biaya'
-        })
-
-        if (tagihanRows.length === 0) e.tagihan_global = 'Minimal satu tagihan wajib diisi'
-
-        if (diskonMode === 'dropdown' && !selectedDiskon) {
-            e.diskon = 'Pilih diskon dari daftar'
-        }
-        if (diskonMode === 'kode' && !kodeDiskon.trim()) {
-            e.diskon = 'Kode promo tidak boleh kosong'
+        if (isTrial) {
+            if (!selectedJadwalTrial) e.jadwal_trial = 'Pilih jadwal untuk sesi trial'
+        } else {
+            tagihanRows.forEach((row, idx) => {
+                if (!row.id_biaya) e[`tagihan_${idx}_biaya`] = 'Pilih biaya'
+            })
+            if (tagihanRows.length === 0) e.tagihan_global = 'Minimal satu tagihan wajib diisi'
+            if (diskonMode === 'dropdown' && !selectedDiskon) e.diskon = 'Pilih diskon dari daftar'
+            if (diskonMode === 'kode' && !kodeDiskon.trim()) e.diskon = 'Kode promo tidak boleh kosong'
         }
 
         setErrors(e)
@@ -237,13 +238,7 @@ const PendaftaranFormPage = ({
             return
         }
 
-        const tagihan: IDaftarSiswaItem[] = tagihanRows.map((row) => ({
-            id_biaya: row.id_biaya,
-            ...(row.id_jadwal_kelas && { id_jadwal_kelas: row.id_jadwal_kelas }),
-            ...(row.periode.trim() && { periode: row.periode.trim() }),
-        }))
-
-        const payload: IDaftarSiswa = {
+        const baseFields = {
             nama_siswa: form.nama_siswa.trim(),
             ...(form.nama_panggilan.trim() && { nama_panggilan: form.nama_panggilan.trim() }),
             ...(form.email.trim() && { email: form.email.trim() }),
@@ -256,12 +251,29 @@ const PendaftaranFormPage = ({
             ...(form.instagram.trim() && { instagram: form.instagram.trim() }),
             ...(form.kontak_utama_nama.trim() && { kontak_utama_nama: form.kontak_utama_nama.trim() }),
             ...(form.kontak_utama_relasi.trim() && { kontak_utama_relasi: form.kontak_utama_relasi.trim() }),
+        }
+
+        if (isTrial) {
+            onSubmit({
+                ...baseFields,
+                is_trial: 1,
+                id_jadwal_kelas_trial: selectedJadwalTrial!.value,
+            })
+            return
+        }
+
+        const tagihan: IDaftarSiswaItem[] = tagihanRows.map((row) => ({
+            id_biaya: row.id_biaya,
+            ...(row.id_jadwal_kelas && { id_jadwal_kelas: row.id_jadwal_kelas }),
+            ...(row.periode.trim() && { periode: row.periode.trim() }),
+        }))
+
+        onSubmit({
+            ...baseFields,
             tagihan,
             ...(diskonMode === 'dropdown' && selectedDiskon && { id_diskon: selectedDiskon.value }),
             ...(diskonMode === 'kode' && kodeDiskon.trim() && { kode_diskon: kodeDiskon.trim() }),
-        }
-
-        onSubmit(payload)
+        })
     }
 
     const estimasiTotal = tagihanRows.reduce(
@@ -455,208 +467,266 @@ const PendaftaranFormPage = ({
 
                     <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
 
-                    {/* Section: Diskon */}
+                    {/* Mode Pendaftaran */}
                     <div>
                         <div className="mb-3">
-                            <h5 className="font-semibold">Diskon</h5>
+                            <h5 className="font-semibold">Mode Pendaftaran</h5>
                         </div>
-
-                        <div className="flex flex-col gap-3">
-                            {/* Mode selector */}
-                            <div className="flex gap-2">
-                                {(['none', 'dropdown', 'kode'] as const).map((mode) => (
-                                    <button
-                                        key={mode}
-                                        type="button"
-                                        onClick={() => {
-                                            setDiskonMode(mode)
-                                            setSelectedDiskon(null)
-                                            setKodeDiskon('')
-                                            setErrors((p) => { const n = { ...p }; delete n.diskon; return n })
-                                        }}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${diskonMode === mode
-                                            ? 'bg-[#E9F3FF] text-[#2a85ff] border-[#d0e6ff] dark:bg-[#E9F3FF]/10 dark:border-[#E9F3FF]/20 dark:text-[#7BB8FF]'
-                                            : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                                            }`}
-                                    >
-                                        {mode === 'none' ? 'Tanpa Diskon' : mode === 'dropdown' ? 'Pilih Diskon' : 'Kode Promo'}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {diskonMode === 'dropdown' && (
-                                <FormItem
-                                    invalid={!!errors.diskon}
-                                    errorMessage={errors.diskon}
-                                >
-                                    <Select<SelectOption>
-                                        placeholder="— Pilih diskon aktif —"
-                                        options={diskonOptions}
-                                        isLoading={loadingDiskon}
-                                        isClearable
-                                        value={selectedDiskon}
-                                        onChange={(opt) => setSelectedDiskon(opt as SelectOption | null)}
-                                    />
-                                </FormItem>
-                            )}
-
-                            {diskonMode === 'kode' && (
-                                <FormItem
-                                    invalid={!!errors.diskon}
-                                    errorMessage={errors.diskon}
-                                >
-                                    <Input
-                                        placeholder="Masukkan kode promo"
-                                        value={kodeDiskon}
-                                        onChange={(e) => setKodeDiskon(e.target.value.toUpperCase())}
-                                    />
-                                </FormItem>
-                            )}
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setIsTrial(false)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${!isTrial
+                                    ? 'bg-[#E9F3FF] text-[#2a85ff] border-[#d0e6ff] dark:bg-[#E9F3FF]/10 dark:border-[#E9F3FF]/20 dark:text-[#7BB8FF]'
+                                    : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                    }`}
+                            >
+                                Reguler
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsTrial(true)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${isTrial
+                                    ? 'bg-violet-100 text-violet-600 border-violet-200 dark:bg-violet-500/20 dark:border-violet-500/30 dark:text-violet-300'
+                                    : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                    }`}
+                            >
+                                Trial (Gratis)
+                            </button>
                         </div>
                     </div>
 
                     <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
 
-                    {/* Section: Tagihan */}
-                    <div>
-                        {errors.tagihan_global && (
-                            <p className="text-red-500 text-sm mb-3">{errors.tagihan_global}</p>
-                        )}
-
-                        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
-                            {/* Header */}
-                            <div className="flex items-center justify-between px-5 py-3 bg-[#E9F3FF] dark:bg-[#E9F3FF]/10 border-b border-[#d0e6ff] dark:border-[#E9F3FF]/20">
-                                <div className="flex items-center gap-2">
-                                    <HiOutlineDocumentText className="text-[#2a85ff] text-base shrink-0" />
-                                    <span className="text-xs font-semibold text-[#2a85ff] dark:text-[#7BB8FF] uppercase tracking-wide">Tagihan</span>
-                                    <span className="text-xs font-semibold text-[#2a85ff] dark:text-[#7BB8FF] bg-white dark:bg-[#E9F3FF]/10 border border-[#d0e6ff] dark:border-[#E9F3FF]/20 px-2 py-0.5 rounded-full">
-                                        {tagihanRows.length} item
-                                    </span>
-                                </div>
-                                <Button
-                                    type="button"
-                                    size="xs"
-                                    variant="solid"
-                                    customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
-                                    className="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500"
-                                    icon={<HiOutlinePlus />}
-                                    onClick={handleAddTagihan}
-                                    disabled={submitting}
-                                >
-                                    Tambah Tagihan
-                                </Button>
+                    {/* Section: Diskon */}
+                    {!isTrial && (
+                        <div>
+                            <div className="mb-3">
+                                <h5 className="font-semibold">Diskon</h5>
                             </div>
 
-                            {/* Rows */}
-                            <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                                {tagihanRows.map((row, idx) => {
-                                    const biaya = row.id_biaya ? biayaMap[row.id_biaya] : null
-                                    return (
-                                        <div key={row._key} className="flex items-start gap-3 px-5 py-4 bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors">
-                                            {/* Nomor */}
-                                            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#E9F3FF] dark:bg-[#E9F3FF]/10 shrink-0 mt-1">
-                                                <span className="text-xs font-bold text-[#2a85ff] dark:text-[#7BB8FF]">{idx + 1}</span>
-                                            </div>
-
-                                            {/* Fields */}
-                                            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
-                                                {/* Biaya */}
-                                                <div>
-                                                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
-                                                        <HiOutlineDocumentText className="text-[#2a85ff]/60 shrink-0" />
-                                                        Biaya <span className="text-red-500">*</span>
-                                                    </p>
-                                                    <Select<SelectOption>
-                                                        isClearable
-                                                        placeholder="Pilih biaya..."
-                                                        options={biayaOptions}
-                                                        isLoading={loadingBiaya}
-                                                        value={biayaOptions.find((o) => o.value === row.id_biaya) ?? null}
-                                                        onChange={(opt) =>
-                                                            handleTagihanChange(row._key, 'id_biaya', opt ? (opt as SelectOption).value : '')
-                                                        }
-                                                        menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
-                                                        menuPosition="fixed"
-                                                    />
-                                                    {errors[`tagihan_${idx}_biaya`] && (
-                                                        <p className="text-red-500 text-xs mt-1">{errors[`tagihan_${idx}_biaya`]}</p>
-                                                    )}
-                                                    {biaya && (
-                                                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 flex-wrap">
-                                                            <span className="font-medium">{biaya.jenis_biaya}</span>
-                                                            <span className="text-gray-300">·</span>
-                                                            <span>{biaya.nama_kelas ?? '-'}</span>
-                                                            <span className="text-gray-300">·</span>
-                                                            <span className="font-semibold">{formatRupiah(biaya.harga_biaya)}</span>
-                                                        </p>
-                                                    )}
-                                                </div>
-
-                                                {/* Jadwal Kelas */}
-                                                <div>
-                                                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
-                                                        <HiOutlineCollection className="text-[#2a85ff]/60 shrink-0" />
-                                                        Jadwal Kelas
-                                                    </p>
-                                                    <Select<SelectOption>
-                                                        isClearable
-                                                        placeholder="- Pilih jadwal -"
-                                                        options={jadwalOptions}
-                                                        isLoading={loadingJadwal}
-                                                        value={jadwalOptions.find((o) => o.value === row.id_jadwal_kelas) ?? null}
-                                                        onChange={(opt) =>
-                                                            handleTagihanChange(row._key, 'id_jadwal_kelas', opt ? (opt as SelectOption).value : '')
-                                                        }
-                                                        menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
-                                                        menuPosition="fixed"
-                                                    />
-                                                </div>
-
-                                                {/* Periode */}
-                                                <div>
-                                                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
-                                                        <HiOutlineCalendar className="text-[#2a85ff]/60 shrink-0" />
-                                                        Periode
-                                                    </p>
-                                                    <DatePicker
-                                                        placeholder="Bulan & tahun"
-                                                        inputFormat="MMMM YYYY"
-                                                        clearable
-                                                        value={row.periodeDate}
-                                                        onChange={(date) =>
-                                                            handlePeriodeChange(row._key, date as Date | null)
-                                                        }
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* Hapus */}
-                                            {tagihanRows.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRemoveTagihan(row._key)}
-                                                    className="flex items-center justify-center w-7 h-7 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors mt-1 shrink-0"
-                                                    title="Hapus tagihan"
-                                                >
-                                                    <HiOutlineTrash className="text-base" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    )
-                                })}
-                            </div>
-
-                            {/* Estimasi total */}
-                            {estimasiTotal > 0 && (
-                                <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-100 dark:border-gray-700">
-                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Estimasi Total</span>
-                                    <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
-                                        {formatRupiah(estimasiTotal)}
-                                    </span>
+                            <div className="flex flex-col gap-3">
+                                {/* Mode selector */}
+                                <div className="flex gap-2">
+                                    {(['none', 'dropdown', 'kode'] as const).map((mode) => (
+                                        <button
+                                            key={mode}
+                                            type="button"
+                                            onClick={() => {
+                                                setDiskonMode(mode)
+                                                setSelectedDiskon(null)
+                                                setKodeDiskon('')
+                                                setErrors((p) => { const n = { ...p }; delete n.diskon; return n })
+                                            }}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${diskonMode === mode
+                                                ? 'bg-[#E9F3FF] text-[#2a85ff] border-[#d0e6ff] dark:bg-[#E9F3FF]/10 dark:border-[#E9F3FF]/20 dark:text-[#7BB8FF]'
+                                                : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                                }`}
+                                        >
+                                            {mode === 'none' ? 'Tanpa Diskon' : mode === 'dropdown' ? 'Pilih Diskon' : 'Kode Promo'}
+                                        </button>
+                                    ))}
                                 </div>
-                            )}
+
+                                {diskonMode === 'dropdown' && (
+                                    <FormItem
+                                        invalid={!!errors.diskon}
+                                        errorMessage={errors.diskon}
+                                    >
+                                        <Select<SelectOption>
+                                            placeholder="— Pilih diskon aktif —"
+                                            options={diskonOptions}
+                                            isLoading={loadingDiskon}
+                                            isClearable
+                                            value={selectedDiskon}
+                                            onChange={(opt) => setSelectedDiskon(opt as SelectOption | null)}
+                                        />
+                                    </FormItem>
+                                )}
+
+                                {diskonMode === 'kode' && (
+                                    <FormItem
+                                        invalid={!!errors.diskon}
+                                        errorMessage={errors.diskon}
+                                    >
+                                        <Input
+                                            placeholder="Masukkan kode promo"
+                                            value={kodeDiskon}
+                                            onChange={(e) => setKodeDiskon(e.target.value.toUpperCase())}
+                                        />
+                                    </FormItem>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
+
+                    <div className="border-t mt-0 mb-0 border-gray-100 dark:border-gray-700" />
+
+                    {/* Section: Tagihan / Jadwal Trial */}
+                    {isTrial ? (
+                        <div>
+                            <FormItem
+                                label="Jadwal Trial"
+                                asterisk
+                                invalid={!!errors.jadwal_trial}
+                                errorMessage={errors.jadwal_trial}
+                            >
+                                <Select<SelectOption>
+                                    placeholder="Pilih jadwal kelas untuk sesi trial..."
+                                    options={jadwalOptions}
+                                    isLoading={loadingJadwal}
+                                    isClearable
+                                    value={selectedJadwalTrial}
+                                    onChange={(opt) => {
+                                        setSelectedJadwalTrial(opt as SelectOption | null)
+                                        setErrors((p) => { const n = { ...p }; delete n.jadwal_trial; return n })
+                                    }}
+                                    menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                                    menuPosition="fixed"
+                                />
+                            </FormItem>
+                        </div>
+                    ) : (
+                        <div>
+                            {errors.tagihan_global && (
+                                <p className="text-red-500 text-sm mb-3">{errors.tagihan_global}</p>
+                            )}
+
+                            <div className="rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+                                {/* Header */}
+                                <div className="flex items-center justify-between px-5 py-3 bg-[#E9F3FF] dark:bg-[#E9F3FF]/10 border-b border-[#d0e6ff] dark:border-[#E9F3FF]/20">
+                                    <div className="flex items-center gap-2">
+                                        <HiOutlineDocumentText className="text-[#2a85ff] text-base shrink-0" />
+                                        <span className="text-xs font-semibold text-[#2a85ff] dark:text-[#7BB8FF] uppercase tracking-wide">Tagihan</span>
+                                        <span className="text-xs font-semibold text-[#2a85ff] dark:text-[#7BB8FF] bg-white dark:bg-[#E9F3FF]/10 border border-[#d0e6ff] dark:border-[#E9F3FF]/20 px-2 py-0.5 rounded-full">
+                                            {tagihanRows.length} item
+                                        </span>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        size="xs"
+                                        variant="solid"
+                                        customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                                        className="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500"
+                                        icon={<HiOutlinePlus />}
+                                        onClick={handleAddTagihan}
+                                        disabled={submitting}
+                                    >
+                                        Tambah Tagihan
+                                    </Button>
+                                </div>
+
+                                {/* Rows */}
+                                <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                                    {tagihanRows.map((row, idx) => {
+                                        const biaya = row.id_biaya ? biayaMap[row.id_biaya] : null
+                                        return (
+                                            <div key={row._key} className="flex items-start gap-3 px-5 py-4 bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors">
+                                                {/* Nomor */}
+                                                <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#E9F3FF] dark:bg-[#E9F3FF]/10 shrink-0 mt-1">
+                                                    <span className="text-xs font-bold text-[#2a85ff] dark:text-[#7BB8FF]">{idx + 1}</span>
+                                                </div>
+
+                                                {/* Fields */}
+                                                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                    {/* Biaya */}
+                                                    <div>
+                                                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                                                            <HiOutlineDocumentText className="text-[#2a85ff]/60 shrink-0" />
+                                                            Biaya <span className="text-red-500">*</span>
+                                                        </p>
+                                                        <Select<SelectOption>
+                                                            isClearable
+                                                            placeholder="Pilih biaya..."
+                                                            options={biayaOptions}
+                                                            isLoading={loadingBiaya}
+                                                            value={biayaOptions.find((o) => o.value === row.id_biaya) ?? null}
+                                                            onChange={(opt) =>
+                                                                handleTagihanChange(row._key, 'id_biaya', opt ? (opt as SelectOption).value : '')
+                                                            }
+                                                            menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                                                            menuPosition="fixed"
+                                                        />
+                                                        {errors[`tagihan_${idx}_biaya`] && (
+                                                            <p className="text-red-500 text-xs mt-1">{errors[`tagihan_${idx}_biaya`]}</p>
+                                                        )}
+                                                        {biaya && (
+                                                            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 flex-wrap">
+                                                                <span className="font-medium">{biaya.jenis_biaya}</span>
+                                                                <span className="text-gray-300">·</span>
+                                                                <span>{biaya.nama_kelas ?? '-'}</span>
+                                                                <span className="text-gray-300">·</span>
+                                                                <span className="font-semibold">{formatRupiah(biaya.harga_biaya)}</span>
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Jadwal Kelas */}
+                                                    <div>
+                                                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                                                            <HiOutlineCollection className="text-[#2a85ff]/60 shrink-0" />
+                                                            Jadwal Kelas
+                                                        </p>
+                                                        <Select<SelectOption>
+                                                            isClearable
+                                                            placeholder="- Pilih jadwal -"
+                                                            options={jadwalOptions}
+                                                            isLoading={loadingJadwal}
+                                                            value={jadwalOptions.find((o) => o.value === row.id_jadwal_kelas) ?? null}
+                                                            onChange={(opt) =>
+                                                                handleTagihanChange(row._key, 'id_jadwal_kelas', opt ? (opt as SelectOption).value : '')
+                                                            }
+                                                            menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                                                            menuPosition="fixed"
+                                                        />
+                                                    </div>
+
+                                                    {/* Periode */}
+                                                    <div>
+                                                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                                                            <HiOutlineCalendar className="text-[#2a85ff]/60 shrink-0" />
+                                                            Periode
+                                                        </p>
+                                                        <DatePicker
+                                                            placeholder="Bulan & tahun"
+                                                            inputFormat="MMMM YYYY"
+                                                            clearable
+                                                            value={row.periodeDate}
+                                                            onChange={(date) =>
+                                                                handlePeriodeChange(row._key, date as Date | null)
+                                                            }
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Hapus */}
+                                                {tagihanRows.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveTagihan(row._key)}
+                                                        className="flex items-center justify-center w-7 h-7 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors mt-1 shrink-0"
+                                                        title="Hapus tagihan"
+                                                    >
+                                                        <HiOutlineTrash className="text-base" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+
+                                {/* Estimasi total */}
+                                {estimasiTotal > 0 && (
+                                    <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-100 dark:border-gray-700">
+                                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Estimasi Total</span>
+                                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                                            {formatRupiah(estimasiTotal)}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Actions */}
                     <div className="flex items-center justify-end gap-4 mt-6">

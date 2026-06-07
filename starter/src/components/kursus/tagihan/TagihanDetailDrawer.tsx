@@ -185,7 +185,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                             {/* Jenis + periode */}
                             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                                 <HiOutlineTag className="shrink-0" />
-                                <span>{tagihan.nama_biaya}</span>
+                                <span>{tagihan.nama_biaya ?? '—'}</span>
                                 {tagihan.periode && (
                                     <>
                                         <span className="text-gray-300">·</span>

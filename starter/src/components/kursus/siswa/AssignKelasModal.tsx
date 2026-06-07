@@ -30,6 +30,7 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
     const [totalSesiAutoFilled, setTotalSesiAutoFilled] = useState(false)
 
     const [submitting, setSubmitting] = useState(false)
+    const [isTrial, setIsTrial] = useState(false)
     const [error, setError] = useState('')
 
     // Reset on open
@@ -44,6 +45,7 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
         setTotalSesi('')
         setTotalSesiAutoFilled(false)
         setError('')
+        setIsTrial(false)
 
         KelasService.getAll({ aktif: 1, limit: 200 }).then((res) => {
             setKelasList(res.data.map((k: IKelas) => ({ value: k.id_kelas, label: k.nama_kelas })))
@@ -78,7 +80,7 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
     const jadwalOptions = useMemo<SelectOption[]>(() => {
         return jadwalList.map((j) => ({
             value: j.id_jadwal_kelas,
-            label: `${j.hari}, ${j.jam_mulai}–${j.jam_selesai}${j.nama_karyawan ? ` · ${j.nama_karyawan}` : ''}`,
+            label: `${j.hari}, ${j.jam_mulai}–${j.jam_selesai}${j.nama_karyawan ? ` · ${j.nama_karyawan}` : ''}${j.kuota > 0 ? ` (${j.kuota_terpakai}/${j.kuota} terisi)` : ''}`,
         }))
     }, [jadwalList])
 
@@ -133,6 +135,7 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
                 id_siswa: siswa.id_siswa,
                 id_jadwal_kelas: selectedJadwal.value,
                 ...(totalSesi !== '' ? { total_sesi: Number(totalSesi) } : {}),
+                ...(isTrial ? { is_trial: 1 } : {}),
             })
             onSuccess()
             onClose()
@@ -231,6 +234,22 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
                         />
                     </FormItem>
                 )}
+
+                {/* Trial */}
+                <FormItem label="Mode Pendaftaran">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={isTrial}
+                            onChange={(e) => setIsTrial(e.target.checked)}
+                            className="w-4 h-4 accent-violet-600 cursor-pointer"
+                        />
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                            Daftarkan sebagai Trial{' '}
+                            <span className="text-gray-400">(gratis, tidak ada tagihan)</span>
+                        </span>
+                    </label>
+                </FormItem>
 
                 {/* Total Sesi */}
                 <FormItem

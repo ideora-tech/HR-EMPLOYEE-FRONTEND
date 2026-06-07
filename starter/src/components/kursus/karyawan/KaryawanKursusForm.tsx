@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Button, Dialog, FormItem, Input, Select } from '@/components/ui'
+import { Button, FormItem, Input, Select } from '@/components/ui'
 import ApiService from '@/services/ApiService'
 import { API_ENDPOINTS } from '@/constants/api.constant'
 import { formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
@@ -74,11 +74,10 @@ const INITIAL: FormState = {
     no_bpjs_ketenagakerjaan: '',
 }
 
-interface KaryawanKursusFormProps {
-    open: boolean
+export interface KaryawanKursusFormProps {
     editData?: IKaryawan | null
     submitting?: boolean
-    onClose: () => void
+    onCancel: () => void
     onSubmit: (payload: ICreateKaryawan | IUpdateKaryawan) => void
 }
 
@@ -89,10 +88,9 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 )
 
 const KaryawanKursusForm = ({
-    open,
     editData,
     submitting = false,
-    onClose,
+    onCancel,
     onSubmit,
 }: KaryawanKursusFormProps) => {
     const isEdit = !!editData
@@ -101,7 +99,6 @@ const KaryawanKursusForm = ({
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
     const [jabatanOptions, setJabatanOptions] = useState<JabatanOption[]>([{ value: '', label: 'Pilih jabatan' }])
 
-    /* ── Fetch jabatan list ─────────────────────────────────── */
     useEffect(() => {
         const fetchJabatan = async () => {
             try {
@@ -116,13 +113,12 @@ const KaryawanKursusForm = ({
                     ])
                 }
             } catch {
-                /* silent — jabatan optional */
+                /* silent */
             }
         }
         fetchJabatan()
     }, [])
 
-    /* ── Populate form saat edit ────────────────────────────── */
     useEffect(() => {
         if (editData) {
             setForm({
@@ -148,7 +144,7 @@ const KaryawanKursusForm = ({
             setForm(INITIAL)
         }
         setErrors({})
-    }, [editData, open])
+    }, [editData])
 
     const set = (key: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) =>
         setForm((p) => ({ ...p, [key]: e.target.value }))
@@ -185,181 +181,128 @@ const KaryawanKursusForm = ({
     }
 
     return (
-        <Dialog isOpen={open} onClose={onClose} onRequestClose={onClose} width={640}>
-            <h5 className="mb-6">{isEdit ? 'Edit Karyawan' : 'Tambah Karyawan Baru'}</h5>
+        <div className="flex flex-col gap-6">
 
-            <div className="flex flex-col gap-6 max-h-[70vh] overflow-y-auto pr-1">
-
-                {/* ── Section 1: Data Diri ─────────────────────────────── */}
-                <div>
-                    <SectionLabel>Data Diri</SectionLabel>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="col-span-2">
-                            <FormItem
-                                label="Nama Lengkap"
-                                asterisk
-                                invalid={!!errors.nama_karyawan}
-                                errorMessage={errors.nama_karyawan}
-                            >
-                                <Input
-                                    placeholder="Nama lengkap karyawan"
-                                    value={form.nama_karyawan}
-                                    onChange={set('nama_karyawan')}
-                                />
-                            </FormItem>
-                        </div>
-                        <FormItem label="NIK">
+            {/* Section 1: Data Diri */}
+            <div>
+                <SectionLabel>Data Diri</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                        <FormItem
+                            label="Nama Lengkap"
+                            asterisk
+                            invalid={!!errors.nama_karyawan}
+                            errorMessage={errors.nama_karyawan}
+                        >
                             <Input
-                                placeholder="Nomor Induk Karyawan"
-                                value={form.nik}
-                                onChange={set('nik')}
-                            />
-                        </FormItem>
-                        <FormItem label="Email">
-                            <Input
-                                type="email"
-                                placeholder="email@domain.com"
-                                value={form.email}
-                                onChange={set('email')}
-                            />
-                        </FormItem>
-                        <FormItem label="Telepon">
-                            <Input
-                                placeholder="08xx-xxxx-xxxx"
-                                value={form.telepon}
-                                onChange={set('telepon')}
-                            />
-                        </FormItem>
-                        <FormItem label="Tanggal Lahir">
-                            <Input
-                                type="date"
-                                value={form.tanggal_lahir}
-                                onChange={set('tanggal_lahir')}
-                            />
-                        </FormItem>
-                        <FormItem label="Jenis Kelamin">
-                            <Select<JenisKelaminOption>
-                                options={JENIS_KELAMIN_OPTIONS}
-                                value={JENIS_KELAMIN_OPTIONS.find((o) => o.value === form.jenis_kelamin) ?? JENIS_KELAMIN_OPTIONS[0]}
-                                onChange={(opt) =>
-                                    setForm((p) => ({ ...p, jenis_kelamin: (opt as JenisKelaminOption).value }))
-                                }
+                                placeholder="Nama lengkap karyawan"
+                                value={form.nama_karyawan}
+                                onChange={set('nama_karyawan')}
                             />
                         </FormItem>
                     </div>
+                    <FormItem label="NIK">
+                        <Input placeholder="Nomor Induk Karyawan" value={form.nik} onChange={set('nik')} />
+                    </FormItem>
+                    <FormItem label="Email">
+                        <Input type="email" placeholder="email@domain.com" value={form.email} onChange={set('email')} />
+                    </FormItem>
+                    <FormItem label="Telepon">
+                        <Input placeholder="08xx-xxxx-xxxx" value={form.telepon} onChange={set('telepon')} />
+                    </FormItem>
+                    <FormItem label="Tanggal Lahir">
+                        <Input type="date" value={form.tanggal_lahir} onChange={set('tanggal_lahir')} />
+                    </FormItem>
+                    <FormItem label="Jenis Kelamin">
+                        <Select<JenisKelaminOption>
+                            options={JENIS_KELAMIN_OPTIONS}
+                            value={JENIS_KELAMIN_OPTIONS.find((o) => o.value === form.jenis_kelamin) ?? JENIS_KELAMIN_OPTIONS[0]}
+                            onChange={(opt) => setForm((p) => ({ ...p, jenis_kelamin: (opt as JenisKelaminOption).value }))}
+                        />
+                    </FormItem>
                 </div>
-
-                {/* ── Section 2: Kepegawaian ───────────────────────────── */}
-                <div>
-                    <SectionLabel>Kepegawaian</SectionLabel>
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormItem label="Jabatan">
-                            <Select<JabatanOption>
-                                options={jabatanOptions}
-                                value={jabatanOptions.find((o) => o.value === form.id_jabatan) ?? jabatanOptions[0]}
-                                onChange={(opt) =>
-                                    setForm((p) => ({ ...p, id_jabatan: (opt as JabatanOption).value }))
-                                }
-                            />
-                        </FormItem>
-                        <FormItem label="Status Kepegawaian">
-                            <Select<StatusKepegawaianOption>
-                                options={STATUS_KEPEGAWAIAN_OPTIONS}
-                                value={STATUS_KEPEGAWAIAN_OPTIONS.find((o) => o.value === form.status_kepegawaian) ?? STATUS_KEPEGAWAIAN_OPTIONS[0]}
-                                onChange={(opt) =>
-                                    setForm((p) => ({ ...p, status_kepegawaian: (opt as StatusKepegawaianOption).value }))
-                                }
-                            />
-                        </FormItem>
-                        <FormItem label="Tanggal Masuk">
-                            <Input
-                                type="date"
-                                value={form.tanggal_masuk}
-                                onChange={set('tanggal_masuk')}
-                            />
-                        </FormItem>
-                        <FormItem label="Gaji Pokok">
-                            <Input
-                                prefix={<span className="text-gray-500 font-medium">Rp</span>}
-                                placeholder="0"
-                                value={form.gaji_pokok}
-                                onChange={(e) =>
-                                    setForm((p) => ({ ...p, gaji_pokok: formatRupiahInput(e.target.value) }))
-                                }
-                            />
-                        </FormItem>
-                    </div>
-                </div>
-
-                {/* ── Section 3: Keuangan & Pajak ──────────────────────── */}
-                <div>
-                    <SectionLabel>Keuangan &amp; Pajak</SectionLabel>
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormItem label="Nama Bank">
-                            <Input
-                                placeholder="BCA / Mandiri / BNI..."
-                                value={form.nama_bank}
-                                onChange={set('nama_bank')}
-                            />
-                        </FormItem>
-                        <FormItem label="No. Rekening">
-                            <Input
-                                placeholder="Nomor rekening"
-                                value={form.no_rekening}
-                                onChange={set('no_rekening')}
-                            />
-                        </FormItem>
-                        <div className="col-span-2">
-                            <FormItem label="Nama Pemilik Rekening">
-                                <Input
-                                    placeholder="Sesuai buku rekening"
-                                    value={form.nama_pemilik_rekening}
-                                    onChange={set('nama_pemilik_rekening')}
-                                />
-                            </FormItem>
-                        </div>
-                        <FormItem label="NPWP">
-                            <Input
-                                placeholder="xx.xxx.xxx.x-xxx.xxx"
-                                value={form.npwp}
-                                onChange={set('npwp')}
-                            />
-                        </FormItem>
-                        <FormItem label="Status Pajak">
-                            <Select<StatusPajakOption>
-                                options={STATUS_PAJAK_OPTIONS}
-                                value={STATUS_PAJAK_OPTIONS.find((o) => o.value === form.status_pajak) ?? STATUS_PAJAK_OPTIONS[0]}
-                                onChange={(opt) =>
-                                    setForm((p) => ({ ...p, status_pajak: (opt as StatusPajakOption).value }))
-                                }
-                            />
-                        </FormItem>
-                        <FormItem label="No. BPJS Kesehatan">
-                            <Input
-                                placeholder="Nomor BPJS Kesehatan"
-                                value={form.no_bpjs_kesehatan}
-                                onChange={set('no_bpjs_kesehatan')}
-                            />
-                        </FormItem>
-                        <FormItem label="No. BPJS Ketenagakerjaan">
-                            <Input
-                                placeholder="Nomor BPJS Ketenagakerjaan"
-                                value={form.no_bpjs_ketenagakerjaan}
-                                onChange={set('no_bpjs_ketenagakerjaan')}
-                            />
-                        </FormItem>
-                    </div>
-                </div>
-
             </div>
 
-            <div className="flex justify-end gap-2 mt-6">
-                <Button variant="plain" onClick={onClose}>Batal</Button>
-                <Button variant="solid" loading={submitting} onClick={handleSubmit}>
-                    {isEdit ? 'Simpan Perubahan' : 'Tambah'}
+            {/* Section 2: Kepegawaian */}
+            <div>
+                <SectionLabel>Kepegawaian</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                    <FormItem label="Jabatan">
+                        <Select<JabatanOption>
+                            options={jabatanOptions}
+                            value={jabatanOptions.find((o) => o.value === form.id_jabatan) ?? jabatanOptions[0]}
+                            onChange={(opt) => setForm((p) => ({ ...p, id_jabatan: (opt as JabatanOption).value }))}
+                        />
+                    </FormItem>
+                    <FormItem label="Status Kepegawaian">
+                        <Select<StatusKepegawaianOption>
+                            options={STATUS_KEPEGAWAIAN_OPTIONS}
+                            value={STATUS_KEPEGAWAIAN_OPTIONS.find((o) => o.value === form.status_kepegawaian) ?? STATUS_KEPEGAWAIAN_OPTIONS[0]}
+                            onChange={(opt) => setForm((p) => ({ ...p, status_kepegawaian: (opt as StatusKepegawaianOption).value }))}
+                        />
+                    </FormItem>
+                    <FormItem label="Tanggal Masuk">
+                        <Input type="date" value={form.tanggal_masuk} onChange={set('tanggal_masuk')} />
+                    </FormItem>
+                    <FormItem label="Gaji Pokok">
+                        <Input
+                            prefix={<span className="text-gray-500 font-medium">Rp</span>}
+                            placeholder="0"
+                            value={form.gaji_pokok}
+                            onChange={(e) => setForm((p) => ({ ...p, gaji_pokok: formatRupiahInput(e.target.value) }))}
+                        />
+                    </FormItem>
+                </div>
+            </div>
+
+            {/* Section 3: Keuangan & Pajak */}
+            <div>
+                <SectionLabel>Keuangan &amp; Pajak</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                    <FormItem label="Nama Bank">
+                        <Input placeholder="BCA / Mandiri / BNI..." value={form.nama_bank} onChange={set('nama_bank')} />
+                    </FormItem>
+                    <FormItem label="No. Rekening">
+                        <Input placeholder="Nomor rekening" value={form.no_rekening} onChange={set('no_rekening')} />
+                    </FormItem>
+                    <div className="col-span-2">
+                        <FormItem label="Nama Pemilik Rekening">
+                            <Input placeholder="Sesuai buku rekening" value={form.nama_pemilik_rekening} onChange={set('nama_pemilik_rekening')} />
+                        </FormItem>
+                    </div>
+                    <FormItem label="NPWP">
+                        <Input placeholder="xx.xxx.xxx.x-xxx.xxx" value={form.npwp} onChange={set('npwp')} />
+                    </FormItem>
+                    <FormItem label="Status Pajak">
+                        <Select<StatusPajakOption>
+                            options={STATUS_PAJAK_OPTIONS}
+                            value={STATUS_PAJAK_OPTIONS.find((o) => o.value === form.status_pajak) ?? STATUS_PAJAK_OPTIONS[0]}
+                            onChange={(opt) => setForm((p) => ({ ...p, status_pajak: (opt as StatusPajakOption).value }))}
+                        />
+                    </FormItem>
+                    <FormItem label="No. BPJS Kesehatan">
+                        <Input placeholder="Nomor BPJS Kesehatan" value={form.no_bpjs_kesehatan} onChange={set('no_bpjs_kesehatan')} />
+                    </FormItem>
+                    <FormItem label="No. BPJS Ketenagakerjaan">
+                        <Input placeholder="Nomor BPJS Ketenagakerjaan" value={form.no_bpjs_ketenagakerjaan} onChange={set('no_bpjs_ketenagakerjaan')} />
+                    </FormItem>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-2 pt-2">
+                <Button variant="plain" onClick={onCancel} disabled={submitting}>Batal</Button>
+                <Button
+                    variant="solid"
+                    customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                    loading={submitting}
+                    onClick={handleSubmit}
+                >
+                    {isEdit ? 'Simpan Perubahan' : 'Tambah Karyawan'}
                 </Button>
             </div>
-        </Dialog>
+
+        </div>
     )
 }
 

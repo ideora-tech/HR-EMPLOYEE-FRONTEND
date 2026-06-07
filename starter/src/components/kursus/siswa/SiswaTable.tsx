@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import DataTable from '@/components/shared/DataTable'
 import { Tag, Tooltip } from '@/components/ui'
-import { HiOutlinePencilAlt, HiOutlineTrash, HiOutlineAcademicCap, HiOutlineEye } from 'react-icons/hi'
+import { HiOutlinePencilAlt, HiOutlineTrash, HiOutlineEye, HiOutlineRefresh } from 'react-icons/hi'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
 import type { ISiswa } from '@/@types/kursus.types'
 
@@ -21,8 +21,7 @@ interface SiswaTableProps {
     onSelectChange: (pageSize: number) => void
     onEdit: (item: ISiswa) => void
     onDelete: (item: ISiswa) => void
-    onAssignKelas?: (item: ISiswa) => void
-    onViewKelas?: (item: ISiswa) => void
+    onDetail: (item: ISiswa) => void
 }
 
 const SiswaTable = ({
@@ -33,8 +32,7 @@ const SiswaTable = ({
     onSelectChange,
     onEdit,
     onDelete,
-    onAssignKelas,
-    onViewKelas,
+    onDetail,
 }: SiswaTableProps) => {
     const columns: ColumnDef<ISiswa>[] = useMemo(
         () => [
@@ -106,11 +104,16 @@ const SiswaTable = ({
                             {visible.map((k) => (
                                 <span
                                     key={k.id_catat}
-                                    className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${k.status === 1
+                                    className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${k.status === 1
                                         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
                                         : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                                         }`}
                                 >
+                                    {k.is_trial === 1 && (
+                                        <span className="inline-block bg-violet-200 text-violet-700 dark:bg-violet-500/30 dark:text-violet-300 text-[10px] font-bold px-1 rounded">
+                                            Trial
+                                        </span>
+                                    )}
                                     {k.nama_kelas}
                                 </span>
                             ))}
@@ -126,29 +129,31 @@ const SiswaTable = ({
             {
                 header: '',
                 id: 'action',
-                size: 100,
-                cell: ({ row }: CellContext<ISiswa, unknown>) => (
+                size: 120,
+                cell: ({ row }: CellContext<ISiswa, unknown>) => {
+                    const hasActiveTrial = (row.original.kelas ?? []).some(
+                        (k) => k.is_trial === 1 && k.status === 1,
+                    )
+                    return (
                     <div className="flex items-center justify-end gap-2">
-                        {onViewKelas && (
-                            <Tooltip title="Detail Kelas">
+                        {hasActiveTrial && (
+                            <Tooltip title="Convert Trial">
                                 <span
                                     className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-500/20 dark:text-violet-300 dark:hover:bg-violet-500/30 transition-colors"
-                                    onClick={() => onViewKelas(row.original)}
+                                    onClick={() => onDetail(row.original)}
                                 >
-                                    <HiOutlineEye className="text-lg" />
+                                    <HiOutlineRefresh className="text-lg" />
                                 </span>
                             </Tooltip>
                         )}
-                        {onAssignKelas && (
-                            <Tooltip title="Input Kelas">
-                                <span
-                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-teal-50 text-teal-600 hover:bg-teal-100 dark:bg-teal-500/20 dark:text-teal-300 dark:hover:bg-teal-500/30 transition-colors"
-                                    onClick={() => onAssignKelas(row.original)}
-                                >
-                                    <HiOutlineAcademicCap className="text-lg" />
-                                </span>
-                            </Tooltip>
-                        )}
+                        <Tooltip title="Detail">
+                            <span
+                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors"
+                                onClick={() => onDetail(row.original)}
+                            >
+                                <HiOutlineEye className="text-lg" />
+                            </span>
+                        </Tooltip>
                         <Tooltip title="Edit">
                             <span
                                 className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
@@ -166,10 +171,11 @@ const SiswaTable = ({
                             </span>
                         </Tooltip>
                     </div>
-                ),
+                    )
+                },
             },
         ],
-        [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete, onAssignKelas, onViewKelas],
+        [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete, onDetail],
     )
 
     return (

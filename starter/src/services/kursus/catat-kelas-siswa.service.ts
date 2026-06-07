@@ -4,6 +4,7 @@ import type {
     ICatatKelasSiswa,
     ICreateCatatKelasSiswa,
     IUpdateCatatKelasSiswa,
+    IConvertTrialPayload,
     ApiResponse,
 } from '@/@types/kursus.types'
 
@@ -18,6 +19,13 @@ const CatatKelasSiswaService = {
     async getByKelas(id_kelas: string): Promise<ApiResponse<ICatatKelasSiswa[]>> {
         return ApiService.fetchDataWithAxios<ApiResponse<ICatatKelasSiswa[]>>({
             url: API_ENDPOINTS.KURSUS.CATAT_KELAS_SISWA.BY_KELAS(id_kelas),
+            method: 'GET',
+        })
+    },
+
+    async getByJadwal(id_jadwal_kelas: string): Promise<ApiResponse<ICatatKelasSiswa[]>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<ICatatKelasSiswa[]>>({
+            url: API_ENDPOINTS.KURSUS.CATAT_KELAS_SISWA.BY_JADWAL(id_jadwal_kelas),
             method: 'GET',
         })
     },
@@ -42,6 +50,14 @@ const CatatKelasSiswaService = {
         return ApiService.fetchDataWithAxios<ApiResponse<null>>({
             url: API_ENDPOINTS.KURSUS.CATAT_KELAS_SISWA.BY_ID(id),
             method: 'DELETE',
+        })
+    },
+
+    async convertTrial(id: string, payload: IConvertTrialPayload): Promise<ApiResponse<ICatatKelasSiswa>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<ICatatKelasSiswa>, IConvertTrialPayload>({
+            url: API_ENDPOINTS.KURSUS.CATAT_KELAS_SISWA.CONVERT(id),
+            method: 'POST',
+            data: payload,
         })
     },
 }

@@ -4,21 +4,32 @@ import type {
     IPembayaran,
     ICreatePembayaran,
     IPembayaranQuery,
+    IPembayaranMeta,
     ApiResponse,
-    ApiPaginatedResponse,
 } from '@/@types/kursus.types'
 
+export interface IPembayaranPaginatedResponse {
+    success: boolean
+    message: string
+    data: IPembayaran[]
+    meta: IPembayaranMeta
+    timestamp: string
+}
+
 const PembayaranService = {
-    async getAll(query?: IPembayaranQuery): Promise<ApiPaginatedResponse<IPembayaran>> {
+    async getAll(query?: IPembayaranQuery): Promise<IPembayaranPaginatedResponse> {
         const params = new URLSearchParams()
         if (query?.search) params.append('search', query.search)
         if (query?.page) params.append('page', String(query.page))
         if (query?.limit) params.append('limit', String(query.limit))
+        if (query?.tanggal_mulai) params.append('tanggal_mulai', query.tanggal_mulai)
+        if (query?.tanggal_selesai) params.append('tanggal_selesai', query.tanggal_selesai)
+        if (query?.metode) params.append('metode', query.metode)
         const qs = params.toString()
         const url = qs
             ? `${API_ENDPOINTS.KURSUS.PEMBAYARAN.BASE}?${qs}`
             : API_ENDPOINTS.KURSUS.PEMBAYARAN.BASE
-        return ApiService.fetchDataWithAxios<ApiPaginatedResponse<IPembayaran>>({
+        return ApiService.fetchDataWithAxios<IPembayaranPaginatedResponse>({
             url,
             method: 'GET',
         })
