@@ -52,7 +52,6 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
     useEffect(() => {
         if (!open || !tagihan) {
             setPayments([])
-            setKwitansiData(null)
             return
         }
         setLoading(true)

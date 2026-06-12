@@ -5,7 +5,7 @@ import { Button, FormItem, Input, Select } from '@/components/ui'
 import ApiService from '@/services/ApiService'
 import { API_ENDPOINTS } from '@/constants/api.constant'
 import { formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
-import type { IKaryawan, ICreateKaryawan, IUpdateKaryawan } from '@/@types/karyawan.types'
+import type { IKaryawan, ICreateKaryawan } from '@/@types/karyawan.types'
 import type { IJabatan } from '@/@types/organisasi.types'
 import type { ApiPaginatedResponse } from '@/@types/karyawan.types'
 
@@ -78,7 +78,9 @@ export interface KaryawanKursusFormProps {
     editData?: IKaryawan | null
     submitting?: boolean
     onCancel: () => void
-    onSubmit: (payload: ICreateKaryawan | IUpdateKaryawan) => void
+    // Form selalu mengirim payload lengkap, baik mode tambah maupun edit
+    // (ICreateKaryawan assignable ke IUpdateKaryawan karena Partial)
+    onSubmit: (payload: ICreateKaryawan) => void
 }
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (

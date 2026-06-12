@@ -24,12 +24,17 @@ export const apexLineChartDefaultOption: ApexOptions = {
             vertical: 10,
         },
         tooltipHoverFormatter: function (val, opts) {
-            return (
-                val +
-                ' - ' +
-                opts.w.globals.series[opts.seriesIndex][opts.dataPointIndex] +
-                ''
-            )
+            // Runtime ApexCharts mengirim seriesIndex/dataPointIndex/w,
+            // tapi deklarasi type ApexLegendFormatterOpts tidak lengkap
+            const o = opts as
+                | {
+                      w: { globals: { series: number[][] } }
+                      seriesIndex: number
+                      dataPointIndex: number
+                  }
+                | undefined
+            if (!o) return val
+            return `${val} - ${o.w.globals.series[o.seriesIndex][o.dataPointIndex]}`
         },
     },
     xaxis: {
@@ -82,12 +87,17 @@ export const apexBarChartDefaultOption: ApexOptions = {
             vertical: 10,
         },
         tooltipHoverFormatter: function (val, opts) {
-            return (
-                val +
-                ' - ' +
-                opts.w.globals.series[opts.seriesIndex][opts.dataPointIndex] +
-                ''
-            )
+            // Runtime ApexCharts mengirim seriesIndex/dataPointIndex/w,
+            // tapi deklarasi type ApexLegendFormatterOpts tidak lengkap
+            const o = opts as
+                | {
+                      w: { globals: { series: number[][] } }
+                      seriesIndex: number
+                      dataPointIndex: number
+                  }
+                | undefined
+            if (!o) return val
+            return `${val} - ${o.w.globals.series[o.seriesIndex][o.dataPointIndex]}`
         },
     },
     xaxis: {
