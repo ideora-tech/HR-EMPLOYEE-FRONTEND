@@ -3,5 +3,8 @@
     "allow": [
       "Bash(find /d/HR-EMPLOYEE-FRONTEND/starter/docs -name *.md)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "mysql-penggajian"
+  ]
 }

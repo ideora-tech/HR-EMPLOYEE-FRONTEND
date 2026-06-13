@@ -17,6 +17,11 @@
   }
 
   .side-nav-bg {
-    @apply border-r bg-white  border-gray-200 dark:bg-gray-800 dark:border-gray-700;
+    border-right: 1px solid rgba(85, 51, 187, 0.15);
+    background: linear-gradient(180deg, #220A88 0%, #5533BB 55%, #AA38C0 100%);
+  }
+
+  .side-nav-bg.dark {
+    background: linear-gradient(180deg, #180870 0%, #4422A8 55%, #9830C0 100%);
   }
 }
