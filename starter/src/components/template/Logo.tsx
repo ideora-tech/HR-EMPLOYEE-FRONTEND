@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import { APP_NAME } from '@/constants/app.constant'
 import Image from 'next/image'
 import type { CommonProps } from '@/@types/common'
 
@@ -11,77 +10,29 @@ interface LogoProps extends CommonProps {
     logoHeight?: number
 }
 
-const LOGO_SRC_PATH = '/img/logo/'
-
 const Logo = (props: LogoProps) => {
-    const {
-        type = 'full',
-        mode = 'light',
-        className,
-        imgClass,
-        style,
-        logoWidth,
-        logoHeight,
-    } = props
-
-    const width = logoWidth || (type === 'full' ? 120 : 40)
-    const height = logoHeight || (type === 'full' ? 40 : 40)
+    const { type = 'full', className, style } = props
 
     return (
-        <div className={classNames('logo', className)} style={style}>
-            {mode === 'light' && (
-                <>
-                    <Image
-                        className={classNames(
-                            '',
-                            type === 'full' ? '' : 'hidden',
-                            imgClass,
-                        )}
-                        src={`${LOGO_SRC_PATH}logo-light-full.png`}
-                        alt={`${APP_NAME} logo`}
-                        width={width}
-                        height={height}
-                        priority
-                    />
-                    <Image
-                        className={classNames(
-                            '',
-                            type === 'streamline' ? '' : 'hidden',
-                            imgClass,
-                        )}
-                        src={`${LOGO_SRC_PATH}logo-light-streamline.png`}
-                        alt={`${APP_NAME} logo`}
-                        width={width}
-                        height={height}
-                        priority
-                    />
-                </>
-            )}
-            {mode === 'dark' && (
-                <>
-                    <Image
-                        className={classNames(
-                            type === 'full' ? '' : 'hidden',
-                            imgClass,
-                        )}
-                        src={`${LOGO_SRC_PATH}logo-dark-full.png`}
-                        alt={`${APP_NAME} logo`}
-                        width={width}
-                        height={height}
-                        priority
-                    />
-                    <Image
-                        className={classNames(
-                            type === 'streamline' ? '' : 'hidden',
-                            imgClass,
-                        )}
-                        src={`${LOGO_SRC_PATH}logo-dark-streamline.png`}
-                        alt={`${APP_NAME} logo`}
-                        width={width}
-                        height={height}
-                        priority
-                    />
-                </>
+        <div className={classNames('logo flex items-center gap-2', className)} style={style}>
+            <Image
+                src="/logo-sky.jpeg"
+                alt="SKY Dance Academy"
+                width={36}
+                height={36}
+                priority
+                style={{ borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
+            />
+            {type === 'full' && (
+                <span style={{
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    fontSize: '15px',
+                    lineHeight: 1.2,
+                    whiteSpace: 'nowrap',
+                }}>
+                    SKY Dance
+                </span>
             )}
         </div>
     )
