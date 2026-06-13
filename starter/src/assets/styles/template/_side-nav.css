@@ -19,6 +19,53 @@
   .side-nav-bg {
     border-right: 1px solid rgba(85, 51, 187, 0.15);
     background: linear-gradient(180deg, #220A88 0%, #5533BB 55%, #AA38C0 100%);
+
+    /* Semua teks menu jadi putih */
+    .menu-item {
+      color: rgba(255, 255, 255, 0.75);
+
+      &.menu-item-hoverable:hover {
+        color: #ffffff;
+        background-color: rgba(255, 255, 255, 0.12);
+      }
+
+      &.menu-item-active {
+        color: #ffffff;
+        background-color: rgba(255, 255, 255, 0.18);
+      }
+    }
+
+    .menu-collapse-item {
+      color: rgba(255, 255, 255, 0.75);
+
+      &:hover {
+        color: #ffffff;
+        background-color: rgba(255, 255, 255, 0.12);
+      }
+
+      &.menu-collapse-item-active {
+        color: #ffffff;
+        background-color: rgba(255, 255, 255, 0.18);
+      }
+    }
+
+    /* Icon & chevron */
+    .menu-item svg,
+    .menu-collapse-item svg {
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    .menu-item.menu-item-active svg,
+    .menu-collapse-item.menu-collapse-item-active svg {
+      color: #ffffff;
+    }
+
+    /* Group title / section label */
+    .text-gray-500,
+    .text-gray-600,
+    .text-gray-400 {
+      color: rgba(255, 255, 255, 0.5) !important;
+    }
   }
 
   .side-nav-bg.dark {
