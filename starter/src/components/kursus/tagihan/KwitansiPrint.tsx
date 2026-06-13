@@ -63,7 +63,6 @@ const KwitansiPrint = forwardRef<HTMLDivElement, KwitansiPrintProps>(
                 `}</style>
 
                 <div className="kw-header">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/logo-sky.jpeg" alt={academyName} />
                     <p>Kwitansi Pembayaran Kursus</p>
                 </div>

@@ -35,16 +35,14 @@ const Side = ({ children, ...rest }: SideProps) => {
                 {/* Logo & Brand */}
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-16">
-                        <div style={{
-                            width: '44px', height: '44px', borderRadius: '12px',
-                            background: 'rgba(255,255,255,0.15)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                            <span style={{ fontSize: '22px' }}>💼</span>
-                        </div>
+                        <img
+                            src="/logo-sky.jpeg"
+                            alt="SKY Dance Academy"
+                            style={{ width: '52px', height: '52px', borderRadius: '12px', objectFit: 'cover' }}
+                        />
                         <div>
-                            <div style={{ color: '#fff', fontWeight: 700, fontSize: '18px', lineHeight: 1.2 }}>IdeoraHR</div>
-                            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>by Ideora Tech</div>
+                            <div style={{ color: '#fff', fontWeight: 700, fontSize: '18px', lineHeight: 1.2 }}>SKY Dance Academy</div>
+                            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Powered by IdeoraHR</div>
                         </div>
                     </div>
 
@@ -53,19 +51,19 @@ const Side = ({ children, ...rest }: SideProps) => {
                         lineHeight: 1.2, marginBottom: '16px',
                         textShadow: '0 2px 20px rgba(0,0,0,0.2)',
                     }}>
-                        Kelola SDM &<br />Penggajian dengan<br />
-                        <span style={{ color: '#D4B8FF' }}>Lebih Mudah</span>
+                        Selamat Datang di<br />
+                        <span style={{ color: '#D4B8FF' }}>SKY Dance Academy</span>
                     </h2>
                     <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '15px', lineHeight: 1.7, marginBottom: '40px' }}>
-                        Platform HR & Payroll modern untuk bisnis Indonesia — cepat, akurat, dan aman.
+                        Kelola karyawan, jadwal, dan penggajian academy Anda dengan mudah dan efisien.
                     </p>
 
                     {/* Feature list */}
                     {[
-                        { icon: '✓', text: 'Penggajian otomatis dengan PPh 21 & BPJS' },
-                        { icon: '✓', text: 'Manajemen karyawan & struktur organisasi' },
-                        { icon: '✓', text: 'Absensi digital & laporan real-time' },
-                        { icon: '✓', text: 'Multi-perusahaan dalam satu platform' },
+                        { icon: '✓', text: 'Manajemen karyawan & instruktur' },
+                        { icon: '✓', text: 'Jadwal kelas & absensi digital' },
+                        { icon: '✓', text: 'Penggajian otomatis & slip gaji' },
+                        { icon: '✓', text: 'Laporan keuangan real-time' },
                     ].map((f, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
                             <div style={{
@@ -97,8 +95,8 @@ const Side = ({ children, ...rest }: SideProps) => {
                 <div className="w-full max-w-[420px]">
                     {/* Mobile logo */}
                     <div className="flex items-center gap-2 mb-10 lg:hidden">
-                        <span style={{ fontSize: '28px' }}>💼</span>
-                        <span style={{ fontWeight: 800, fontSize: '20px', color: '#5533BB' }}>IdeoraHR</span>
+                        <img src="/logo-sky.jpeg" alt="SKY Dance Academy" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} />
+                        <span style={{ fontWeight: 800, fontSize: '20px', color: '#5533BB' }}>SKY Dance Academy</span>
                     </div>
 
                     <div

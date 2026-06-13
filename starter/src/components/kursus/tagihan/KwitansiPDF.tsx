@@ -65,6 +65,7 @@ export default function KwitansiPDF({ data, academyName = 'Sky Dance Academy', l
             <Page size="A5" style={S.page}>
                 {/* Header */}
                 <View style={S.header}>
+                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
                     {logoUrl && <Image style={S.logo} src={logoUrl} />}
                     <Text style={S.headerTitle}>Kwitansi Pembayaran Kursus</Text>
                     <Text style={S.headerSub}>{academyName}</Text>

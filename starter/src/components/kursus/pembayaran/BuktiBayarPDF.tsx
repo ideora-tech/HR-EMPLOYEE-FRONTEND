@@ -77,6 +77,7 @@ export default function BuktiBayarPDF({ data, academyName = 'Sky Dance Academy',
             <Page size="A5" style={S.page}>
                 {/* Header */}
                 <View style={S.header}>
+                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
                     {logoUrl && <Image style={S.logo} src={logoUrl} />}
                     <Text style={S.headerTitle}>Bukti Pembayaran</Text>
                     <Text style={S.headerSub}>{academyName}</Text>

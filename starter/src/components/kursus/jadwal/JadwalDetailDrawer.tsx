@@ -46,7 +46,7 @@ const JadwalDetailDrawer = ({ open, jadwal, onClose }: JadwalDetailDrawerProps) 
             .then(res => setSiswaList(res.data ?? []))
             .catch(() => setSiswaList([]))
             .finally(() => setLoadingSiswa(false))
-    }, [open, jadwal?.id_jadwal_kelas])
+    }, [open, jadwal])
 
     if (!jadwal) return null
 

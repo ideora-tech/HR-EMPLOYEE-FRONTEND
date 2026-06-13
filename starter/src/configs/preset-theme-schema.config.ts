@@ -9,17 +9,17 @@ export type ThemeVariables = Record<'light' | 'dark', Record<Variables, string>>
 
 const defaultTheme: ThemeVariables = {
     light: {
-        primary: '#2a85ff',
-        primaryDeep: '#0069f6',
-        primaryMild: '#4996ff',
-        primarySubtle: '#2a85ff1a',
+        primary: '#5533BB',
+        primaryDeep: '#3318A0',
+        primaryMild: '#7048D8',
+        primarySubtle: '#5533BB1a',
         neutral: '#ffffff',
     },
     dark: {
-        primary: '#2a85ff',
-        primaryDeep: '#0069f6',
-        primaryMild: '#4996ff',
-        primarySubtle: '#2a85ff1a',
+        primary: '#7048D8',
+        primaryDeep: '#5533BB',
+        primaryMild: '#9060E8',
+        primarySubtle: '#7048D81a',
         neutral: '#ffffff',
     },
 }

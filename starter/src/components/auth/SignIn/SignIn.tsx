@@ -20,14 +20,12 @@ const SignIn = ({
     return (
         <>
             <div className="mb-8">
-                <div style={{
-                    width: '52px', height: '52px', borderRadius: '14px',
-                    background: 'linear-gradient(135deg, #5533BB, #9830C0)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '26px', marginBottom: '4px',
-                }}>
-                    💼
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                    src="/logo-sky.jpeg"
+                    alt="SKY Dance Academy"
+                    style={{ width: '56px', height: '56px', borderRadius: '14px', objectFit: 'cover' }}
+                />
             </div>
             <div className="mb-8">
                 <h2 className="mb-1" style={{ fontSize: '26px', color: '#18102E' }}>
