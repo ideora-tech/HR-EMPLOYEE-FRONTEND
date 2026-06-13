@@ -1,4 +1,5 @@
 import { cloneElement } from 'react'
+import type { ReactElement } from 'react'
 import type { CommonProps } from '@/@types/common'
 
 type SideProps = CommonProps
@@ -105,8 +106,7 @@ const Side = ({ children, ...rest }: SideProps) => {
                         style={{ background: '#fff', border: '1px solid rgba(85,51,187,0.1)' }}
                     >
                         {children
-                            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                              cloneElement(children as React.ReactElement<any>, { ...rest })
+                            ? cloneElement(children as ReactElement<Record<string, unknown>>, { ...rest })
                             : null}
                     </div>
                 </div>
