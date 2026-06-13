@@ -5,20 +5,15 @@ import SignInForm from './SignInForm'
 import ActionLink from '@/components/shared/ActionLink'
 import useTimeOutMessage from '@/utils/hooks/useTimeOutMessage'
 import type { OnSignIn } from './SignInForm'
-import type { OnOauthSignIn } from './OauthSignIn'
 
 type SignInProps = {
-    signUpUrl?: string
     forgetPasswordUrl?: string
     onSignIn?: OnSignIn
-    onOauthSignIn?: OnOauthSignIn
 }
 
 const SignIn = ({
-    signUpUrl = '/sign-up',
     forgetPasswordUrl = '/forgot-password',
     onSignIn,
-    onOauthSignIn,
 }: SignInProps) => {
     const [message, setMessage] = useTimeOutMessage()
 

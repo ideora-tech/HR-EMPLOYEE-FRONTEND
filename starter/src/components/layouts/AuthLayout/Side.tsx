@@ -105,7 +105,8 @@ const Side = ({ children, ...rest }: SideProps) => {
                         style={{ background: '#fff', border: '1px solid rgba(85,51,187,0.1)' }}
                     >
                         {children
-                            ? cloneElement(children as React.ReactElement<any>, { ...rest })
+                            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                              cloneElement(children as React.ReactElement<any>, { ...rest })
                             : null}
                     </div>
                 </div>
