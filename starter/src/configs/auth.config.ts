@@ -11,14 +11,18 @@ export default {
     // tanpa ini NextAuth menolak request dengan error UntrustedHost
     trustHost: true,
     providers: [
-        Github({
-            clientId: process.env.GITHUB_AUTH_CLIENT_ID,
-            clientSecret: process.env.GITHUB_AUTH_CLIENT_SECRET,
-        }),
-        Google({
-            clientId: process.env.GOOGLE_AUTH_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET,
-        }),
+        ...(process.env.GITHUB_AUTH_CLIENT_ID && process.env.GITHUB_AUTH_CLIENT_SECRET
+            ? [Github({
+                clientId: process.env.GITHUB_AUTH_CLIENT_ID,
+                clientSecret: process.env.GITHUB_AUTH_CLIENT_SECRET,
+              })]
+            : []),
+        ...(process.env.GOOGLE_AUTH_CLIENT_ID && process.env.GOOGLE_AUTH_CLIENT_SECRET
+            ? [Google({
+                clientId: process.env.GOOGLE_AUTH_CLIENT_ID,
+                clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET,
+              })]
+            : []),
         Credentials({
             async authorize(credentials) {
                 const user = await validateCredential(
