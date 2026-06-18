@@ -93,8 +93,7 @@ const TagihanService = {
             url: API_ENDPOINTS.KURSUS.TAGIHAN.CETAK(id),
             method: 'GET',
         })
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:4012'
-        window.open(`${backendUrl}${res.data.url}`, '_blank')
+        window.open(`/api/proxy${res.data.url}`, '_blank')
     },
 
     async addDetail(id: string, payload: IAddDetailTagihan): Promise<ApiResponse<ITagihan>> {
