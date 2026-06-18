@@ -12,6 +12,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # saat runtime lewat docker-compose environment
 ARG AUTH_SECRET=build-time-placeholder-not-used-at-runtime
 ENV AUTH_SECRET=$AUTH_SECRET
+
+# NEXT_PUBLIC_* harus di-embed saat build (bukan runtime)
+ARG NEXT_PUBLIC_BACKEND_API_URL=http://localhost:4012
+ENV NEXT_PUBLIC_BACKEND_API_URL=$NEXT_PUBLIC_BACKEND_API_URL
+
 RUN npm run build
 
 FROM node:20-alpine AS runner
