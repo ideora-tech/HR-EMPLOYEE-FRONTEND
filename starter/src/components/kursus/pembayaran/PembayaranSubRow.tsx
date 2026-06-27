@@ -26,6 +26,7 @@ interface PembayaranSubRowProps {
 const PembayaranSubRow = ({ pembayaran, namaTagihan, onDownloadPdf, pdfLoading }: PembayaranSubRowProps) => {
     const st = STATUS_KONFIRMASI[pembayaran.status_konfirmasi]
     const tanggal = pembayaran.tanggal_bayar?.substring(0, 10) ?? '—'
+    const kembalian = Number(pembayaran.kembalian ?? 0)
 
     return (
         <tr className="bg-gray-50/60 dark:bg-gray-700/20 border-b border-gray-100 dark:border-gray-700/50">
@@ -46,10 +47,17 @@ const PembayaranSubRow = ({ pembayaran, namaTagihan, onDownloadPdf, pdfLoading }
                     {pembayaran.metode}
                 </span>
             </td>
-            <td className="py-2 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400 text-sm">
-                {formatRupiah(pembayaran.jumlah)}
+            <td className="py-2 px-3 text-right text-sm">
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    {formatRupiah(pembayaran.jumlah)}
+                </span>
+                {kembalian > 0 && (
+                    <p className="text-xs font-medium text-emerald-500 dark:text-emerald-400 mt-0.5 whitespace-nowrap">
+                        Kembalian: {formatRupiah(kembalian)}
+                    </p>
+                )}
             </td>
-            {/* Sisa tidak berlaku untuk baris pembayaran — dikosongkan */}
+            {/* Sisa tidak berlaku untuk baris pembayaran */}
             <td className="py-2 px-3"></td>
             <td className="py-2 px-3">
                 {st && (
@@ -58,7 +66,7 @@ const PembayaranSubRow = ({ pembayaran, namaTagihan, onDownloadPdf, pdfLoading }
             </td>
             <td className="py-2 px-3 text-right">
                 <span
-                    title="Download Bukti Bayar"
+                    title="Cetak Bukti Bayar"
                     className={`cursor-pointer inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors ${
                         pdfLoading
                             ? 'opacity-50 cursor-wait bg-gray-100'

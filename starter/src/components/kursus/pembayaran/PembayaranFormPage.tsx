@@ -190,6 +190,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
             id_tagihan: form.id_tagihan,
             jumlah: jumlahTerapkan,
             kembalian: kembalian > 0 ? kembalian : undefined,
+            nominal_diterima: jumlahInput,
             tanggal_bayar: form.tanggal_bayar,
             metode: form.metode,
             referensi: form.referensi || null,

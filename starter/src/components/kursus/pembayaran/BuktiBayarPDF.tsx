@@ -25,6 +25,7 @@ const S = StyleSheet.create({
     statusOk: { color: '#16a34a' },
     statusPending: { color: '#d97706' },
     statusTolak: { color: '#dc2626' },
+    kembalian: { color: '#16a34a', fontFamily: 'Helvetica-Bold' },
     historyTitle: { fontSize: 9, color: '#555', fontFamily: 'Helvetica-Bold', marginBottom: 3, marginTop: 8 },
     historyRow: { fontSize: 9, color: '#555', marginBottom: 2 },
     footer: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 28 },
@@ -36,7 +37,7 @@ const S = StyleSheet.create({
 /* ─── helpers ─────────────────────────────────────────────── */
 
 const fmtRupiah = (n: number) =>
-    'Rp ' + new Intl.NumberFormat('id-ID').format(n)
+    'Rp ' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(n))
 
 const fmtDate = (s: string | null | undefined) =>
     s
@@ -65,6 +66,8 @@ interface Props {
 
 export default function BuktiBayarPDF({ data, academyName = 'Sky Dance Academy', logoUrl }: Props) {
     const noBukti = `BP-${data.id_pembayaran.substring(0, 8).toUpperCase()}`
+    const kembalian = Number(data.kembalian ?? 0)
+    const nominalDiterima = Number(data.jumlah) + kembalian
     const statusStyle =
         data.status_konfirmasi === 1
             ? S.statusOk
@@ -114,16 +117,28 @@ export default function BuktiBayarPDF({ data, academyName = 'Sky Dance Academy',
                             Pembayaran {METODE_LABEL[data.metode] ?? data.metode}
                             {data.referensi ? ` (${data.referensi})` : ''}
                         </Text>
-                        <Text style={S.colAmtBold}>{fmtRupiah(data.jumlah)}</Text>
+                        <Text style={S.colAmtBold}>{fmtRupiah(Number(data.jumlah))}</Text>
                     </View>
                 </View>
 
                 {/* Total */}
                 <View style={S.totalBox}>
                     <View style={S.totalGrand}>
-                        <Text>Jumlah Dibayar</Text>
-                        <Text>{fmtRupiah(data.jumlah)}</Text>
+                        <Text>Jumlah Tagihan</Text>
+                        <Text>{fmtRupiah(Number(data.jumlah))}</Text>
                     </View>
+                    {kembalian > 0 && (
+                        <>
+                            <View style={S.totalRow}>
+                                <Text>Nominal Diterima</Text>
+                                <Text>{fmtRupiah(nominalDiterima)}</Text>
+                            </View>
+                            <View style={S.totalRow}>
+                                <Text style={S.kembalian}>Kembalian</Text>
+                                <Text style={S.kembalian}>{fmtRupiah(kembalian)}</Text>
+                            </View>
+                        </>
+                    )}
                     <View style={S.totalRow}>
                         <Text>Status</Text>
                         <Text style={statusStyle}>

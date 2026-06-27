@@ -278,7 +278,26 @@ Selalu import dari `@/utils/formatNumber`:
 
 ```ts
 import { formatNum, formatRupiah, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
+```
 
+---
+
+## Utility — Parse Error API
+
+```ts
+import { parseApiError } from '@/utils/parseApiError'
+
+// Selalu gunakan ini — bukan err.message
+.catch(err => setError(parseApiError(err)))
+```
+
+---
+
+## Utility — Format Angka (WAJIB)
+
+Selalu import dari `@/utils/formatNumber`:
+
+```ts
 formatNum(1500000)           // → "1.500.000"
 formatRupiah(150000)         // → "Rp 150.000"
 formatRupiahInput("1500abc") // → "1.500" (untuk input field)

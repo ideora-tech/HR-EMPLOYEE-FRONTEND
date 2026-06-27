@@ -480,6 +480,8 @@ export interface IPembayaran {
     id_siswa: string | null
     nama_siswa: string | null
     jumlah: number
+    kembalian?: number
+    nominal_diterima?: number | null
     tanggal_bayar: string
     metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
     referensi: string | null
@@ -505,6 +507,7 @@ export interface ICreatePembayaran {
     id_tagihan: string
     jumlah: number
     kembalian?: number
+    nominal_diterima?: number
     tanggal_bayar: string          // "YYYY-MM-DD"
     metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
     referensi?: string | null

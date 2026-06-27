@@ -8,7 +8,7 @@ import { HiOutlineSearch, HiOutlineX, HiPlusCircle } from 'react-icons/hi'
 import TagihanService from '@/services/kursus/tagihan.service'
 import PembayaranService from '@/services/kursus/pembayaran.service'
 import TagihanFormPage from '@/components/kursus/tagihan/TagihanFormPage'
-import { downloadPdf } from '@/utils/downloadPdf'
+import { previewPdf } from '@/utils/downloadPdf'
 import { parseApiError } from '@/utils/parseApiError'
 import { formatRupiah } from '@/utils/formatNumber'
 import TagihanGroupRow from './TagihanGroupRow'
@@ -112,15 +112,14 @@ const PembayaranListPageInner = () => {
         try {
             const { default: BuktiBayarPDF } = await import('./BuktiBayarPDF')
             const { createElement } = await import('react')
-            await downloadPdf(
+            await previewPdf(
                 createElement(BuktiBayarPDF, {
                     data: p,
                     logoUrl: window.location.origin + '/logo-sky.jpeg',
                 }),
-                `bukti-bayar-${p.id_pembayaran.slice(0, 8)}.pdf`,
             )
         } catch {
-            toast.push(<Notification type="danger" title="Gagal membuat PDF" />)
+            toast.push(<Notification type="danger" title="Gagal membuka bukti bayar" />)
         } finally {
             setPdfLoadingId(null)
         }
