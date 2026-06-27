@@ -53,6 +53,14 @@ const CatatKelasSiswaService = {
         })
     },
 
+    async changeTrialKelas(id: string, idJadwalKelas: string): Promise<ApiResponse<ICatatKelasSiswa>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<ICatatKelasSiswa>, { id_jadwal_kelas: string }>({
+            url: API_ENDPOINTS.KURSUS.CATAT_KELAS_SISWA.CHANGE_TRIAL_KELAS(id),
+            method: 'PATCH',
+            data: { id_jadwal_kelas: idJadwalKelas },
+        })
+    },
+
     async convertTrial(id: string, payload: IConvertTrialPayload): Promise<ApiResponse<ICatatKelasSiswa>> {
         return ApiService.fetchDataWithAxios<ApiResponse<ICatatKelasSiswa>, IConvertTrialPayload>({
             url: API_ENDPOINTS.KURSUS.CATAT_KELAS_SISWA.CONVERT(id),

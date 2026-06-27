@@ -238,6 +238,7 @@ export interface ISiswaKelasItem {
     id_catat: string
     id_kelas: string
     nama_kelas: string
+    id_jadwal_kelas: string | null
     total_sesi: number | null      // target total sesi
     total_sesi_hadir: number
     total_sesi_tidak_hadir: number

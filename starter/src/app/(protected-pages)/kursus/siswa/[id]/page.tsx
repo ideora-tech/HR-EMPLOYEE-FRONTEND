@@ -7,6 +7,7 @@ import { HiArrowLeft } from 'react-icons/hi'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import AssignKelasModal from '@/components/kursus/siswa/AssignKelasModal'
 import ConvertTrialModal from '@/components/kursus/siswa/ConvertTrialModal'
+import ChangeTrialKelasModal from '@/components/kursus/siswa/ChangeTrialKelasModal'
 import SiswaDetailHeader from '@/components/kursus/siswa/SiswaDetailHeader'
 import SiswaKelasTable from '@/components/kursus/siswa/SiswaKelasTable'
 import SiswaTagihanTable from '@/components/kursus/siswa/SiswaTagihanTable'
@@ -29,6 +30,7 @@ const SiswaDetailPage = () => {
     const [deleteOpen, setDeleteOpen] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [convertTarget, setConvertTarget] = useState<ISiswaKelasItem | null>(null)
+    const [changeKelasTarget, setChangeKelasTarget] = useState<ISiswaKelasItem | null>(null)
 
     const fetchSiswa = useCallback(async () => {
         try {
@@ -130,6 +132,7 @@ const SiswaDetailPage = () => {
                 <SiswaKelasTable
                     data={siswa.kelas ?? []}
                     onConvert={(item) => setConvertTarget(item)}
+                    onChangeKelas={(item) => setChangeKelasTarget(item)}
                 />
             </Card>
 
@@ -153,15 +156,24 @@ const SiswaDetailPage = () => {
                 }}
             />
 
+            <ChangeTrialKelasModal
+                isOpen={!!changeKelasTarget}
+                trialItem={changeKelasTarget}
+                onClose={() => setChangeKelasTarget(null)}
+                onSuccess={() => {
+                    setChangeKelasTarget(null)
+                    fetchSiswa()
+                }}
+            />
+
             <ConvertTrialModal
                 isOpen={!!convertTarget}
                 trialItem={convertTarget}
                 onClose={() => setConvertTarget(null)}
-                onSuccess={(idJadwalKelas) => {
+                onSuccess={() => {
                     setConvertTarget(null)
-                    router.push(
-                        `${ROUTES.KURSUS_PEMBAYARAN}?id_siswa=${siswa.id_siswa}&id_jadwal=${idJadwalKelas}`,
-                    )
+                    toast.push(<Notification type="success" title="Trial berhasil dikonversi ke kelas reguler" />)
+                    fetchSiswa()
                 }}
             />
 

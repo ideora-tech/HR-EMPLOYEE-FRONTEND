@@ -33,10 +33,6 @@ const SiswaImportModal = ({ open, onClose, onSuccess }: SiswaImportModalProps) =
             const res = await SiswaService.importExcel(fileList[0])
             if (res.success) {
                 setResult(res.data)
-                toast.push(
-                    <Notification type="success" title={`${res.data.berhasil} siswa berhasil diimport`} />,
-                )
-                onSuccess()
             }
         } catch (err) {
             toast.push(
@@ -155,7 +151,14 @@ const SiswaImportModal = ({ open, onClose, onSuccess }: SiswaImportModalProps) =
                         >
                             Import Lagi
                         </Button>
-                        <Button variant="solid" customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'} onClick={handleClose}>
+                        <Button
+                            variant="solid"
+                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                            onClick={() => {
+                                if (result && result.berhasil > 0) onSuccess()
+                                handleClose()
+                            }}
+                        >
                             Selesai
                         </Button>
                     </div>

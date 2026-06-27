@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { Button, Dialog, FormItem, Input, Select } from '@/components/ui'
+import { HiOutlineExclamationCircle } from 'react-icons/hi'
+import { parseApiError } from '@/utils/parseApiError'
 import KelasService from '@/services/kursus/kelas.service'
 import KategoriUmurService from '@/services/kursus/kategori-umur.service'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
@@ -140,17 +142,20 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
             onSuccess()
             onClose()
         } catch (err: unknown) {
-            const msg =
-                (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-                'Gagal input kelas'
-            setError(msg)
+            setError(parseApiError(err))
         } finally {
             setSubmitting(false)
         }
     }
 
     return (
-        <Dialog isOpen={isOpen} onClose={onClose} onRequestClose={onClose} width={480}>
+        <Dialog
+            isOpen={isOpen}
+            onClose={onClose}
+            onRequestClose={onClose}
+            width={600}
+            style={{ overlay: { display: 'flex', alignItems: 'center', justifyContent: 'center' } }}
+        >
             <h5 className="mb-1">Input Kelas</h5>
             {siswa && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
@@ -268,8 +273,11 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
                     />
                 </FormItem>
 
-                {error && selectedKelas && (
-                    <p className="text-sm text-red-500">{error}</p>
+                {error && (
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30">
+                        <HiOutlineExclamationCircle className="text-lg text-red-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                    </div>
                 )}
             </div>
 

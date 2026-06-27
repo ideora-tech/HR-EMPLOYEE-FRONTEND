@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Button, Dialog, FormItem, Input, Select, Notification, toast } from '@/components/ui'
+import { Button, Dialog, FormItem, Select } from '@/components/ui'
+import { HiOutlineExclamationCircle } from 'react-icons/hi'
 import KelasService from '@/services/kursus/kelas.service'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
 import CatatKelasSiswaService from '@/services/kursus/catat-kelas-siswa.service'
 import { parseApiError } from '@/utils/parseApiError'
 import type { IKelas, IJadwalKelas, ISiswaKelasItem } from '@/@types/kursus.types'
 
-interface ConvertTrialModalProps {
+interface ChangeTrialKelasModalProps {
     isOpen: boolean
     trialItem: ISiswaKelasItem | null
     onClose: () => void
@@ -17,13 +18,11 @@ interface ConvertTrialModalProps {
 
 type SelectOption = { value: string; label: string }
 
-const ConvertTrialModal = ({ isOpen, trialItem, onClose, onSuccess }: ConvertTrialModalProps) => {
+const ChangeTrialKelasModal = ({ isOpen, trialItem, onClose, onSuccess }: ChangeTrialKelasModalProps) => {
     const [kelasList, setKelasList] = useState<SelectOption[]>([])
     const [jadwalList, setJadwalList] = useState<IJadwalKelas[]>([])
-
     const [selectedKelas, setSelectedKelas] = useState<SelectOption | null>(null)
     const [selectedJadwal, setSelectedJadwal] = useState<SelectOption | null>(null)
-    const [totalSesi, setTotalSesi] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
 
@@ -32,7 +31,6 @@ const ConvertTrialModal = ({ isOpen, trialItem, onClose, onSuccess }: ConvertTri
         setSelectedKelas(null)
         setSelectedJadwal(null)
         setJadwalList([])
-        setTotalSesi(trialItem?.total_sesi != null ? String(trialItem.total_sesi) : '')
         setError('')
 
         KelasService.getAll({ aktif: 1, limit: 200 })
@@ -45,7 +43,6 @@ const ConvertTrialModal = ({ isOpen, trialItem, onClose, onSuccess }: ConvertTri
                     const matched = options.find((o: SelectOption) => o.value === trialItem.id_kelas)
                     if (matched) {
                         setSelectedKelas(matched)
-                        // Load jadwal untuk kelas tersebut, lalu pre-select jadwal trial
                         JadwalKelasService.getByKelas(trialItem.id_kelas)
                             .then((jRes) => {
                                 const aktifJadwal = jRes.data.filter((j) => j.aktif === 1)
@@ -91,18 +88,14 @@ const ConvertTrialModal = ({ isOpen, trialItem, onClose, onSuccess }: ConvertTri
     }, [jadwalList])
 
     const handleSubmit = async () => {
-        if (!trialItem) return
-        if (!selectedJadwal) {
+        if (!trialItem || !selectedJadwal) {
             setError('Pilih kelas dan jadwal tujuan terlebih dahulu')
             return
         }
         setSubmitting(true)
         setError('')
         try {
-            await CatatKelasSiswaService.convertTrial(trialItem.id_catat, {
-                id_jadwal_kelas: selectedJadwal.value,
-                ...(totalSesi !== '' ? { total_sesi: Number(totalSesi) } : {}),
-            })
+            await CatatKelasSiswaService.changeTrialKelas(trialItem.id_catat, selectedJadwal.value)
             onSuccess()
             onClose()
         } catch (err) {
@@ -113,24 +106,28 @@ const ConvertTrialModal = ({ isOpen, trialItem, onClose, onSuccess }: ConvertTri
     }
 
     return (
-        <Dialog isOpen={isOpen} onClose={onClose} onRequestClose={onClose} width={480}>
-            <h5 className="mb-1">Convert Trial ke Reguler</h5>
+        <Dialog
+            isOpen={isOpen}
+            onClose={onClose}
+            onRequestClose={onClose}
+            width={520}
+            style={{ overlay: { display: 'flex', alignItems: 'center', justifyContent: 'center' } }}
+        >
+            <h5 className="mb-1">Ubah Kelas Trial</h5>
             {trialItem && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
-                    Trial:{' '}
+                    Kelas saat ini:{' '}
                     <span className="font-semibold text-gray-700 dark:text-gray-200">
                         {trialItem.nama_kelas}
                     </span>
+                    {trialItem.hari && (
+                        <span className="text-gray-400"> · {trialItem.hari}{trialItem.jam_mulai ? `, ${trialItem.jam_mulai}` : ''}</span>
+                    )}
                 </p>
             )}
 
             <div className="flex flex-col gap-4">
-                <FormItem
-                    label="Kelas Tujuan"
-                    asterisk
-                    invalid={!!error && !selectedKelas}
-                    errorMessage={!selectedKelas ? error : ''}
-                >
+                <FormItem label="Kelas Baru" asterisk>
                     <Select
                         placeholder="Pilih kelas..."
                         options={kelasList}
@@ -140,12 +137,7 @@ const ConvertTrialModal = ({ isOpen, trialItem, onClose, onSuccess }: ConvertTri
                 </FormItem>
 
                 {selectedKelas && (
-                    <FormItem
-                        label="Jadwal"
-                        asterisk
-                        invalid={!!error && !!selectedKelas && !selectedJadwal}
-                        errorMessage={selectedKelas && !selectedJadwal ? error : ''}
-                    >
+                    <FormItem label="Jadwal Baru" asterisk>
                         <Select
                             placeholder={jadwalList.length === 0 ? 'Tidak ada jadwal tersedia' : 'Pilih jadwal...'}
                             options={jadwalOptions}
@@ -159,21 +151,11 @@ const ConvertTrialModal = ({ isOpen, trialItem, onClose, onSuccess }: ConvertTri
                     </FormItem>
                 )}
 
-                <FormItem
-                    label="Total Sesi"
-                    extra="Opsional — kosongkan jika tidak dibatasi"
-                >
-                    <Input
-                        type="number"
-                        min={1}
-                        placeholder="Contoh: 16"
-                        value={totalSesi}
-                        onChange={(e) => setTotalSesi(e.target.value)}
-                    />
-                </FormItem>
-
-                {error && selectedJadwal && (
-                    <p className="text-sm text-red-500">{error}</p>
+                {error && (
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30">
+                        <HiOutlineExclamationCircle className="text-lg text-red-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                    </div>
                 )}
             </div>
 
@@ -184,16 +166,17 @@ const ConvertTrialModal = ({ isOpen, trialItem, onClose, onSuccess }: ConvertTri
                 <Button
                     variant="solid"
                     customColorClass={() =>
-                        'bg-violet-500 hover:bg-violet-600 active:bg-violet-700 text-white border-violet-500'
+                        'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'
                     }
                     loading={submitting}
+                    disabled={!selectedJadwal}
                     onClick={handleSubmit}
                 >
-                    Convert
+                    Simpan Perubahan
                 </Button>
             </div>
         </Dialog>
     )
 }
 
-export default ConvertTrialModal
+export default ChangeTrialKelasModal

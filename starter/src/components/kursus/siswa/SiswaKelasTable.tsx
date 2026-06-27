@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Tag } from '@/components/ui'
+import { Tag, Tooltip } from '@/components/ui'
+import { HiOutlinePencilAlt, HiOutlineArrowCircleRight } from 'react-icons/hi'
 import type { ISiswaKelasItem } from '@/@types/kursus.types'
 
 const formatDate = (raw: string | null): string => {
@@ -14,9 +15,10 @@ const formatDate = (raw: string | null): string => {
 interface SiswaKelasTableProps {
     data: ISiswaKelasItem[]
     onConvert?: (item: ISiswaKelasItem) => void
+    onChangeKelas?: (item: ISiswaKelasItem) => void
 }
 
-const SiswaKelasTable = ({ data, onConvert }: SiswaKelasTableProps) => {
+const SiswaKelasTable = ({ data, onConvert, onChangeKelas }: SiswaKelasTableProps) => {
     const sorted = useMemo(
         () => [...data].sort((a, b) => (b.mulai_kelas ?? '').localeCompare(a.mulai_kelas ?? '')),
         [data],
@@ -99,13 +101,29 @@ const SiswaKelasTable = ({ data, onConvert }: SiswaKelasTableProps) => {
                                     </div>
                                 </td>
                                 <td className="py-3 px-3 text-right">
-                                    {item.is_trial === 1 && item.status === 1 && onConvert && (
-                                        <button
-                                            onClick={() => onConvert(item)}
-                                            className="text-xs font-medium px-2.5 py-1 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-500/20 dark:text-violet-300 dark:hover:bg-violet-500/30 transition-colors"
-                                        >
-                                            Convert
-                                        </button>
+                                    {item.is_trial === 1 && item.status === 1 && (
+                                        <div className="flex items-center justify-end gap-1">
+                                            {onChangeKelas && (
+                                                <Tooltip title="Ubah Kelas">
+                                                    <span
+                                                        onClick={() => onChangeKelas(item)}
+                                                        className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
+                                                    >
+                                                        <HiOutlinePencilAlt className="text-lg" />
+                                                    </span>
+                                                </Tooltip>
+                                            )}
+                                            {onConvert && (
+                                                <Tooltip title="Convert ke Reguler">
+                                                    <span
+                                                        onClick={() => onConvert(item)}
+                                                        className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-500/20 dark:text-violet-300 dark:hover:bg-violet-500/30 transition-colors"
+                                                    >
+                                                        <HiOutlineArrowCircleRight className="text-lg" />
+                                                    </span>
+                                                </Tooltip>
+                                            )}
+                                        </div>
                                     )}
                                 </td>
                             </tr>
