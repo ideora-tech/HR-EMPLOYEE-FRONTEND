@@ -1,31 +1,27 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Button, DatePicker, Dialog, FormItem, Input, Select, Notification, toast } from '@/components/ui'
+import { Button, Dialog, FormItem, Input, Select, Spinner, Notification, toast } from '@/components/ui'
+import { HiOutlineCollection, HiOutlineViewGrid, HiOutlineUsers, HiOutlineClock, HiOutlineTag } from 'react-icons/hi'
+import KelasService from '@/services/kursus/kelas.service'
 import BiayaService from '@/services/kursus/biaya.service'
+import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
 import TagihanService from '@/services/kursus/tagihan.service'
 import { formatNum, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 import { parseApiError } from '@/utils/parseApiError'
-import type { IBiaya, ITagihan } from '@/@types/kursus.types'
+import type { IKelas, IBiaya, IJadwalKelas, ITagihan } from '@/@types/kursus.types'
 
 /* ─── option types ───────────────────────────────────────── */
 
+type KelasOption = { value: string; label: string; kelas: IKelas }
 type BiayaOption = { value: string; label: string; biaya: IBiaya }
+type JadwalOption = { value: string; label: string; jadwal: IJadwalKelas }
 
 const JENIS_LABEL: Record<string, string> = {
     PENDAFTARAN: 'Pendaftaran',
     KELAS: 'Kelas',
     LAINNYA: 'Lainnya',
 }
-
-/* ─── helpers ────────────────────────────────────────────── */
-
-const dateToMonth = (date: Date): string => {
-    const y = date.getFullYear()
-    const m = String(date.getMonth() + 1).padStart(2, '0')
-    return `${y}-${m}`
-}
-
 
 /* ─── props ──────────────────────────────────────────────── */
 
@@ -36,64 +32,108 @@ interface TambahDetailFormProps {
     onSaved: (updated: ITagihan) => void
 }
 
-interface FormState {
-    id_biaya: string
-    periode: string
-    harga_akhir: string
-}
-
-const INITIAL_STATE: FormState = {
-    id_biaya: '',
-    periode: '',
-    harga_akhir: '',
-}
-
 /* ─── component ──────────────────────────────────────────── */
 
 const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormProps) => {
-    const [form, setForm] = useState<FormState>(INITIAL_STATE)
-    const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
-    const [periodeDate, setPeriodeDate] = useState<Date | null>(null)
     const [submitting, setSubmitting] = useState(false)
+    const [hargaOverride, setHargaOverride] = useState('')
+
+    const [kelasOptions, setKelasOptions] = useState<KelasOption[]>([])
+    const [loadingKelas, setLoadingKelas] = useState(false)
+    const [selectedKelas, setSelectedKelas] = useState<KelasOption | null>(null)
 
     const [biayaOptions, setBiayaOptions] = useState<BiayaOption[]>([])
-    const [loadingBiaya, setLoadingBiaya] = useState(false)
+    const [jadwalOptions, setJadwalOptions] = useState<JadwalOption[]>([])
+    const [loadingBiayaJadwal, setLoadingBiayaJadwal] = useState(false)
+    const [selectedBiaya, setSelectedBiaya] = useState<BiayaOption | null>(null)
+    const [selectedJadwal, setSelectedJadwal] = useState<JadwalOption | null>(null)
 
-    const loadBiaya = useCallback(async () => {
-        setLoadingBiaya(true)
+    const [errors, setErrors] = useState<{ kelas?: string; biaya?: string }>({})
+
+    const loadKelas = useCallback(async () => {
+        setLoadingKelas(true)
         try {
-            const res = await BiayaService.getAll({ aktif: 1, limit: 500 })
+            const res = await KelasService.getAll({ aktif: 1, limit: 500 })
             if (res.success)
-                setBiayaOptions(
-                    res.data.map((b) => ({
-                        value: b.id_biaya,
-                        label: `[${JENIS_LABEL[b.jenis_biaya] ?? b.jenis_biaya}] ${b.nama_biaya}${b.nama_kelas ? ` — ${b.nama_kelas}` : ''} (Rp ${formatNum(b.harga_biaya)})`,
-                        biaya: b,
-                    }))
+                setKelasOptions(
+                    res.data.map((k) => ({ value: k.id_kelas, label: k.nama_kelas, kelas: k }))
                 )
         } catch {
-            setBiayaOptions([])
+            setKelasOptions([])
         } finally {
-            setLoadingBiaya(false)
+            setLoadingKelas(false)
+        }
+    }, [])
+
+    const loadBiayaAndJadwal = useCallback(async (idKelas: string) => {
+        setLoadingBiayaJadwal(true)
+        setBiayaOptions([])
+        setJadwalOptions([])
+        try {
+            const [biayaRes, jadwalRes] = await Promise.all([
+                BiayaService.getByKelas(idKelas),
+                JadwalKelasService.getByKelas(idKelas),
+            ])
+            if (biayaRes.success)
+                setBiayaOptions(
+                    biayaRes.data
+                        .filter((b) => b.aktif === 1)
+                        .map((b) => ({
+                            value: b.id_biaya,
+                            label: [
+                                `[${JENIS_LABEL[b.jenis_biaya] ?? b.jenis_biaya}]`,
+                                b.nama_biaya,
+                                b.nama_paket ? `· ${b.nama_paket}` : '',
+                                b.nama_kategori_umur ? `· ${b.nama_kategori_umur}` : '',
+                                `(Rp ${formatNum(b.harga_biaya)})`,
+                            ].filter(Boolean).join(' '),
+                            biaya: b,
+                        }))
+                )
+            if (jadwalRes.success)
+                setJadwalOptions(
+                    jadwalRes.data
+                        .filter((j) => j.aktif === 1)
+                        .map((j) => ({
+                            value: j.id_jadwal_kelas,
+                            label: `${j.hari} ${j.jam_mulai}-${j.jam_selesai} — ${j.nama_karyawan} (${j.kuota_terpakai}/${j.kuota ?? '∞'} siswa)`,
+                            jadwal: j,
+                        }))
+                )
+        } catch {
+            // biarkan kosong, user bisa pilih tanpa jadwal
+        } finally {
+            setLoadingBiayaJadwal(false)
         }
     }, [])
 
     useEffect(() => {
         if (open) {
-            const now = new Date()
-            const periodeNow = dateToMonth(now)
-            setForm({ ...INITIAL_STATE, periode: periodeNow })
+            setSelectedKelas(null)
+            setSelectedBiaya(null)
+            setSelectedJadwal(null)
+            setBiayaOptions([])
+            setJadwalOptions([])
+            setHargaOverride('')
             setErrors({})
-            setPeriodeDate(now)
-            loadBiaya()
+            loadKelas()
         }
-    }, [open, loadBiaya])
+    }, [open, loadKelas])
 
-    const validate = (): boolean => {
-        const next: Partial<Record<keyof FormState, string>> = {}
-        if (!form.id_biaya) next.id_biaya = 'Pilih biaya'
-        setErrors(next)
-        return Object.keys(next).length === 0
+    const handleKelasChange = (opt: KelasOption | null) => {
+        setSelectedKelas(opt)
+        setSelectedBiaya(null)
+        setSelectedJadwal(null)
+        setHargaOverride('')
+        if (opt) loadBiayaAndJadwal(opt.value)
+    }
+
+    const validate = () => {
+        const e: typeof errors = {}
+        if (!selectedKelas) e.kelas = 'Pilih kelas terlebih dahulu'
+        if (!selectedBiaya) e.biaya = 'Pilih biaya'
+        setErrors(e)
+        return Object.keys(e).length === 0
     }
 
     const handleSubmit = async () => {
@@ -101,9 +141,9 @@ const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormP
         setSubmitting(true)
         try {
             const res = await TagihanService.addDetail(tagihan.id_tagihan, {
-                id_biaya: form.id_biaya,
-                ...(form.periode ? { periode: form.periode } : {}),
-                ...(form.harga_akhir ? { harga_akhir: parseRupiah(form.harga_akhir) } : {}),
+                id_biaya: selectedBiaya!.value,
+                ...(selectedJadwal ? { id_jadwal_kelas: selectedJadwal.value } : {}),
+                ...(hargaOverride ? { harga_akhir: parseRupiah(hargaOverride) } : {}),
             })
             if (res.success) {
                 toast.push(<Notification type="success" title="Baris biaya berhasil ditambahkan" />)
@@ -121,71 +161,142 @@ const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormP
         }
     }
 
+    const b = selectedBiaya?.biaya
+    const j = selectedJadwal?.jadwal
+
     return (
-        <Dialog isOpen={open} onClose={onClose} onRequestClose={onClose} width={460}>
+        <Dialog isOpen={open} onClose={onClose} onRequestClose={onClose} width={520}>
             <h5 className="mb-6">Tambah Baris Biaya</h5>
             <div className="flex flex-col gap-4">
-                {/* Biaya */}
-                <FormItem
-                    label="Biaya"
-                    asterisk
-                    invalid={!!errors.id_biaya}
-                    errorMessage={errors.id_biaya}
-                >
-                    <Select
-                        placeholder={loadingBiaya ? 'Memuat...' : 'Pilih jenis biaya'}
-                        isDisabled={loadingBiaya}
-                        options={biayaOptions}
-                        value={biayaOptions.find((o) => o.value === form.id_biaya) ?? null}
-                        onChange={(opt) => {
-                            const selected = opt as BiayaOption | null
-                            setForm((p) => ({
-                                ...p,
-                                id_biaya: selected?.value ?? '',
-                                harga_akhir: selected ? formatNum(selected.biaya.harga_biaya) : '',
-                            }))
-                        }}
+
+                {/* Step 1: Kelas */}
+                <FormItem label="Kelas" asterisk invalid={!!errors.kelas} errorMessage={errors.kelas}>
+                    <Select<KelasOption>
+                        placeholder={loadingKelas ? 'Memuat kelas…' : 'Pilih kelas'}
+                        isDisabled={loadingKelas}
+                        options={kelasOptions}
+                        value={selectedKelas}
+                        onChange={(opt) => handleKelasChange(opt as KelasOption | null)}
+                        isClearable
                     />
                 </FormItem>
 
-                {/* Periode (opsional) */}
-                <FormItem label="Periode (opsional)">
-                    <DatePicker
-                        placeholder="Pilih bulan"
-                        value={periodeDate}
-                        inputFormat="MMM YYYY"
-                        clearable
-                        onChange={(date) => {
-                            setPeriodeDate(date)
-                            setForm((p) => ({
-                                ...p,
-                                periode: date ? dateToMonth(date) : '',
-                            }))
-                        }}
-                    />
-                </FormItem>
+                {/* Step 2: Biaya (muncul setelah kelas dipilih) */}
+                {selectedKelas && (
+                    <FormItem
+                        label="Biaya / Paket / Kategori Umur"
+                        asterisk
+                        invalid={!!errors.biaya}
+                        errorMessage={errors.biaya}
+                    >
+                        {loadingBiayaJadwal ? (
+                            <div className="flex items-center gap-2 h-10 text-sm text-gray-400">
+                                <Spinner size={14} /> Memuat opsi biaya…
+                            </div>
+                        ) : biayaOptions.length === 0 ? (
+                            <p className="h-10 flex items-center text-sm text-gray-400">
+                                Tidak ada biaya aktif untuk kelas ini
+                            </p>
+                        ) : (
+                            <Select<BiayaOption>
+                                placeholder="Pilih biaya"
+                                options={biayaOptions}
+                                value={selectedBiaya}
+                                onChange={(opt) => {
+                                    const sel = opt as BiayaOption | null
+                                    setSelectedBiaya(sel)
+                                    setHargaOverride(sel ? formatNum(sel.biaya.harga_biaya) : '')
+                                }}
+                                isClearable
+                            />
+                        )}
+                    </FormItem>
+                )}
 
-                {/* Override harga (opsional) */}
-                <FormItem label="Override Harga (opsional)">
-                    <Input
-                        prefix={<span className="text-gray-500 font-medium">Rp</span>}
-                        placeholder="Kosongkan untuk pakai harga biaya"
-                        value={form.harga_akhir}
-                        onChange={(e) =>
-                            setForm((p) => ({
-                                ...p,
-                                harga_akhir: formatRupiahInput(e.target.value),
-                            }))
-                        }
-                    />
-                </FormItem>
+                {/* Step 3: Jadwal (muncul setelah kelas dipilih) */}
+                {selectedKelas && (
+                    <FormItem label="Jadwal (opsional)">
+                        {loadingBiayaJadwal ? (
+                            <div className="flex items-center gap-2 h-10 text-sm text-gray-400">
+                                <Spinner size={14} /> Memuat jadwal…
+                            </div>
+                        ) : jadwalOptions.length === 0 ? (
+                            <p className="h-10 flex items-center text-sm text-gray-400">
+                                Tidak ada jadwal aktif untuk kelas ini
+                            </p>
+                        ) : (
+                            <Select<JadwalOption>
+                                placeholder="— Pilih jadwal (opsional) —"
+                                options={jadwalOptions}
+                                value={selectedJadwal}
+                                onChange={(opt) => setSelectedJadwal(opt as JadwalOption | null)}
+                                isClearable
+                            />
+                        )}
+                    </FormItem>
+                )}
+
+                {/* Info card: ringkasan pilihan */}
+                {(b || j) && (
+                    <div className="rounded-xl border border-[#d0e6ff] dark:border-[#E9F3FF]/20 bg-[#E9F3FF]/60 dark:bg-[#E9F3FF]/10 px-4 py-3 flex flex-wrap gap-x-5 gap-y-2">
+                        {b?.nama_kelas && (
+                            <div className="flex items-center gap-1.5 text-xs text-[#2a85ff] dark:text-[#7BB8FF]">
+                                <HiOutlineCollection className="shrink-0" />
+                                <span className="font-medium">{b.nama_kelas}</span>
+                            </div>
+                        )}
+                        {b?.nama_paket && (
+                            <div className="flex items-center gap-1.5 text-xs text-[#2a85ff] dark:text-[#7BB8FF]">
+                                <HiOutlineViewGrid className="shrink-0" />
+                                <span className="font-medium">{b.nama_paket}</span>
+                            </div>
+                        )}
+                        {b?.nama_kategori_umur && (
+                            <div className="flex items-center gap-1.5 text-xs text-[#2a85ff] dark:text-[#7BB8FF]">
+                                <HiOutlineUsers className="shrink-0" />
+                                <span className="font-medium">{b.nama_kategori_umur}</span>
+                            </div>
+                        )}
+                        {j && (
+                            <div className="flex items-center gap-1.5 text-xs text-[#2a85ff] dark:text-[#7BB8FF]">
+                                <HiOutlineClock className="shrink-0" />
+                                <span className="font-medium">{j.hari} {j.jam_mulai}-{j.jam_selesai}</span>
+                            </div>
+                        )}
+                        {j?.nama_karyawan && (
+                            <div className="flex items-center gap-1.5 text-xs text-[#2a85ff] dark:text-[#7BB8FF]">
+                                <HiOutlineTag className="shrink-0" />
+                                <span className="font-medium">{j.nama_karyawan}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Override harga (muncul setelah biaya dipilih) */}
+                {selectedBiaya && (
+                    <FormItem label="Override Harga (opsional)">
+                        <Input
+                            prefix={<span className="text-gray-500 font-medium">Rp</span>}
+                            placeholder="Kosongkan untuk pakai harga biaya"
+                            value={hargaOverride}
+                            onChange={(e) => setHargaOverride(formatRupiahInput(e.target.value))}
+                        />
+                    </FormItem>
+                )}
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
                 <Button type="button" variant="plain" onClick={onClose} disabled={submitting}>
                     Batal
                 </Button>
-                <Button type="button" variant="solid" customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'} loading={submitting} onClick={handleSubmit}>
+                <Button
+                    type="button"
+                    variant="solid"
+                    customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                    loading={submitting}
+                    disabled={!selectedBiaya}
+                    onClick={handleSubmit}
+                >
                     Tambah
                 </Button>
             </div>

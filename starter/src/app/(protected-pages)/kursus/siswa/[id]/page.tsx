@@ -5,14 +5,15 @@ import { useParams, useRouter } from 'next/navigation'
 import { Card, Notification, toast } from '@/components/ui'
 import { HiArrowLeft } from 'react-icons/hi'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import AssignKelasModal from '@/components/kursus/siswa/AssignKelasModal'
 import ConvertTrialModal from '@/components/kursus/siswa/ConvertTrialModal'
 import ChangeTrialKelasModal from '@/components/kursus/siswa/ChangeTrialKelasModal'
+import EditKelasModal from '@/components/kursus/siswa/EditKelasModal'
 import SiswaDetailHeader from '@/components/kursus/siswa/SiswaDetailHeader'
 import SiswaKelasTable from '@/components/kursus/siswa/SiswaKelasTable'
 import SiswaTagihanTable from '@/components/kursus/siswa/SiswaTagihanTable'
 import SiswaService from '@/services/kursus/siswa.service'
 import TagihanService from '@/services/kursus/tagihan.service'
+import CatatKelasSiswaService from '@/services/kursus/catat-kelas-siswa.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { ROUTES } from '@/constants/route.constant'
 import type { ISiswa, ITagihan, ISiswaKelasItem } from '@/@types/kursus.types'
@@ -26,11 +27,13 @@ const SiswaDetailPage = () => {
     const [tagihan, setTagihan] = useState<ITagihan[]>([])
     const [loading, setLoading] = useState(true)
     const [loadingTagihan, setLoadingTagihan] = useState(true)
-    const [assignOpen, setAssignOpen] = useState(false)
     const [deleteOpen, setDeleteOpen] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [convertTarget, setConvertTarget] = useState<ISiswaKelasItem | null>(null)
     const [changeKelasTarget, setChangeKelasTarget] = useState<ISiswaKelasItem | null>(null)
+    const [editKelasTarget, setEditKelasTarget] = useState<ISiswaKelasItem | null>(null)
+    const [hapusKelasTarget, setHapusKelasTarget] = useState<ISiswaKelasItem | null>(null)
+    const [hapusKelasLoading, setHapusKelasLoading] = useState(false)
 
     const fetchSiswa = useCallback(async () => {
         try {
@@ -63,6 +66,25 @@ const SiswaDetailPage = () => {
         fetchSiswa()
         fetchTagihan()
     }, [fetchSiswa, fetchTagihan])
+
+    const handleHapusKelas = async () => {
+        if (!hapusKelasTarget) return
+        setHapusKelasLoading(true)
+        try {
+            await CatatKelasSiswaService.remove(hapusKelasTarget.id_catat)
+            toast.push(<Notification type="success" title="Kelas berhasil dihapus dari siswa" />)
+            setHapusKelasTarget(null)
+            fetchSiswa()
+        } catch (err) {
+            toast.push(
+                <Notification type="danger" title="Gagal menghapus kelas">
+                    {parseApiError(err)}
+                </Notification>,
+            )
+        } finally {
+            setHapusKelasLoading(false)
+        }
+    }
 
     const handleDelete = async () => {
         if (!siswa) return
@@ -120,7 +142,7 @@ const SiswaDetailPage = () => {
             <SiswaDetailHeader
                 siswa={siswa}
                 onEdit={() => router.push(ROUTES.KURSUS_SISWA_EDIT(siswa.id_siswa))}
-                onInputKelas={() => setAssignOpen(true)}
+                onInputKelas={() => router.push(ROUTES.KURSUS_SISWA_ASSIGN_KELAS(siswa.id_siswa))}
                 onHapus={() => setDeleteOpen(true)}
             />
 
@@ -133,6 +155,8 @@ const SiswaDetailPage = () => {
                     data={siswa.kelas ?? []}
                     onConvert={(item) => setConvertTarget(item)}
                     onChangeKelas={(item) => setChangeKelasTarget(item)}
+                    onEdit={(item) => setEditKelasTarget(item)}
+                    onHapus={(item) => setHapusKelasTarget(item)}
                 />
             </Card>
 
@@ -144,17 +168,37 @@ const SiswaDetailPage = () => {
                 <SiswaTagihanTable data={tagihan} loading={loadingTagihan} />
             </Card>
 
-            {/* AssignKelasModal */}
-            <AssignKelasModal
-                isOpen={assignOpen}
-                siswa={siswa}
-                onClose={() => setAssignOpen(false)}
+            <EditKelasModal
+                isOpen={!!editKelasTarget}
+                item={editKelasTarget}
+                onClose={() => setEditKelasTarget(null)}
                 onSuccess={() => {
-                    toast.push(<Notification type="success" title="Kelas berhasil di-assign" />)
-                    setAssignOpen(false)
+                    setEditKelasTarget(null)
                     fetchSiswa()
                 }}
             />
+
+            <ConfirmDialog
+                isOpen={!!hapusKelasTarget}
+                type="danger"
+                title="Hapus Kelas?"
+                confirmText="Ya, Hapus"
+                cancelText="Batal"
+                confirmButtonProps={{
+                    loading: hapusKelasLoading,
+                    customColorClass: () =>
+                        'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white border-red-500',
+                }}
+                onClose={() => setHapusKelasTarget(null)}
+                onCancel={() => setHapusKelasTarget(null)}
+                onConfirm={handleHapusKelas}
+            >
+                <p className="text-sm">
+                    Siswa akan dikeluarkan dari kelas{' '}
+                    <span className="font-semibold">&ldquo;{hapusKelasTarget?.nama_kelas}&rdquo;</span>.
+                    Data presensi yang sudah ada tidak akan terhapus.
+                </p>
+            </ConfirmDialog>
 
             <ChangeTrialKelasModal
                 isOpen={!!changeKelasTarget}
@@ -174,6 +218,7 @@ const SiswaDetailPage = () => {
                     setConvertTarget(null)
                     toast.push(<Notification type="success" title="Trial berhasil dikonversi ke kelas reguler" />)
                     fetchSiswa()
+                    fetchTagihan()
                 }}
             />
 

@@ -206,6 +206,7 @@ export const API_ENDPOINTS = {
             BY_JADWAL: (idJadwalKelas: string) => `${PROXY}/kursus/catat-kelas-siswa/jadwal/${idJadwalKelas}`,
             CONVERT: (id: string) => `${PROXY}/kursus/catat-kelas-siswa/${id}/convert`,
             CHANGE_TRIAL_KELAS: (id: string) => `${PROXY}/kursus/catat-kelas-siswa/${id}/change-trial-kelas`,
+            ADMIN_ENROLL: `${PROXY}/kursus/admin/enroll`,
         },
         TINGKAT: {
             BASE: `${PROXY}/kursus/tingkat-program`,

@@ -68,6 +68,19 @@ const CatatKelasSiswaService = {
             data: payload,
         })
     },
+
+    async adminEnroll(payload: {
+        id_siswa: string
+        id_jadwal_kelas: string
+        id_biaya: string
+        total_sesi?: number
+    }): Promise<ApiResponse<{ id_catat: string; id_tagihan: string }>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<{ id_catat: string; id_tagihan: string }>>({
+            url: API_ENDPOINTS.KURSUS.CATAT_KELAS_SISWA.ADMIN_ENROLL,
+            method: 'POST',
+            data: payload,
+        })
+    },
 }
 
 export default CatatKelasSiswaService

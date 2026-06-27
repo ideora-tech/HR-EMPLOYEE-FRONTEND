@@ -30,6 +30,7 @@ export const ROUTES = {
     KURSUS_SISWA_TAMBAH: '/kursus/siswa/tambah',
     KURSUS_SISWA_EDIT: (id: string) => `/kursus/siswa/${id}/edit`,
     KURSUS_SISWA_DETAIL: (id: string) => `/kursus/siswa/${id}`,
+    KURSUS_SISWA_ASSIGN_KELAS: (id: string) => `/kursus/siswa/${id}/assign-kelas`,
     KURSUS_PROGRAM: '/kursus/program-pengajaran',
     KURSUS_TARIF: '/kursus/tarif',
     KURSUS_JADWAL: '/kursus/jadwal-kelas',

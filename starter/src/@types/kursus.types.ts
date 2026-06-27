@@ -504,6 +504,7 @@ export interface IPembayaran {
 export interface ICreatePembayaran {
     id_tagihan: string
     jumlah: number
+    kembalian?: number
     tanggal_bayar: string          // "YYYY-MM-DD"
     metode: 'TUNAI' | 'TRANSFER' | 'QRIS'
     referensi?: string | null
@@ -732,6 +733,7 @@ export interface ICreateCatatKelasSiswa {
 
 export interface IConvertTrialPayload {
     id_jadwal_kelas: string
+    id_biaya?: string
     total_sesi?: number | null
 }
 

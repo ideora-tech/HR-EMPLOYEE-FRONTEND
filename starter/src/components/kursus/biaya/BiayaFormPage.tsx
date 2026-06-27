@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
     Button,
     Card,
-    DatePicker,
     FormItem,
     Input,
     Select,
@@ -12,10 +11,9 @@ import {
 } from '@/components/ui'
 import { HiArrowLeft } from 'react-icons/hi'
 import KelasService from '@/services/kursus/kelas.service'
-import PaketService from '@/services/kursus/paket.service'
 import KategoriUmurService from '@/services/kursus/kategori-umur.service'
 import { formatNum, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
-import type { IBiaya, ICreateBiaya, IUpdateBiaya, JenisBiaya } from '@/@types/kursus.types'
+import type { IBiaya, ICreateBiaya, IUpdateBiaya, IKategoriUmur, JenisBiaya } from '@/@types/kursus.types'
 
 type SelectOption = { value: string; label: string }
 type JenisBiayaOption = { value: JenisBiaya; label: string }
@@ -55,13 +53,6 @@ const INITIAL_STATE: FormState = {
     aktif: true,
 }
 
-const dateToMonth = (date: Date): string => {
-    const y = date.getFullYear()
-    const m = String(date.getMonth() + 1).padStart(2, '0')
-    return `${y}-${m}`
-}
-
-
 const BiayaFormPage = ({
     editData,
     submitting = false,
@@ -70,15 +61,29 @@ const BiayaFormPage = ({
 }: BiayaFormPageProps) => {
     const [form, setForm] = useState<FormState>(INITIAL_STATE)
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
-    const [periodeDate, setPeriodeDate] = useState<Date | null>(null)
     const [kelasOptions, setKelasOptions] = useState<SelectOption[]>([])
-    const [paketOptions, setPaketOptions] = useState<SelectOption[]>([])
-    const [kategoriOptions, setKategoriOptions] = useState<SelectOption[]>([])
+    const [kategoriAllList, setKategoriAllList] = useState<IKategoriUmur[]>([])
     const [loadingKelas, setLoadingKelas] = useState(false)
-    const [loadingPaket, setLoadingPaket] = useState(false)
     const [loadingKategori, setLoadingKategori] = useState(false)
 
     const isEdit = !!editData
+
+    // Paket options — derived dari kategori yang sudah difilter by kelas
+    const paketOptions = useMemo<SelectOption[]>(() => {
+        const map = new Map<string, string>()
+        kategoriAllList.forEach((k) => {
+            if (k.id_paket && k.nama_paket) map.set(k.id_paket, k.nama_paket)
+        })
+        return Array.from(map.entries()).map(([value, label]) => ({ value, label }))
+    }, [kategoriAllList])
+
+    // Kategori options — filtered by selected paket
+    const kategoriOptions = useMemo<SelectOption[]>(() => {
+        const list = form.id_paket
+            ? kategoriAllList.filter((k) => k.id_paket === form.id_paket)
+            : kategoriAllList
+        return list.map((k) => ({ value: k.id_kategori_umur, label: k.nama_kategori_umur }))
+    }, [kategoriAllList, form.id_paket])
 
     const loadKelas = useCallback(async () => {
         setLoadingKelas(true)
@@ -86,47 +91,28 @@ const BiayaFormPage = ({
             const res = await KelasService.getAll({ aktif: 1, limit: 200 })
             if (res.success)
                 setKelasOptions(res.data.map((k) => ({ value: k.id_kelas, label: k.nama_kelas })))
-        } catch {
-            //
-        } finally {
+        } catch { /* */ } finally {
             setLoadingKelas(false)
         }
     }, [])
 
-    const loadPaket = useCallback(async () => {
-        setLoadingPaket(true)
-        try {
-            const res = await PaketService.getAll({ aktif: 1, limit: 100 })
-            if (res.success)
-                setPaketOptions(res.data.map((p) => ({ value: p.id_paket, label: p.nama_paket })))
-        } catch {
-            setPaketOptions([])
-        } finally {
-            setLoadingPaket(false)
-        }
-    }, [])
-
-    const loadKategori = useCallback(async (idPaket: string) => {
-        if (!idPaket) { setKategoriOptions([]); return }
+    const loadKategoriByKelas = useCallback(async (idKelas: string) => {
+        if (!idKelas) { setKategoriAllList([]); return }
         setLoadingKategori(true)
         try {
-            const res = await KategoriUmurService.getByPaket(idPaket)
-            if (res.success)
-                setKategoriOptions(
-                    res.data.map((k) => ({ value: k.id_kategori_umur, label: k.nama_kategori_umur })),
-                )
+            const res = await KategoriUmurService.getByKelas(idKelas)
+            if (res.success) setKategoriAllList(res.data)
         } catch {
-            setKategoriOptions([])
+            setKategoriAllList([])
         } finally {
             setLoadingKategori(false)
         }
     }, [])
 
-    useEffect(() => { loadKelas(); loadPaket() }, [loadKelas, loadPaket])
+    useEffect(() => { loadKelas() }, [loadKelas])
 
     useEffect(() => {
         if (editData) {
-            loadKategori(editData.id_paket ?? '')
             setForm({
                 id_kelas: editData.id_kelas ?? '',
                 id_paket: editData.id_paket ?? '',
@@ -137,30 +123,22 @@ const BiayaFormPage = ({
                 deskripsi: editData.deskripsi ?? '',
                 aktif: editData.aktif === 1,
             })
-            if (editData.periode) {
-                const [y, m] = editData.periode.split('-').map(Number)
-                setPeriodeDate(new Date(y, m - 1, 1))
-            } else {
-                setPeriodeDate(null)
-            }
+            if (editData.id_kelas) loadKategoriByKelas(editData.id_kelas)
         } else {
             setForm(INITIAL_STATE)
-            setPeriodeDate(null)
-            setPaketOptions([])
-            setKategoriOptions([])
+            setKategoriAllList([])
         }
         setErrors({})
-    }, [editData, loadKategori])
+    }, [editData, loadKategoriByKelas])
 
-    const handleKelasChange = (idKelas: string) => {
+    const handleKelasChange = async (idKelas: string) => {
         setForm((p) => ({ ...p, id_kelas: idKelas, id_paket: '', id_kategori_umur: '' }))
-        setKategoriOptions([])
+        setKategoriAllList([])
+        if (idKelas) await loadKategoriByKelas(idKelas)
     }
 
     const handlePaketChange = (idPaket: string) => {
         setForm((p) => ({ ...p, id_paket: idPaket, id_kategori_umur: '' }))
-        setKategoriOptions([])
-        loadKategori(idPaket)
     }
 
     const validate = (): boolean => {
@@ -183,7 +161,6 @@ const BiayaFormPage = ({
             nama_biaya: form.nama_biaya.trim(),
             harga_biaya: parseRupiah(form.harga_biaya),
             deskripsi: form.deskripsi.trim() || undefined,
-            ...(periodeDate && { periode: dateToMonth(periodeDate) }),
         }
         if (isEdit) {
             onSubmit({ ...base, aktif: form.aktif ? 1 : 0 } as IUpdateBiaya)
@@ -195,10 +172,7 @@ const BiayaFormPage = ({
     return (
         <form
             className="flex flex-col gap-6"
-            onSubmit={(e) => {
-                e.preventDefault()
-                handleSubmit()
-            }}
+            onSubmit={(e) => { e.preventDefault(); handleSubmit() }}
         >
             {/* Page header */}
             <div className="flex items-center gap-3">
@@ -227,43 +201,37 @@ const BiayaFormPage = ({
                     <div>
                         <div className="mb-3">
                             <h5 className="font-semibold">Relasi Kelas</h5>
+                            <p className="text-gray-500 text-sm mt-0.5">Pilih kelas dahulu — paket dan kategori umur akan menyesuaikan</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
-                            <FormItem
-                                label="Kelas"
-                            >
+                            <FormItem label="Kelas">
                                 <Select<SelectOption>
                                     placeholder="— Pilih Kelas —"
                                     options={kelasOptions}
                                     isLoading={loadingKelas}
                                     isClearable
                                     value={kelasOptions.find((o) => o.value === form.id_kelas) ?? null}
-                                    onChange={(opt) => opt ? handleKelasChange((opt as SelectOption).value) : handleKelasChange('')}
+                                    onChange={(opt) => handleKelasChange(opt ? (opt as SelectOption).value : '')}
                                 />
                             </FormItem>
 
-                            <FormItem
-                                label="Paket"
-                            >
+                            <FormItem label="Paket">
                                 <Select<SelectOption>
-                                    placeholder={form.id_kelas ? '— Pilih Paket —' : 'Pilih kelas dahulu'}
+                                    placeholder={!form.id_kelas ? 'Pilih kelas dahulu' : paketOptions.length === 0 ? 'Tidak ada paket' : '— Pilih Paket —'}
                                     options={paketOptions}
-                                    isLoading={loadingPaket}
-                                    isDisabled={!form.id_kelas}
+                                    isLoading={loadingKategori}
+                                    isDisabled={!form.id_kelas || paketOptions.length === 0}
                                     isClearable
                                     value={paketOptions.find((o) => o.value === form.id_paket) ?? null}
-                                    onChange={(opt) => opt ? handlePaketChange((opt as SelectOption).value) : handlePaketChange('')}
+                                    onChange={(opt) => handlePaketChange(opt ? (opt as SelectOption).value : '')}
                                 />
                             </FormItem>
 
-                            <FormItem
-                                label="Kategori Umur"
-                            >
+                            <FormItem label="Kategori Umur">
                                 <Select<SelectOption>
-                                    placeholder={form.id_paket ? '— Pilih Kategori Umur —' : 'Pilih paket dahulu'}
+                                    placeholder={!form.id_kelas ? 'Pilih kelas dahulu' : !form.id_paket ? 'Pilih paket dahulu' : kategoriOptions.length === 0 ? 'Tidak ada kategori' : '— Pilih Kategori Umur —'}
                                     options={kategoriOptions}
-                                    isLoading={loadingKategori}
-                                    isDisabled={!form.id_paket}
+                                    isDisabled={!form.id_paket || kategoriOptions.length === 0}
                                     isClearable
                                     value={kategoriOptions.find((o) => o.value === form.id_kategori_umur) ?? null}
                                     onChange={(opt) =>
@@ -326,16 +294,6 @@ const BiayaFormPage = ({
                                     onChange={(e) =>
                                         setForm((p) => ({ ...p, harga_biaya: formatRupiahInput(e.target.value) }))
                                     }
-                                />
-                            </FormItem>
-
-                            <FormItem label="Periode (opsional)">
-                                <DatePicker
-                                    placeholder="Pilih bulan & tahun"
-                                    inputFormat="MMMM YYYY"
-                                    clearable
-                                    value={periodeDate}
-                                    onChange={(date) => setPeriodeDate(date as Date | null)}
                                 />
                             </FormItem>
                         </div>

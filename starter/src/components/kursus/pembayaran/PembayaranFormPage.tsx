@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Card, Dialog, FormItem, Input, Notification, Select, Spinner, toast } from '@/components/ui'
-import { HiArrowLeft, HiOutlinePlus, HiOutlineTrash, HiOutlineUser, HiOutlineTag, HiOutlineCollection, HiOutlineCalendar, HiOutlineCash, HiOutlineCheckCircle, HiOutlineClock, HiOutlineReceiptTax, HiOutlineDocumentText, HiOutlineX, HiCheck } from 'react-icons/hi'
+import { HiArrowLeft, HiOutlinePlus, HiOutlineTrash, HiOutlineUser, HiOutlineTag, HiOutlineCollection, HiOutlineCalendar, HiOutlineCash, HiOutlineCheckCircle, HiOutlineClock, HiOutlineReceiptTax, HiOutlineDocumentText, HiOutlineX, HiCheck, HiOutlineViewGrid, HiOutlineUsers } from 'react-icons/hi'
 import TagihanService from '@/services/kursus/tagihan.service'
 import DiskonService from '@/services/kursus/diskon.service'
 import { parseApiError } from '@/utils/parseApiError'
@@ -174,11 +174,22 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
         return Object.keys(e).length === 0
     }
 
+    const sisa = selectedTagihan
+        ? selectedTagihan.total_harga - selectedTagihan.total_bayar
+        : null
+
+    const kembalian = sisa !== null
+        ? Math.max(0, parseRupiah(form.jumlah) - sisa)
+        : 0
+
     const handleSubmit = () => {
         if (!validate()) return
+        const jumlahInput = parseRupiah(form.jumlah)
+        const jumlahTerapkan = sisa !== null ? Math.min(jumlahInput, sisa) : jumlahInput
         onSubmit({
             id_tagihan: form.id_tagihan,
-            jumlah: parseRupiah(form.jumlah),
+            jumlah: jumlahTerapkan,
+            kembalian: kembalian > 0 ? kembalian : undefined,
             tanggal_bayar: form.tanggal_bayar,
             metode: form.metode,
             referensi: form.referensi || null,
@@ -186,10 +197,6 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
             aktif: 1,
         })
     }
-
-    const sisa = selectedTagihan
-        ? selectedTagihan.total_harga - selectedTagihan.total_bayar
-        : null
     const statusInfo = selectedTagihan ? STATUS_LABEL[selectedTagihan.status] : null
 
     const handleDetailSaved = (updated: ITagihan) => {
@@ -377,29 +384,6 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                             </div>
                                         </div>
 
-                                        {/* ── Meta info: kelas, periode, instruktur ── */}
-                                        {(selectedTagihan.nama_kelas || selectedTagihan.periode || selectedTagihan.nama_instruktur) && (
-                                            <div className="flex flex-wrap gap-4 px-5 py-3 bg-[#E9F3FF] dark:bg-[#E9F3FF]/10 border-b border-[#d0e6ff] dark:border-[#E9F3FF]/20">
-                                                {selectedTagihan.nama_kelas && (
-                                                    <div className="flex items-center gap-1.5 text-sm text-[#2a85ff] dark:text-[#7BB8FF]">
-                                                        <HiOutlineCollection className="text-[#2a85ff]/60 shrink-0" />
-                                                        <span className="font-medium">{selectedTagihan.nama_kelas}</span>
-                                                    </div>
-                                                )}
-                                                {selectedTagihan.periode && (
-                                                    <div className="flex items-center gap-1.5 text-sm text-[#2a85ff] dark:text-[#7BB8FF]">
-                                                        <HiOutlineCalendar className="text-[#2a85ff]/60 shrink-0" />
-                                                        <span className="font-medium">{selectedTagihan.periode}</span>
-                                                    </div>
-                                                )}
-                                                {selectedTagihan.nama_instruktur && (
-                                                    <div className="flex items-center gap-1.5 text-sm text-[#2a85ff] dark:text-[#7BB8FF]">
-                                                        <HiOutlineTag className="text-[#2a85ff]/60 shrink-0" />
-                                                        <span className="font-medium">{selectedTagihan.nama_instruktur}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
 
                                         {/* ── Diskon info ── */}
                                         {selectedTagihan.id_diskon && (
@@ -489,15 +473,31 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate">{d.nama_biaya}</p>
-                                                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                                                <div className="flex items-center gap-x-3 gap-y-0.5 mt-0.5 flex-wrap">
                                                                     {d.nama_kelas && (
                                                                         <span className="text-xs text-gray-400 flex items-center gap-1">
                                                                             <HiOutlineCollection className="shrink-0" />{d.nama_kelas}
                                                                         </span>
                                                                     )}
-                                                                    {d.periode && (
+                                                                    {d.nama_paket && (
                                                                         <span className="text-xs text-gray-400 flex items-center gap-1">
-                                                                            <HiOutlineCalendar className="shrink-0" />{d.periode}
+                                                                            <HiOutlineViewGrid className="shrink-0" />{d.nama_paket}
+                                                                        </span>
+                                                                    )}
+                                                                    {d.nama_kategori_umur && (
+                                                                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                                                                            <HiOutlineUsers className="shrink-0" />{d.nama_kategori_umur}
+                                                                        </span>
+                                                                    )}
+                                                                    {(d.hari_jadwal || d.jam_jadwal) && (
+                                                                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                                                                            <HiOutlineClock className="shrink-0" />
+                                                                            {[d.hari_jadwal, d.jam_jadwal].filter(Boolean).join(' ')}
+                                                                        </span>
+                                                                    )}
+                                                                    {d.nama_instruktur && (
+                                                                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                                                                            <HiOutlineTag className="shrink-0" />{d.nama_instruktur}
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -657,9 +657,23 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                 <h5 className="font-semibold">Detail Pembayaran</h5>
                             </div>
 
+                            {/* Kembalian card */}
+                            {kembalian > 0 && (
+                                <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
+                                    <div className="flex-1">
+                                        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide mb-0.5">Kembalian</p>
+                                        <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{formatRupiah(kembalian)}</p>
+                                        <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">
+                                            Diterima {formatRupiah(parseRupiah(form.jumlah))} &minus; Tagihan {formatRupiah(sisa!)}
+                                        </p>
+                                    </div>
+                                    <HiOutlineCheckCircle className="text-4xl text-emerald-400 shrink-0" />
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                                 <FormItem
-                                    label="Jumlah Pembayaran"
+                                    label="Nominal Diterima"
                                     asterisk
                                     invalid={!!errors.jumlah}
                                     errorMessage={errors.jumlah}

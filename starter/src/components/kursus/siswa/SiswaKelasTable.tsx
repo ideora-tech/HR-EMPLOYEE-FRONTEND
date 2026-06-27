@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { Tag, Tooltip } from '@/components/ui'
-import { HiOutlinePencilAlt, HiOutlineArrowCircleRight } from 'react-icons/hi'
+import { HiOutlinePencilAlt, HiOutlineArrowCircleRight, HiOutlineTrash } from 'react-icons/hi'
 import type { ISiswaKelasItem } from '@/@types/kursus.types'
 
 const formatDate = (raw: string | null): string => {
@@ -16,9 +16,11 @@ interface SiswaKelasTableProps {
     data: ISiswaKelasItem[]
     onConvert?: (item: ISiswaKelasItem) => void
     onChangeKelas?: (item: ISiswaKelasItem) => void
+    onEdit?: (item: ISiswaKelasItem) => void
+    onHapus?: (item: ISiswaKelasItem) => void
 }
 
-const SiswaKelasTable = ({ data, onConvert, onChangeKelas }: SiswaKelasTableProps) => {
+const SiswaKelasTable = ({ data, onConvert, onChangeKelas, onEdit, onHapus }: SiswaKelasTableProps) => {
     const sorted = useMemo(
         () => [...data].sort((a, b) => (b.mulai_kelas ?? '').localeCompare(a.mulai_kelas ?? '')),
         [data],
@@ -101,30 +103,48 @@ const SiswaKelasTable = ({ data, onConvert, onChangeKelas }: SiswaKelasTableProp
                                     </div>
                                 </td>
                                 <td className="py-3 px-3 text-right">
-                                    {item.is_trial === 1 && item.status === 1 && (
-                                        <div className="flex items-center justify-end gap-1">
-                                            {onChangeKelas && (
-                                                <Tooltip title="Ubah Kelas">
-                                                    <span
-                                                        onClick={() => onChangeKelas(item)}
-                                                        className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
-                                                    >
-                                                        <HiOutlinePencilAlt className="text-lg" />
-                                                    </span>
-                                                </Tooltip>
-                                            )}
-                                            {onConvert && (
-                                                <Tooltip title="Convert ke Reguler">
-                                                    <span
-                                                        onClick={() => onConvert(item)}
-                                                        className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-500/20 dark:text-violet-300 dark:hover:bg-violet-500/30 transition-colors"
-                                                    >
-                                                        <HiOutlineArrowCircleRight className="text-lg" />
-                                                    </span>
-                                                </Tooltip>
-                                            )}
-                                        </div>
-                                    )}
+                                    <div className="flex items-center justify-end gap-1">
+                                        {item.is_trial === 1 && item.status === 1 && onChangeKelas && (
+                                            <Tooltip title="Ubah Jadwal Trial">
+                                                <span
+                                                    onClick={() => onChangeKelas(item)}
+                                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
+                                                >
+                                                    <HiOutlinePencilAlt className="text-lg" />
+                                                </span>
+                                            </Tooltip>
+                                        )}
+                                        {item.is_trial === 1 && item.status === 1 && onConvert && (
+                                            <Tooltip title="Convert ke Reguler">
+                                                <span
+                                                    onClick={() => onConvert(item)}
+                                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-500/20 dark:text-violet-300 dark:hover:bg-violet-500/30 transition-colors"
+                                                >
+                                                    <HiOutlineArrowCircleRight className="text-lg" />
+                                                </span>
+                                            </Tooltip>
+                                        )}
+                                        {item.is_trial !== 1 && onEdit && (
+                                            <Tooltip title="Ubah Data Kelas">
+                                                <span
+                                                    onClick={() => onEdit(item)}
+                                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
+                                                >
+                                                    <HiOutlinePencilAlt className="text-lg" />
+                                                </span>
+                                            </Tooltip>
+                                        )}
+                                        {onHapus && (
+                                            <Tooltip title="Hapus Kelas">
+                                                <span
+                                                    onClick={() => onHapus(item)}
+                                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
+                                                >
+                                                    <HiOutlineTrash className="text-lg" />
+                                                </span>
+                                            </Tooltip>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         )

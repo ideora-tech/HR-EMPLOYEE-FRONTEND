@@ -4,11 +4,13 @@ import { useState, useEffect, useMemo } from 'react'
 import { Button, Dialog, FormItem, Input, Select } from '@/components/ui'
 import { HiOutlineExclamationCircle } from 'react-icons/hi'
 import { parseApiError } from '@/utils/parseApiError'
+import { formatRupiah } from '@/utils/formatNumber'
 import KelasService from '@/services/kursus/kelas.service'
 import KategoriUmurService from '@/services/kursus/kategori-umur.service'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
+import BiayaService from '@/services/kursus/biaya.service'
 import CatatKelasSiswaService from '@/services/kursus/catat-kelas-siswa.service'
-import type { ISiswa, IKelas, IKategoriUmur, IJadwalKelas } from '@/@types/kursus.types'
+import type { ISiswa, IKelas, IKategoriUmur, IJadwalKelas, IBiaya } from '@/@types/kursus.types'
 
 interface AssignKelasModalProps {
     isOpen: boolean
@@ -23,11 +25,13 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
     const [kelasList, setKelasList] = useState<SelectOption[]>([])
     const [jadwalList, setJadwalList] = useState<IJadwalKelas[]>([])
     const [kategoriList, setKategoriList] = useState<IKategoriUmur[]>([])
+    const [biayaList, setBiayaList] = useState<IBiaya[]>([])
 
     const [selectedKelas, setSelectedKelas] = useState<SelectOption | null>(null)
     const [selectedJadwal, setSelectedJadwal] = useState<SelectOption | null>(null)
     const [selectedPaket, setSelectedPaket] = useState<SelectOption | null>(null)
     const [selectedKategori, setSelectedKategori] = useState<SelectOption | null>(null)
+    const [selectedBiaya, setSelectedBiaya] = useState<SelectOption | null>(null)
     const [totalSesi, setTotalSesi] = useState('')
     const [totalSesiAutoFilled, setTotalSesiAutoFilled] = useState(false)
 
@@ -42,8 +46,10 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
         setSelectedJadwal(null)
         setSelectedPaket(null)
         setSelectedKategori(null)
+        setSelectedBiaya(null)
         setJadwalList([])
         setKategoriList([])
+        setBiayaList([])
         setTotalSesi('')
         setTotalSesiAutoFilled(false)
         setError('')
@@ -54,31 +60,33 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
         }).catch(() => { })
     }, [isOpen])
 
-    // When kelas changes → load jadwal & kategori umur, reset selects
     const handleKelasChange = async (opt: SelectOption | null) => {
         setSelectedKelas(opt)
         setSelectedJadwal(null)
         setSelectedPaket(null)
         setSelectedKategori(null)
+        setSelectedBiaya(null)
         setJadwalList([])
         setKategoriList([])
+        setBiayaList([])
         setTotalSesi('')
         setTotalSesiAutoFilled(false)
         setError('')
         if (!opt) return
         try {
-            const [jadwalRes, kategoriRes] = await Promise.allSettled([
+            const [jadwalRes, kategoriRes, biayaRes] = await Promise.allSettled([
                 JadwalKelasService.getByKelas(opt.value),
                 KategoriUmurService.getByKelas(opt.value),
+                BiayaService.getByKelas(opt.value),
             ])
             if (jadwalRes.status === 'fulfilled') setJadwalList(jadwalRes.value.data.filter((j) => j.aktif === 1))
             if (kategoriRes.status === 'fulfilled') setKategoriList(kategoriRes.value.data)
+            if (biayaRes.status === 'fulfilled') setBiayaList(biayaRes.value.data)
         } catch {
             // lanjutkan meski gagal
         }
     }
 
-    // Jadwal options for selected kelas
     const jadwalOptions = useMemo<SelectOption[]>(() => {
         return jadwalList.map((j) => ({
             value: j.id_jadwal_kelas,
@@ -86,7 +94,6 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
         }))
     }, [jadwalList])
 
-    // Derive unique paket options from loaded kategori umur
     const paketOptions = useMemo<SelectOption[]>(() => {
         const map = new Map<string, string>()
         kategoriList.forEach((k) => {
@@ -95,7 +102,6 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
         return Array.from(map.entries()).map(([value, label]) => ({ value, label }))
     }, [kategoriList])
 
-    // Filtered kategori umur based on selected paket
     const filteredKategori = useMemo<SelectOption[]>(() => {
         const list = selectedPaket
             ? kategoriList.filter((k) => k.id_paket === selectedPaket.value)
@@ -106,9 +112,29 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
         }))
     }, [kategoriList, selectedPaket])
 
-    // When kategori umur changes → auto-fill total_sesi from sesi_pertemuan
+    // Biaya options: filter berdasarkan kategori umur jika dipilih, jika tidak tampilkan semua
+    const biayaOptions = useMemo<SelectOption[]>(() => {
+        const list = selectedKategori
+            ? biayaList.filter((b) => b.id_kategori_umur === selectedKategori.value)
+            : biayaList
+        return list.map((b) => ({
+            value: b.id_biaya,
+            label: `${b.nama_biaya}${b.nama_paket ? ` · ${b.nama_paket}` : ''} — ${formatRupiah(b.harga_biaya)}`,
+        }))
+    }, [biayaList, selectedKategori])
+
+    // Auto-select biaya jika hanya ada 1 pilihan
+    useEffect(() => {
+        if (biayaOptions.length === 1 && !isTrial) {
+            setSelectedBiaya(biayaOptions[0])
+        } else if (biayaOptions.length !== 1) {
+            setSelectedBiaya(null)
+        }
+    }, [biayaOptions, isTrial])
+
     const handleKategoriChange = (opt: SelectOption | null) => {
         setSelectedKategori(opt)
+        setSelectedBiaya(null)
         setError('')
         if (!opt) {
             if (totalSesiAutoFilled) { setTotalSesi(''); setTotalSesiAutoFilled(false) }
@@ -130,15 +156,30 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
             setError('Pilih jadwal / jam kelas terlebih dahulu')
             return
         }
+        if (!isTrial && !selectedBiaya) {
+            setError('Pilih biaya untuk membuat tagihan, atau centang Trial jika tidak ada tagihan')
+            return
+        }
         setSubmitting(true)
         setError('')
         try {
-            await CatatKelasSiswaService.create({
-                id_siswa: siswa.id_siswa,
-                id_jadwal_kelas: selectedJadwal.value,
-                ...(totalSesi !== '' ? { total_sesi: Number(totalSesi) } : {}),
-                ...(isTrial ? { is_trial: 1 } : {}),
-            })
+            if (isTrial) {
+                // Trial: hanya buat catat_kelas_siswa, tanpa tagihan
+                await CatatKelasSiswaService.create({
+                    id_siswa: siswa.id_siswa,
+                    id_jadwal_kelas: selectedJadwal.value,
+                    ...(totalSesi !== '' ? { total_sesi: Number(totalSesi) } : {}),
+                    is_trial: 1,
+                })
+            } else {
+                // Reguler: buat catat_kelas_siswa + tagihan dalam 1 transaksi
+                await CatatKelasSiswaService.adminEnroll({
+                    id_siswa: siswa.id_siswa,
+                    id_jadwal_kelas: selectedJadwal.value,
+                    id_biaya: selectedBiaya!.value,
+                    ...(totalSesi !== '' ? { total_sesi: Number(totalSesi) } : {}),
+                })
+            }
             onSuccess()
             onClose()
         } catch (err: unknown) {
@@ -182,7 +223,7 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
                     />
                 </FormItem>
 
-                {/* Jadwal / Jam Kelas — muncul setelah kelas dipilih */}
+                {/* Jadwal */}
                 {selectedKelas && (
                     <FormItem
                         label="Jadwal / Jam Kelas"
@@ -204,7 +245,7 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
                     </FormItem>
                 )}
 
-                {/* Paket — muncul setelah kelas dipilih dan ada paket tersedia */}
+                {/* Paket */}
                 {selectedKelas && paketOptions.length > 0 && (
                     <FormItem
                         label="Paket"
@@ -218,17 +259,18 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
                             onChange={(opt) => {
                                 setSelectedPaket(opt as SelectOption | null)
                                 setSelectedKategori(null)
+                                setSelectedBiaya(null)
                                 if (totalSesiAutoFilled) { setTotalSesi(''); setTotalSesiAutoFilled(false) }
                             }}
                         />
                     </FormItem>
                 )}
 
-                {/* Kategori Umur — muncul setelah kelas dipilih */}
+                {/* Kategori Umur */}
                 {selectedKelas && filteredKategori.length > 0 && (
                     <FormItem
                         label="Kategori Umur"
-                        extra="Opsional — total sesi akan diisi otomatis"
+                        extra="Opsional — total sesi dan pilihan biaya akan disesuaikan"
                     >
                         <Select
                             placeholder="Pilih kategori umur..."
@@ -240,13 +282,17 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
                     </FormItem>
                 )}
 
-                {/* Trial */}
+                {/* Trial toggle */}
                 <FormItem label="Mode Pendaftaran">
                     <label className="flex items-center gap-2 cursor-pointer select-none">
                         <input
                             type="checkbox"
                             checked={isTrial}
-                            onChange={(e) => setIsTrial(e.target.checked)}
+                            onChange={(e) => {
+                                setIsTrial(e.target.checked)
+                                setSelectedBiaya(null)
+                                setError('')
+                            }}
                             className="w-4 h-4 accent-violet-600 cursor-pointer"
                         />
                         <span className="text-sm text-gray-600 dark:text-gray-300">
@@ -255,6 +301,37 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
                         </span>
                     </label>
                 </FormItem>
+
+                {/* Biaya — hanya tampil jika bukan trial dan ada pilihan biaya */}
+                {selectedKelas && !isTrial && biayaOptions.length > 0 && (
+                    <FormItem
+                        label="Biaya / Tagihan"
+                        asterisk
+                        extra="Tagihan akan dibuat otomatis setelah kelas di-assign"
+                        invalid={!!error && !selectedBiaya}
+                        errorMessage={!selectedBiaya ? error : ''}
+                    >
+                        <Select
+                            placeholder="Pilih biaya..."
+                            options={biayaOptions}
+                            value={selectedBiaya}
+                            onChange={(opt) => {
+                                setSelectedBiaya(opt as SelectOption | null)
+                                setError('')
+                            }}
+                        />
+                    </FormItem>
+                )}
+
+                {/* Info jika tidak ada biaya tersedia */}
+                {selectedKelas && !isTrial && biayaList.length === 0 && (
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30">
+                        <HiOutlineExclamationCircle className="text-lg text-amber-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-amber-700 dark:text-amber-400">
+                            Tidak ada data biaya untuk kelas ini. Tambahkan biaya di menu Master Biaya, atau daftarkan sebagai Trial.
+                        </p>
+                    </div>
+                )}
 
                 {/* Total Sesi */}
                 <FormItem
@@ -285,8 +362,13 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
                 <Button variant="plain" onClick={onClose} disabled={submitting}>
                     Batal
                 </Button>
-                <Button variant="solid" customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'} loading={submitting} onClick={handleSubmit}>
-                    Assign
+                <Button
+                    variant="solid"
+                    customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                    loading={submitting}
+                    onClick={handleSubmit}
+                >
+                    {isTrial ? 'Daftar Trial' : 'Assign & Buat Tagihan'}
                 </Button>
             </div>
         </Dialog>
