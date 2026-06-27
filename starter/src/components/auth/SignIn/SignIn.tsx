@@ -20,7 +20,6 @@ const SignIn = ({
     return (
         <>
             <div className="mb-8">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src="/logo-sky.jpeg"
                     alt="SKY Dance Academy"
