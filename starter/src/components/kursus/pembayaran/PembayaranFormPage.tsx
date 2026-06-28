@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Card, Dialog, FormItem, Input, Notification, Select, Spinner, toast } from '@/components/ui'
-import { HiArrowLeft, HiOutlinePlus, HiOutlineTrash, HiOutlineUser, HiOutlineTag, HiOutlineCollection, HiOutlineCalendar, HiOutlineCash, HiOutlineCheckCircle, HiOutlineClock, HiOutlineReceiptTax, HiOutlineDocumentText, HiOutlineX, HiCheck, HiOutlineViewGrid, HiOutlineUsers } from 'react-icons/hi'
+import { HiArrowLeft, HiOutlinePlus, HiOutlineTrash, HiOutlineUser, HiOutlineTag, HiOutlineCollection, HiOutlineCash, HiOutlineCheckCircle, HiOutlineClock, HiOutlineReceiptTax, HiOutlineDocumentText, HiOutlineX, HiCheck, HiOutlineViewGrid, HiOutlineUsers, HiOutlinePhotograph, HiOutlineUpload } from 'react-icons/hi'
 import TagihanService from '@/services/kursus/tagihan.service'
 import DiskonService from '@/services/kursus/diskon.service'
 import { parseApiError } from '@/utils/parseApiError'
@@ -70,6 +70,8 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
 
     const [form, setForm] = useState<FormState>(INITIAL)
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+    const [buktiBayar, setBuktiBayar] = useState<File | null>(null)
+    const [buktiBayarPreview, setBuktiBayarPreview] = useState<string | null>(null)
 
     const [tagihanOptions, setTagihanOptions] = useState<TagihanOption[]>([])
     const [loadingTagihan, setLoadingTagihan] = useState(false)
@@ -182,6 +184,24 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
         ? Math.max(0, parseRupiah(form.jumlah) - sisa)
         : 0
 
+    const handleBuktiBayarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null
+        if (!file) return
+        setBuktiBayar(file)
+        if (file.type.startsWith('image/')) {
+            const url = URL.createObjectURL(file)
+            setBuktiBayarPreview(url)
+        } else {
+            setBuktiBayarPreview(null)
+        }
+    }
+
+    const handleRemoveBukti = () => {
+        setBuktiBayar(null)
+        if (buktiBayarPreview) URL.revokeObjectURL(buktiBayarPreview)
+        setBuktiBayarPreview(null)
+    }
+
     const handleSubmit = () => {
         if (!validate()) return
         const jumlahInput = parseRupiah(form.jumlah)
@@ -195,6 +215,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
             metode: form.metode,
             referensi: form.referensi || null,
             deskripsi: form.deskripsi || null,
+            bukti_bayar: buktiBayar ?? undefined,
             aktif: 1,
         })
     }
@@ -727,6 +748,66 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                     />
                                 </FormItem>
                             </div>
+                        </div>
+
+                        <div className="border-t border-gray-100 dark:border-gray-700 my-2" />
+
+                        {/* ── Section: Bukti Bayar ── */}
+                        <div>
+                            <div className="mb-3">
+                                <h5 className="font-semibold">Bukti Bayar</h5>
+                                <p className="text-gray-500 text-sm mt-0.5">
+                                    Opsional — foto struk, bukti transfer, atau tangkapan layar QRIS (jpg/png/webp/pdf, maks 5 MB)
+                                </p>
+                            </div>
+
+                            {buktiBayar ? (
+                                <div className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40">
+                                    {buktiBayarPreview ? (
+                                        /* eslint-disable-next-line @next/next/no-img-element */
+                                        <img
+                                            src={buktiBayarPreview}
+                                            alt="Bukti bayar"
+                                            className="w-20 h-20 rounded-lg object-cover border border-gray-200 dark:border-gray-700 shrink-0"
+                                        />
+                                    ) : (
+                                        <div className="flex items-center justify-center w-20 h-20 rounded-lg bg-gray-200 dark:bg-gray-700 shrink-0">
+                                            <HiOutlineDocumentText className="text-3xl text-gray-400" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{buktiBayar.name}</p>
+                                        <p className="text-xs text-gray-400 mt-0.5">
+                                            {(buktiBayar.size / 1024).toFixed(0)} KB
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveBukti}
+                                        className="flex items-center justify-center w-8 h-8 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0"
+                                        title="Hapus file"
+                                    >
+                                        <HiOutlineX className="text-base" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label className="flex flex-col items-center justify-center gap-2 w-full py-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                                    <HiOutlineUpload className="text-3xl text-gray-300 dark:text-gray-600" />
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                                        Klik untuk pilih file
+                                    </span>
+                                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                                        <HiOutlinePhotograph className="text-base" />
+                                        JPG · PNG · WEBP · PDF
+                                    </span>
+                                    <input
+                                        type="file"
+                                        accept=".jpg,.jpeg,.png,.webp,.pdf"
+                                        className="sr-only"
+                                        onChange={handleBuktiBayarChange}
+                                    />
+                                </label>
+                            )}
                         </div>
 
                         <div className="border-t border-gray-100 dark:border-gray-700 my-2" />

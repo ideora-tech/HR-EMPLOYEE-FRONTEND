@@ -1135,6 +1135,7 @@ export interface ICreateCancelKelas {
     id_jadwal_kelas: string
     tanggal: string
     keterangan?: string
+    tanggal_pengganti?: string
 }
 
 export interface IKonfirmasiPengganti {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, Button, FormItem, Input } from '@/components/ui'
+import { Dialog, Button, FormItem, Input, DatePicker } from '@/components/ui'
 import { toast, Notification } from '@/components/ui'
 import LiburJadwalService from '@/services/kursus/libur-jadwal.service'
 import { parseApiError } from '@/utils/parseApiError'
@@ -13,15 +13,27 @@ interface Props {
     onSuccess: () => void
 }
 
+function parseToDate(str: string): Date | null {
+    if (!str) return null
+    return new Date(str + 'T12:00:00')
+}
+
+function dateToYMD(date: Date): string {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+}
+
 export default function LiburForm({ open, tanggalDefault = '', onClose, onSuccess }: Props) {
-    const [tanggal, setTanggal] = useState(tanggalDefault)
+    const [tanggal, setTanggal] = useState<Date | null>(() => parseToDate(tanggalDefault))
     const [keterangan, setKeterangan] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [errors, setErrors] = useState<{ tanggal?: string; keterangan?: string }>({})
 
     useEffect(() => {
         if (open) {
-            setTanggal(tanggalDefault)
+            setTanggal(parseToDate(tanggalDefault))
             setKeterangan('')
             setErrors({})
         }
@@ -39,7 +51,7 @@ export default function LiburForm({ open, tanggalDefault = '', onClose, onSucces
         if (!validate()) return
         setSubmitting(true)
         try {
-            const res = await LiburJadwalService.create({ tanggal, keterangan })
+            const res = await LiburJadwalService.create({ tanggal: dateToYMD(tanggal!), keterangan })
             const jumlah = res.data.kelas_terdampak?.length ?? 0
             toast.push(
                 <Notification type="success"
@@ -63,10 +75,10 @@ export default function LiburForm({ open, tanggalDefault = '', onClose, onSucces
             </p>
             <div className="flex flex-col gap-4">
                 <FormItem label="Tanggal" asterisk invalid={!!errors.tanggal} errorMessage={errors.tanggal}>
-                    <Input
-                        type="date"
+                    <DatePicker
+                        placeholder="Pilih tanggal libur"
                         value={tanggal}
-                        onChange={e => setTanggal(e.target.value)}
+                        onChange={(date) => setTanggal(date)}
                     />
                 </FormItem>
                 <FormItem label="Keterangan" asterisk invalid={!!errors.keterangan} errorMessage={errors.keterangan}>

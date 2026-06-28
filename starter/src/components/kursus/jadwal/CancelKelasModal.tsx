@@ -1,16 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, Button, FormItem, Input } from '@/components/ui'
+import { Dialog, Button, FormItem, Input, DatePicker } from '@/components/ui'
 import { toast, Notification } from '@/components/ui'
 import CancelKelasService from '@/services/kursus/cancel-kelas.service'
 import { parseApiError } from '@/utils/parseApiError'
 import type { IJadwalKelas } from '@/@types/kursus.types'
 
-function addDays(dateStr: string, n: number): string {
-    const d = new Date(dateStr + 'T12:00:00')
-    d.setDate(d.getDate() + n)
-    return d.toISOString().split('T')[0]
+function dateToYMD(date: Date): string {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
 }
 
 function fmtTanggal(dateStr: string): string {
@@ -29,15 +30,19 @@ interface Props {
 
 export default function CancelKelasModal({ open, jadwal, tanggal, onClose, onSuccess }: Props) {
     const [keterangan, setKeterangan] = useState('')
+    const [tanggalPengganti, setTanggalPengganti] = useState<Date | null>(null)
     const [submitting, setSubmitting] = useState(false)
 
     useEffect(() => {
-        if (open) setKeterangan('')
-    }, [open])
+        if (open && tanggal) {
+            setKeterangan('')
+            const d = new Date(tanggal + 'T12:00:00')
+            d.setDate(d.getDate() + 7)
+            setTanggalPengganti(d)
+        }
+    }, [open, tanggal])
 
     if (!jadwal) return null
-
-    const tanggalPengganti = tanggal ? addDays(tanggal, 7) : ''
 
     const handleSubmit = async () => {
         setSubmitting(true)
@@ -46,8 +51,9 @@ export default function CancelKelasModal({ open, jadwal, tanggal, onClose, onSuc
                 id_jadwal_kelas: jadwal.id_jadwal_kelas,
                 tanggal,
                 keterangan: keterangan || undefined,
+                tanggal_pengganti: tanggalPengganti ? dateToYMD(tanggalPengganti) : undefined,
             })
-            toast.push(<Notification type="success" title="Kelas berhasil dibatalkan — sesi pengganti dibuat" />)
+            toast.push(<Notification type="success" title="Kelas berhasil dibatalkan — sesi pengganti dikonfirmasi" />)
             onSuccess()
         } catch (err) {
             toast.push(<Notification type="danger" title={parseApiError(err)} />)
@@ -77,22 +83,22 @@ export default function CancelKelasModal({ open, jadwal, tanggal, onClose, onSuc
                     <span className="font-medium text-red-600">{fmtTanggal(tanggal)}</span>
                 </div>
             </div>
-            <FormItem label="Alasan pembatalan">
-                <Input
-                    placeholder="Contoh: Instruktur sakit, Ruangan tidak tersedia"
-                    value={keterangan}
-                    onChange={e => setKeterangan(e.target.value)}
-                />
-            </FormItem>
-            {tanggalPengganti && (
-                <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm">
-                    <p className="text-amber-700 font-medium">Sesi pengganti otomatis:</p>
-                    <p className="text-amber-600 mt-0.5">
-                        {fmtTanggal(tanggalPengganti)} · {jadwal.jam_mulai} – {jadwal.jam_selesai}
-                    </p>
-                    <p className="text-amber-500 text-xs mt-0.5">Perlu konfirmasi setelah disimpan</p>
-                </div>
-            )}
+            <div className="flex flex-col gap-4">
+                <FormItem label="Tanggal pengganti">
+                    <DatePicker
+                        placeholder="Pilih tanggal sesi pengganti"
+                        value={tanggalPengganti}
+                        onChange={(date) => setTanggalPengganti(date)}
+                    />
+                </FormItem>
+                <FormItem label="Alasan pembatalan">
+                    <Input
+                        placeholder="Contoh: Instruktur sakit, Ruangan tidak tersedia"
+                        value={keterangan}
+                        onChange={e => setKeterangan(e.target.value)}
+                    />
+                </FormItem>
+            </div>
             <div className="flex justify-end gap-2 mt-6">
                 <Button variant="plain" onClick={onClose}>Batal</Button>
                 <Button

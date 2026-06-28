@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, Button, FormItem, Input } from '@/components/ui'
+import { Dialog, Button, FormItem, Input, DatePicker } from '@/components/ui'
 import { toast, Notification } from '@/components/ui'
 import CancelKelasService from '@/services/kursus/cancel-kelas.service'
 import { parseApiError } from '@/utils/parseApiError'
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function SesiPenggantiConfirmModal({ open, sesi, onClose, onSuccess }: Props) {
-    const [tanggal, setTanggal] = useState('')
+    const [tanggal, setTanggal] = useState<Date | null>(null)
     const [jamMulai, setJamMulai] = useState('')
     const [jamSelesai, setJamSelesai] = useState('')
     const [keterangan, setKeterangan] = useState('')
@@ -23,7 +23,7 @@ export default function SesiPenggantiConfirmModal({ open, sesi, onClose, onSucce
 
     useEffect(() => {
         if (open && sesi) {
-            setTanggal(sesi.tanggal)
+            setTanggal(sesi.tanggal ? new Date(sesi.tanggal + 'T12:00:00') : null)
             setJamMulai(sesi.jam_mulai ?? '')
             setJamSelesai(sesi.jam_selesai ?? '')
             setKeterangan(sesi.keterangan ?? '')
@@ -35,8 +35,11 @@ export default function SesiPenggantiConfirmModal({ open, sesi, onClose, onSucce
     const handleKonfirmasi = async () => {
         setSubmitting(true)
         try {
+            const tanggalStr = tanggal
+                ? `${tanggal.getFullYear()}-${String(tanggal.getMonth() + 1).padStart(2, '0')}-${String(tanggal.getDate()).padStart(2, '0')}`
+                : undefined
             await CancelKelasService.konfirmasiPengganti(sesi.id_sesi_pengganti, {
-                tanggal: tanggal || undefined,
+                tanggal: tanggalStr,
                 jam_mulai: jamMulai || undefined,
                 jam_selesai: jamSelesai || undefined,
                 keterangan: keterangan || undefined,
@@ -72,7 +75,11 @@ export default function SesiPenggantiConfirmModal({ open, sesi, onClose, onSucce
             </p>
             <div className="flex flex-col gap-4">
                 <FormItem label="Tanggal pengganti" asterisk>
-                    <Input type="date" value={tanggal} onChange={e => setTanggal(e.target.value)} />
+                    <DatePicker
+                        placeholder="Pilih tanggal pengganti"
+                        value={tanggal}
+                        onChange={(date) => setTanggal(date)}
+                    />
                 </FormItem>
                 <div className="grid grid-cols-2 gap-3">
                     <FormItem label="Jam mulai">

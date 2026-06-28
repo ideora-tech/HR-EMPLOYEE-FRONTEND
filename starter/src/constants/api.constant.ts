@@ -186,6 +186,7 @@ export const API_ENDPOINTS = {
             BY_ID: (id: string) => `${PROXY}/kursus/pembayaran/${id}`,
             BY_TAGIHAN: (idTagihan: string) => `${PROXY}/kursus/pembayaran/tagihan/${idTagihan}`,
             BUKTI_BAYAR: (id: string) => `${PROXY}/kursus/pembayaran/${id}/bukti-bayar`,
+            CETAK: (id: string) => `${PROXY}/kursus/pembayaran/${id}/cetak`,
             KONFIRMASI: (id: string) => `${PROXY}/kursus/pembayaran/${id}/konfirmasi`,
             TOLAK: (id: string) => `${PROXY}/kursus/pembayaran/${id}/tolak`,
         },

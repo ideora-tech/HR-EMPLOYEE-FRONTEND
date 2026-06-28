@@ -1,6 +1,7 @@
 'use client'
 
-import { HiOutlineDocumentDownload } from 'react-icons/hi'
+import { HiOutlineDocumentDownload, HiOutlineEye } from 'react-icons/hi'
+import { Tooltip } from '@/components/ui'
 import { formatRupiah } from '@/utils/formatNumber'
 import type { IPembayaran } from '@/@types/kursus.types'
 
@@ -19,11 +20,12 @@ const METODE_CLS: Record<string, string> = {
 interface PembayaranSubRowProps {
     pembayaran: IPembayaran
     namaTagihan?: string | null
-    onDownloadPdf: () => void
-    pdfLoading: boolean
+    cetakLoading: boolean
+    onView: () => void
+    onCetak: () => void
 }
 
-const PembayaranSubRow = ({ pembayaran, namaTagihan, onDownloadPdf, pdfLoading }: PembayaranSubRowProps) => {
+const PembayaranSubRow = ({ pembayaran, namaTagihan, cetakLoading, onView, onCetak }: PembayaranSubRowProps) => {
     const st = STATUS_KONFIRMASI[pembayaran.status_konfirmasi]
     const tanggal = pembayaran.tanggal_bayar?.substring(0, 10) ?? '—'
     const kembalian = Number(pembayaran.kembalian ?? 0)
@@ -65,17 +67,30 @@ const PembayaranSubRow = ({ pembayaran, namaTagihan, onDownloadPdf, pdfLoading }
                 )}
             </td>
             <td className="py-2 px-3 text-right">
-                <span
-                    title="Cetak Bukti Bayar"
-                    className={`cursor-pointer inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors ${
-                        pdfLoading
-                            ? 'opacity-50 cursor-wait bg-gray-100'
-                            : 'bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-500/20 dark:text-violet-300'
-                    }`}
-                    onClick={() => !pdfLoading && onDownloadPdf()}
-                >
-                    <HiOutlineDocumentDownload className="text-base" />
-                </span>
+                <div className="flex items-center justify-end gap-1">
+                    {/* Lihat detail */}
+                    <Tooltip title="Lihat Detail">
+                        <span
+                            className="cursor-pointer inline-flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
+                            onClick={onView}
+                        >
+                            <HiOutlineEye className="text-base" />
+                        </span>
+                    </Tooltip>
+                    {/* Cetak bukti bayar */}
+                    <Tooltip title="Cetak Bukti Bayar">
+                        <span
+                            className={`cursor-pointer inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors ${
+                                cetakLoading
+                                    ? 'opacity-50 cursor-wait bg-gray-100 dark:bg-gray-700'
+                                    : 'bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-500/20 dark:text-violet-300 dark:hover:bg-violet-500/30'
+                            }`}
+                            onClick={() => !cetakLoading && onCetak()}
+                        >
+                            <HiOutlineDocumentDownload className="text-base" />
+                        </span>
+                    </Tooltip>
+                </div>
             </td>
         </tr>
     )

@@ -19,7 +19,20 @@ const CatatPembayaranPage = () => {
     const handleSubmit = async (payload: ICreatePembayaran) => {
         setSubmitting(true)
         try {
-            await PembayaranService.create(payload)
+            const res = await PembayaranService.create(payload)
+
+            // Upload bukti bayar jika user memilih file
+            if (payload.bukti_bayar && res.data?.id_pembayaran) {
+                try {
+                    await PembayaranService.uploadBukti(res.data.id_pembayaran, payload.bukti_bayar)
+                } catch {
+                    // Pembayaran sudah tercatat — bukti bayar gagal tidak batalkan pembayaran
+                    toast.push(
+                        <Notification type="warning" title="Pembayaran tercatat, tapi bukti bayar gagal diupload. Silakan upload ulang." />,
+                    )
+                }
+            }
+
             // Jika tagihan sudah LUNAS, update status_pendaftaran siswa menjadi SELESAI
             try {
                 const tagihanRes = await TagihanService.getById(payload.id_tagihan)
@@ -29,6 +42,7 @@ const CatatPembayaranPage = () => {
             } catch {
                 // silent — jangan blokir alur pembayaran yang sudah sukses
             }
+
             toast.push(
                 <Notification type="success" title={MESSAGES.SUCCESS.CREATED(ENTITY.PEMBAYARAN)} />,
             )

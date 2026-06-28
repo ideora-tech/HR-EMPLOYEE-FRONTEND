@@ -21,12 +21,13 @@ interface TagihanGroupRowProps {
     expanded: boolean
     loadingExpand: boolean
     pembayaran: IPembayaran[]
-    pdfLoadingId: string | null
     cetakLoadingId: string | null
+    cetakPembayaranLoadingId: string | null
     onToggle: () => void
-    onDownloadPdf: (p: IPembayaran) => void
     onDelete: (tagihan: ITagihan) => void
     onCetak: (tagihan: ITagihan) => void
+    onViewPembayaran: (p: IPembayaran) => void
+    onCetakPembayaran: (p: IPembayaran) => void
 }
 
 const TagihanGroupRow = ({
@@ -35,12 +36,13 @@ const TagihanGroupRow = ({
     expanded,
     loadingExpand,
     pembayaran,
-    pdfLoadingId,
     cetakLoadingId,
+    cetakPembayaranLoadingId,
     onToggle,
-    onDownloadPdf,
     onDelete,
     onCetak,
+    onViewPembayaran,
+    onCetakPembayaran,
 }: TagihanGroupRowProps) => {
     const router = useRouter()
     const st = TAGIHAN_STATUS[tagihan.status]
@@ -149,8 +151,9 @@ const TagihanGroupRow = ({
                     key={p.id_pembayaran}
                     pembayaran={p}
                     namaTagihan={tagihan.nama_tagihan ?? tagihan.nama_biaya ?? null}
-                    pdfLoading={pdfLoadingId === p.id_pembayaran}
-                    onDownloadPdf={() => onDownloadPdf(p)}
+                    cetakLoading={cetakPembayaranLoadingId === p.id_pembayaran}
+                    onView={() => onViewPembayaran(p)}
+                    onCetak={() => onCetakPembayaran(p)}
                 />
             ))}
         </>

@@ -50,26 +50,22 @@ const PembayaranService = {
     },
 
     async create(payload: ICreatePembayaran): Promise<ApiResponse<IPembayaran>> {
-        if (payload.bukti_bayar) {
-            const formData = new FormData()
-            formData.append('id_tagihan', payload.id_tagihan)
-            formData.append('jumlah', String(payload.jumlah))
-            formData.append('tanggal_bayar', payload.tanggal_bayar)
-            formData.append('metode', payload.metode)
-            if (payload.referensi) formData.append('referensi', payload.referensi)
-            if (payload.deskripsi) formData.append('deskripsi', payload.deskripsi)
-            formData.append('bukti_bayar', payload.bukti_bayar)
-            return ApiService.fetchDataWithAxios<ApiResponse<IPembayaran>, FormData>({
-                url: API_ENDPOINTS.KURSUS.PEMBAYARAN.BASE,
-                method: 'POST',
-                data: formData,
-                headers: { 'Content-Type': 'multipart/form-data' },
-            })
+        // bukti_bayar is a File object — not serialisable as JSON and uploaded separately via uploadBukti()
+        const body: Record<string, unknown> = {
+            id_tagihan: payload.id_tagihan,
+            jumlah: payload.jumlah,
+            tanggal_bayar: payload.tanggal_bayar,
+            metode: payload.metode,
         }
-        return ApiService.fetchDataWithAxios<ApiResponse<IPembayaran>, ICreatePembayaran>({
+        if (payload.kembalian !== undefined) body.kembalian = payload.kembalian
+        if (payload.nominal_diterima !== undefined) body.nominal_diterima = payload.nominal_diterima
+        if (payload.referensi !== undefined) body.referensi = payload.referensi
+        if (payload.deskripsi !== undefined) body.deskripsi = payload.deskripsi
+        if (payload.aktif !== undefined) body.aktif = payload.aktif
+        return ApiService.fetchDataWithAxios<ApiResponse<IPembayaran>>({
             url: API_ENDPOINTS.KURSUS.PEMBAYARAN.BASE,
             method: 'POST',
-            data: payload,
+            data: body,
         })
     },
 
@@ -97,6 +93,14 @@ const PembayaranService = {
             data: formData,
             headers: { 'Content-Type': 'multipart/form-data' },
         })
+    },
+
+    async cetak(id: string): Promise<void> {
+        const res = await ApiService.fetchDataWithAxios<ApiResponse<{ url: string; filename: string }>>({
+            url: API_ENDPOINTS.KURSUS.PEMBAYARAN.CETAK(id),
+            method: 'GET',
+        })
+        window.open(`/api/proxy${res.data.url}`, '_blank')
     },
 
     async konfirmasi(id: string): Promise<ApiResponse<IPembayaran>> {

@@ -8,7 +8,7 @@ import { HiOutlineSearch, HiOutlineX, HiPlusCircle } from 'react-icons/hi'
 import TagihanService from '@/services/kursus/tagihan.service'
 import PembayaranService from '@/services/kursus/pembayaran.service'
 import TagihanFormPage from '@/components/kursus/tagihan/TagihanFormPage'
-import { previewPdf } from '@/utils/downloadPdf'
+import PembayaranDetailModal from './PembayaranDetailModal'
 import { parseApiError } from '@/utils/parseApiError'
 import { formatRupiah } from '@/utils/formatNumber'
 import TagihanGroupRow from './TagihanGroupRow'
@@ -57,10 +57,18 @@ const PembayaranListPageInner = () => {
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
     const [loadingExpandIds, setLoadingExpandIds] = useState<Set<string>>(new Set())
     const [pembayaranCache, setPembayaranCache] = useState<Record<string, IPembayaran[]>>({})
-    const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null)
 
-    // ── cetak & delete ──
+    // ── cetak tagihan ──
     const [cetakLoadingId, setCetakLoadingId] = useState<string | null>(null)
+
+    // ── cetak pembayaran ──
+    const [cetakPembayaranLoadingId, setCetakPembayaranLoadingId] = useState<string | null>(null)
+
+    // ── view detail pembayaran ──
+    const [viewTarget, setViewTarget] = useState<IPembayaran | null>(null)
+    const [deletePembayaranLoading, setDeletePembayaranLoading] = useState(false)
+
+    // ── delete tagihan ──
     const [deleteTarget, setDeleteTarget] = useState<ITagihan | null>(null)
 
     const fetchData = useCallback(async () => {
@@ -107,24 +115,6 @@ const PembayaranListPageInner = () => {
         }
     }
 
-    const handleDownloadPdf = async (p: IPembayaran) => {
-        setPdfLoadingId(p.id_pembayaran)
-        try {
-            const { default: BuktiBayarPDF } = await import('./BuktiBayarPDF')
-            const { createElement } = await import('react')
-            await previewPdf(
-                createElement(BuktiBayarPDF, {
-                    data: p,
-                    logoUrl: window.location.origin + '/logo-sky.jpeg',
-                }),
-            )
-        } catch {
-            toast.push(<Notification type="danger" title="Gagal membuka bukti bayar" />)
-        } finally {
-            setPdfLoadingId(null)
-        }
-    }
-
     const handleCetak = async (tagihan: ITagihan) => {
         setCetakLoadingId(tagihan.id_tagihan)
         try {
@@ -133,6 +123,44 @@ const PembayaranListPageInner = () => {
             toast.push(<Notification type="danger" title="Gagal mengunduh invoice" />)
         } finally {
             setCetakLoadingId(null)
+        }
+    }
+
+    const handleViewPembayaran = (p: IPembayaran) => {
+        setViewTarget(p)
+    }
+
+    const handleCetakPembayaran = async (p: IPembayaran) => {
+        setCetakPembayaranLoadingId(p.id_pembayaran)
+        try {
+            await PembayaranService.cetak(p.id_pembayaran)
+        } catch {
+            toast.push(<Notification type="danger" title="Gagal membuka bukti bayar" />)
+        } finally {
+            setCetakPembayaranLoadingId(null)
+        }
+    }
+
+    const handleDeletePembayaran = async () => {
+        if (!viewTarget) return
+        setDeletePembayaranLoading(true)
+        try {
+            await PembayaranService.remove(viewTarget.id_pembayaran)
+            toast.push(<Notification type="success" title="Pembayaran berhasil dihapus" />)
+            const idTagihan = viewTarget.id_tagihan
+            setViewTarget(null)
+            // invalidate cache for this tagihan so it reloads on next expand
+            setPembayaranCache((prev) => {
+                const next = { ...prev }
+                delete next[idTagihan]
+                return next
+            })
+            // refresh tagihan list (status may have changed)
+            fetchData()
+        } catch (err) {
+            toast.push(<Notification type="danger" title={parseApiError(err)} />)
+        } finally {
+            setDeletePembayaranLoading(false)
         }
     }
 
@@ -296,12 +324,13 @@ const PembayaranListPageInner = () => {
                                     expanded={expandedIds.has(tagihan.id_tagihan)}
                                     loadingExpand={loadingExpandIds.has(tagihan.id_tagihan)}
                                     pembayaran={pembayaranCache[tagihan.id_tagihan] ?? []}
-                                    pdfLoadingId={pdfLoadingId}
                                     cetakLoadingId={cetakLoadingId}
+                                    cetakPembayaranLoadingId={cetakPembayaranLoadingId}
                                     onToggle={() => handleToggle(tagihan.id_tagihan)}
-                                    onDownloadPdf={handleDownloadPdf}
                                     onDelete={setDeleteTarget}
                                     onCetak={handleCetak}
+                                    onViewPembayaran={handleViewPembayaran}
+                                    onCetakPembayaran={handleCetakPembayaran}
                                 />
                             ))}
                         </tbody>
@@ -332,7 +361,17 @@ const PembayaranListPageInner = () => {
                 </div>
             </Card>
 
-            {/* Delete confirmation */}
+            {/* Detail pembayaran modal */}
+            <PembayaranDetailModal
+                pembayaran={viewTarget}
+                cetakLoading={cetakPembayaranLoadingId === viewTarget?.id_pembayaran}
+                deleteLoading={deletePembayaranLoading}
+                onClose={() => setViewTarget(null)}
+                onCetak={() => viewTarget && handleCetakPembayaran(viewTarget)}
+                onDelete={handleDeletePembayaran}
+            />
+
+            {/* Delete tagihan confirmation */}
             <ConfirmDialog
                 isOpen={!!deleteTarget}
                 type="danger"
