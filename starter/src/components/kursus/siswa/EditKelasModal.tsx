@@ -64,11 +64,11 @@ const EditKelasModal = ({ isOpen, item, onClose, onSuccess }: EditKelasModalProp
                 </p>
             )}
             <div className="flex flex-col gap-4">
-                <FormItem label="Total Sesi" hint="Kosongkan jika tidak terbatas">
+                <FormItem label="Total Sesi">
                     <Input
                         type="number"
                         min={0}
-                        placeholder="contoh: 12"
+                        placeholder="contoh: 12 (kosongkan jika tidak terbatas)"
                         value={totalSesi}
                         onChange={(e) => setTotalSesi(e.target.value)}
                     />

@@ -764,7 +764,6 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                             {buktiBayar ? (
                                 <div className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40">
                                     {buktiBayarPreview ? (
-                                        /* eslint-disable-next-line @next/next/no-img-element */
                                         <img
                                             src={buktiBayarPreview}
                                             alt="Bukti bayar"
