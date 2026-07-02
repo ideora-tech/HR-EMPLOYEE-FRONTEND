@@ -47,6 +47,7 @@ export const ROUTES = {
     KURSUS_TAGIHAN_TAMBAH_BIAYA: '/kursus/tagihan/tambah-biaya',
     KURSUS_PEMBAYARAN: '/kursus/pembayaran',
 
+    LOG_ERROR: '/log-error',
     DEPARTEMEN: '/departemen',
     JABATAN: '/jabatan',
     LOKASI_KANTOR: '/lokasi-kantor',

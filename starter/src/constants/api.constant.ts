@@ -242,6 +242,12 @@ export const API_ENDPOINTS = {
         },
     },
 
+    // Log Error
+    LOG_ERROR: {
+        BASE: `${PROXY}/log-error`,
+        BY_ID: (id: string) => `${PROXY}/log-error/${id}`,
+    },
+
     // Struktur Organisasi
     ORGANISASI: {
         DEPARTEMEN: {
