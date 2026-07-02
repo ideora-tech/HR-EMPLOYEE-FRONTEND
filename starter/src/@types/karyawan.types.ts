@@ -96,6 +96,7 @@ export interface ICreateKaryawan {
     status_kepegawaian?: StatusKepegawaian
     no_bpjs_kesehatan?: string
     no_bpjs_ketenagakerjaan?: string
+    peran?: string
 }
 
 export type IUpdateKaryawan = Partial<ICreateKaryawan> & { aktif?: 0 | 1 }

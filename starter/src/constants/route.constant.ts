@@ -44,6 +44,7 @@ export const ROUTES = {
     KURSUS_TAGIHAN: '/kursus/tagihan',
     KURSUS_TAGIHAN_BUAT: '/kursus/tagihan/buat',
     KURSUS_TAGIHAN_CATAT_PEMBAYARAN: '/kursus/tagihan/catat-pembayaran',
+    KURSUS_TAGIHAN_TAMBAH_BIAYA: '/kursus/tagihan/tambah-biaya',
     KURSUS_PEMBAYARAN: '/kursus/pembayaran',
 
     DEPARTEMEN: '/departemen',

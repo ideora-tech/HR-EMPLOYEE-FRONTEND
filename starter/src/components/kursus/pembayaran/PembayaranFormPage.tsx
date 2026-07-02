@@ -10,7 +10,6 @@ import { parseApiError } from '@/utils/parseApiError'
 import { formatNum, formatRupiah, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 import { ROUTES } from '@/constants/route.constant'
 import type { ITagihan, IDiskon, ICreatePembayaran } from '@/@types/kursus.types'
-import TambahDetailForm from '@/components/kursus/tagihan/TambahDetailForm'
 
 /* ─── helpers ─────────────────────────────────────────────── */
 
@@ -78,7 +77,6 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
     const [selectedTagihan, setSelectedTagihan] = useState<ITagihan | null>(null)
     const [loadingDetail, setLoadingDetail] = useState(false)
 
-    const [detailFormOpen, setDetailFormOpen] = useState(false)
     const [deletingDetailId, setDeletingDetailId] = useState<string | null>(null)
     const [deleteDetailConfirm, setDeleteDetailConfirm] = useState(false)
     const [deletingDetail, setDeletingDetail] = useState(false)
@@ -220,12 +218,6 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
         })
     }
     const statusInfo = selectedTagihan ? STATUS_LABEL[selectedTagihan.status] : null
-
-    const handleDetailSaved = (updated: ITagihan) => {
-        setSelectedTagihan(updated)
-        const sisa = updated.total_harga - updated.total_bayar
-        setForm((p) => ({ ...p, jumlah: formatNum(sisa > 0 ? sisa : 0) }))
-    }
 
     const handleApplyDiskon = async () => {
         if (!selectedTagihan) return
@@ -399,7 +391,11 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                                     customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                                                     className="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500"
                                                     icon={<HiOutlinePlus />}
-                                                    onClick={() => setDetailFormOpen(true)}
+                                                    onClick={() =>
+                                                        router.push(
+                                                            `${ROUTES.KURSUS_TAGIHAN_TAMBAH_BIAYA}?id=${selectedTagihan.id_tagihan}`,
+                                                        )
+                                                    }
                                                 >
                                                     Tambah Biaya
                                                 </Button>
@@ -844,16 +840,6 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                     </div>
                 </Card>
             </form>
-
-            {/* ── Form tambah baris biaya ── */}
-            {selectedTagihan && (
-                <TambahDetailForm
-                    open={detailFormOpen}
-                    tagihan={selectedTagihan}
-                    onClose={() => setDetailFormOpen(false)}
-                    onSaved={handleDetailSaved}
-                />
-            )}
 
             {/* ── Konfirmasi hapus baris biaya ── */}
             <Dialog
