@@ -12,7 +12,6 @@ import {
 } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import {
-    HiPlusCircle,
     HiOutlineSearch,
     HiOutlineX,
     HiOutlineUpload,
@@ -136,22 +135,14 @@ const SiswaPage = () => {
                         </Button>
                         <Button
                             size="sm"
-                            variant="default"
+                            variant="solid"
+                            customColorClass={() =>
+                                'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'
+                            }
                             icon={<HiOutlineClipboardCheck />}
                             onClick={() => router.push(ROUTES.KURSUS_SISWA_DAFTAR)}
                         >
                             Daftarkan Siswa
-                        </Button>
-                        <Button
-                            variant="solid"
-                            size="sm"
-                            customColorClass={() =>
-                                'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'
-                            }
-                            icon={<HiPlusCircle />}
-                            onClick={() => router.push(ROUTES.KURSUS_SISWA_TAMBAH)}
-                        >
-                            Tambah Siswa
                         </Button>
                     </div>
                 </div>
