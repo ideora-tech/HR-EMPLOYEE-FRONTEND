@@ -22,14 +22,14 @@ const LogErrorService = {
         if (query.level) params.set('level', query.level)
         if (query.kode_status) params.set('kode_status', String(query.kode_status))
         const qs = params.toString()
-        return ApiService.fetchData<PaginatedResponse<ILogError>>({
+        return ApiService.fetchDataWithAxios<PaginatedResponse<ILogError>>({
             url: `${API_ENDPOINTS.LOG_ERROR.BASE}${qs ? `?${qs}` : ''}`,
             method: 'get',
         })
     },
 
     getById: (id: string) =>
-        ApiService.fetchData<SingleResponse<ILogError>>({
+        ApiService.fetchDataWithAxios<SingleResponse<ILogError>>({
             url: API_ENDPOINTS.LOG_ERROR.BY_ID(id),
             method: 'get',
         }),
