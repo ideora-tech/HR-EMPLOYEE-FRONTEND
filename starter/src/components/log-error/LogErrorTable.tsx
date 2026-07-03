@@ -170,7 +170,7 @@ const LogErrorTable = () => {
             })
             if (res.success) {
                 setData(res.data)
-                setTotal(res.meta.total)
+                setTotal(res.meta?.total ?? 0)
             }
         } catch {
             setData([])
