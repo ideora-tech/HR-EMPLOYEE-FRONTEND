@@ -1005,6 +1005,8 @@ export interface IAbsensiCoachQuery {
     page?: number
     limit?: number
     id_coach?: string
+    tanggal?: string               // "YYYY-MM-DD"
+    bulan?: string                 // "YYYY-MM"
 }
 
 // ── Reminder Perpanjangan Kursus ──────────────────────────────────────────────
