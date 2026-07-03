@@ -168,9 +168,9 @@ const LogErrorTable = () => {
                 search: search || undefined,
                 level: level || undefined,
             })
-            if (res.data.success) {
-                setData(res.data.data)
-                setTotal(res.data.meta.total)
+            if (res.success) {
+                setData(res.data)
+                setTotal(res.meta.total)
             }
         } catch {
             setData([])
