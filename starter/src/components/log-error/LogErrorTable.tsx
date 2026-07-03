@@ -42,7 +42,10 @@ const statusClass = (code: number | null) => {
 }
 
 const formatDate = (s: string) => {
-    const d = new Date(s)
+    // dateStrings:true returns "YYYY-MM-DD HH:MM:SS" (UTC, no timezone marker).
+    // Append 'Z' so the browser converts UTC → local (WIB = UTC+7) correctly.
+    const iso = s.includes('Z') || s.includes('+') ? s : s.replace(' ', 'T') + 'Z'
+    const d = new Date(iso)
     const pad = (n: number) => String(n).padStart(2, '0')
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
@@ -236,6 +239,16 @@ const LogErrorTable = () => {
             cell: ({ row }) => (
                 <span className="text-sm text-gray-600 dark:text-gray-300">
                     {row.original.konteks ?? '—'}
+                </span>
+            ),
+        },
+        {
+            header: 'Jalur',
+            id: 'jalur',
+            size: 220,
+            cell: ({ row }) => (
+                <span className="text-xs font-mono text-gray-500 dark:text-gray-400 break-all">
+                    {row.original.jalur ?? '—'}
                 </span>
             ),
         },
