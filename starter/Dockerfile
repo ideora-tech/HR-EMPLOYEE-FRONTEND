@@ -17,7 +17,7 @@ ENV AUTH_SECRET=$AUTH_SECRET
 ARG NEXT_PUBLIC_BACKEND_API_URL=http://localhost:4012
 ENV NEXT_PUBLIC_BACKEND_API_URL=$NEXT_PUBLIC_BACKEND_API_URL
 
-RUN npm run build
+RUN NODE_OPTIONS="--max-old-space-size=1536" npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app

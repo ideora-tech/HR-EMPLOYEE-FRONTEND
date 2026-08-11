@@ -7,6 +7,7 @@ import { toast } from '@/components/ui'
 import Notification from '@/components/ui/Notification'
 import type { IPembayaran } from '@/@types/kursus.types'
 import { formatRupiah } from '@/utils/formatNumber'
+import { toProxyFileUrl } from '@/utils/fileUrl'
 import pembayaranService from '@/services/kursus/pembayaran.service'
 
 interface KonfirmasiPanelProps {
@@ -73,7 +74,7 @@ const KonfirmasiPanel = ({ pembayaran, onUpdated }: KonfirmasiPanelProps) => {
 
             {pembayaran.bukti_bayar && (
                 <div className="mb-3">
-                    <a href={pembayaran.bukti_bayar} target="_blank" rel="noreferrer"
+                    <a href={toProxyFileUrl(pembayaran.bukti_bayar)} target="_blank" rel="noreferrer"
                         className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
                         <HiPhotograph className="text-base" />
                         Lihat Bukti Transfer

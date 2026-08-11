@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from 'next-auth'
+import { isJwtExpired } from '@/utils/jwtExpiry'
 import validateCredential from '../server/actions/user/validateCredential'
 import Credentials from 'next-auth/providers/credentials'
 import Github from 'next-auth/providers/github'
@@ -52,6 +53,13 @@ export default {
                 token.accessToken = user.accessToken
                 token.refreshToken = user.refreshToken
             }
+
+            // Token backend expired → return null untuk menghancurkan session
+            // NextAuth, sehingga middleware langsung redirect ke halaman login
+            if (token.accessToken && isJwtExpired(token.accessToken)) {
+                return null
+            }
+
             return token
         },
         async session({ session, token }) {

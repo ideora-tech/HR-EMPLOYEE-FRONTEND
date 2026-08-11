@@ -39,6 +39,18 @@ export default auth((req) => {
 
     /** Redirect to sign-in if not authenticated */
     if (!isSignedIn && !isPublicRoute) {
+        /**
+         * Request API (XHR via axios) tanpa session → balas 401 JSON,
+         * bukan redirect HTML, supaya interceptor axios yang menangani
+         * redirect ke halaman login.
+         */
+        if (nextUrl.pathname.startsWith(appConfig.apiPrefix)) {
+            return NextResponse.json(
+                { statusCode: 401, message: 'Unauthorized' },
+                { status: 401 },
+            )
+        }
+
         let callbackUrl = nextUrl.pathname
         if (nextUrl.search) {
             callbackUrl += nextUrl.search

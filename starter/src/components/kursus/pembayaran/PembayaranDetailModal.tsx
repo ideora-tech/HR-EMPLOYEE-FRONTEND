@@ -5,6 +5,7 @@ import { Dialog, Button } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { HiOutlineDocumentDownload, HiOutlineTrash, HiOutlinePhotograph, HiOutlineExternalLink } from 'react-icons/hi'
 import { formatRupiah } from '@/utils/formatNumber'
+import { toProxyFileUrl } from '@/utils/fileUrl'
 import type { IPembayaran } from '@/@types/kursus.types'
 
 const STATUS_KONFIRMASI: Record<number, { label: string; cls: string }> = {
@@ -17,10 +18,6 @@ const METODE_LABEL: Record<string, string> = {
     TUNAI: 'Tunai',
     TRANSFER: 'Transfer Bank',
     QRIS: 'QRIS',
-}
-
-function toProxyUrl(url: string): string {
-    return url.replace(/^https?:\/\/[^/]+/, '/api/proxy')
 }
 
 function fmtDate(d: string | null | undefined): string {
@@ -51,7 +48,7 @@ const PembayaranDetailModal = ({ pembayaran, cetakLoading, deleteLoading, onClos
     const nominalDiterima = Number(pembayaran.nominal_diterima ?? (Number(pembayaran.jumlah) + kembalian))
     const noBukti = `BP-${pembayaran.id_pembayaran.substring(0, 8).toUpperCase()}`
 
-    const buktiUrl = pembayaran.bukti_bayar ? toProxyUrl(pembayaran.bukti_bayar) : null
+    const buktiUrl = pembayaran.bukti_bayar ? toProxyFileUrl(pembayaran.bukti_bayar) : null
     const isImage = buktiUrl && /\.(jpg|jpeg|png|webp)$/i.test(buktiUrl)
     const isPdf = buktiUrl && /\.pdf$/i.test(buktiUrl)
 
