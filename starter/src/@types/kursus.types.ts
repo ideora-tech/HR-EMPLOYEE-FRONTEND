@@ -198,8 +198,8 @@ export interface IJadwalKelas {
     id_jadwal_kelas: string        // UUID
     id_kelas: string
     nama_kelas: string
-    id_karyawan: string
-    nama_karyawan: string
+    id_karyawan: string | null
+    nama_karyawan: string | null
     id_kategori_umur: string
     nama_kategori_umur: string
     hari: string                   // "Senin" | "Selasa" | "Rabu" | "Kamis" | "Jumat" | "Sabtu" | "Minggu"
@@ -217,7 +217,7 @@ export interface IJadwalKelas {
 
 export interface ICreateJadwalKelas {
     id_kelas: string
-    id_karyawan: string
+    id_karyawan?: string | null    // coach utama — opsional, sekadar label; null = kosongkan coach saat edit
     id_kategori_umur: string
     hari: string
     jam_mulai: string              // "HH:MM"
@@ -939,7 +939,11 @@ export interface IJadwalRequestPublic {
     id_request: string
     id_jadwal_kelas: string
     id_coach: string
-    status: 1 | 2 | 3
+    /** Tanggal pertemuan yang di-request, 'YYYY-MM-DD'. `null` = baris lama
+     *  dari model per-kelas (spec §12.2) — ditampilkan sebagai em dash. */
+    tanggal: string | null
+    /** 1 = Menunggu, 2 = Disetujui, 3 = Ditolak, 4 = Dibatalkan (oleh coach) */
+    status: 1 | 2 | 3 | 4
     catatan_coach: string | null
     catatan_admin: string | null
     ditangani_oleh: string | null
@@ -953,6 +957,7 @@ export interface IJadwalRequestPublic {
 
 export interface ICreateJadwalRequest {
     id_jadwal_kelas: string
+    tanggal: string          // 'YYYY-MM-DD'
     catatan_coach?: string
 }
 
@@ -964,7 +969,9 @@ export interface IApproveJadwalRequest {
 export interface IJadwalRequestQuery {
     page?: number
     limit?: number
-    status?: 1 | 2 | 3
+    status?: 1 | 2 | 3 | 4
+    dari?: string            // 'YYYY-MM-DD' — batas bawah tanggal pertemuan
+    sampai?: string          // 'YYYY-MM-DD' — batas atas tanggal pertemuan
 }
 
 // ── AbsensiCoach ──────────────────────────────────────────────────────────────

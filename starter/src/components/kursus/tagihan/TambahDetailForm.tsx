@@ -96,7 +96,7 @@ const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormP
                         .filter((j) => j.aktif === 1)
                         .map((j) => ({
                             value: j.id_jadwal_kelas,
-                            label: `${j.hari} ${j.jam_mulai}-${j.jam_selesai} — ${j.nama_karyawan} (${j.kuota_terpakai}/${j.kuota ?? '∞'} siswa)`,
+                            label: `${j.hari} ${j.jam_mulai}-${j.jam_selesai} — ${j.nama_karyawan?.trim() || '(Tanpa Coach)'} (${j.kuota_terpakai}/${j.kuota ?? '∞'} siswa)`,
                             jadwal: j,
                         }))
                 )

@@ -6,15 +6,9 @@ import { Tag, Tooltip } from '@/components/ui'
 import { HiOutlineCheck, HiOutlineX } from 'react-icons/hi'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
 import type { IJadwalRequestPublic } from '@/@types/kursus.types'
+import { formatTanggal } from '@/utils/formatTanggal'
 
-function formatDate(s: string | null | undefined): string {
-    if (!s) return '—'
-    const d = new Date(s)
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-    return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`
-}
-
-const STATUS_MAP: Record<1 | 2 | 3, { label: string; className: string }> = {
+const STATUS_MAP: Record<1 | 2 | 3 | 4, { label: string; className: string }> = {
     1: {
         label: 'Menunggu',
         className: 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-100',
@@ -26,6 +20,10 @@ const STATUS_MAP: Record<1 | 2 | 3, { label: string; className: string }> = {
     3: {
         label: 'Ditolak',
         className: 'bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-100',
+    },
+    4: {
+        label: 'Dibatalkan',
+        className: 'bg-gray-100 text-gray-500 dark:bg-gray-500/20 dark:text-gray-300',
     },
 }
 
@@ -79,6 +77,19 @@ const JadwalRequestTable = ({
                 },
             },
             {
+                header: 'Tanggal Pertemuan',
+                id: 'tanggal',
+                size: 170,
+                cell: ({ row }: CellContext<IJadwalRequestPublic, unknown>) =>
+                    row.original.tanggal ? (
+                        <span className="text-sm font-semibold">
+                            {formatTanggal(row.original.tanggal)}
+                        </span>
+                    ) : (
+                        <span className="text-gray-400">—</span>
+                    ),
+            },
+            {
                 header: 'Status',
                 id: 'status',
                 size: 130,
@@ -104,7 +115,7 @@ const JadwalRequestTable = ({
                 id: 'dibuat_pada',
                 size: 160,
                 cell: ({ row }: CellContext<IJadwalRequestPublic, unknown>) => (
-                    <span className="text-sm">{formatDate(row.original.dibuat_pada)}</span>
+                    <span className="text-sm">{formatTanggal(row.original.dibuat_pada)}</span>
                 ),
             },
             {

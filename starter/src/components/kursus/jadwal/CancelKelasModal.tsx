@@ -72,7 +72,7 @@ export default function CancelKelasModal({ open, jadwal, tanggal, onClose, onSuc
                 </div>
                 <div className="flex gap-2">
                     <span className="text-gray-500 w-28">Instruktur</span>
-                    <span>{jadwal.nama_karyawan}</span>
+                    <span>{jadwal.nama_karyawan?.trim() || '(Tanpa Coach)'}</span>
                 </div>
                 <div className="flex gap-2">
                     <span className="text-gray-500 w-28">Jam</span>

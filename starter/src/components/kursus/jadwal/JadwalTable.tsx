@@ -49,7 +49,7 @@ const JadwalTable = ({
                 accessorKey: 'nama_karyawan',
                 size: 150,
                 cell: ({ row }: CellContext<IJadwalKelas, unknown>) =>
-                    row.original.nama_karyawan,
+                    row.original.nama_karyawan?.trim() || '(Tanpa Coach)',
             },
             {
                 header: 'Kategori Umur',

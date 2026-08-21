@@ -162,7 +162,7 @@ const DaftarSiswaJadwalModal = ({ isOpen, jadwal, onClose, onSuccess }: DaftarSi
                 <p className="text-xs text-violet-500 font-medium mb-0.5">Jadwal Kelas</p>
                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{jadwal.nama_kelas}</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                    {jadwal.hari} · {jadwal.jam_mulai}–{jadwal.jam_selesai} · {jadwal.nama_karyawan}
+                    {jadwal.hari} · {jadwal.jam_mulai}–{jadwal.jam_selesai} · {jadwal.nama_karyawan?.trim() || '(Tanpa Coach)'}
                 </p>
             </div>
 

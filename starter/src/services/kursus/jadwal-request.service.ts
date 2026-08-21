@@ -12,6 +12,8 @@ const JadwalRequestService = {
     async getAll(query?: IJadwalRequestQuery): Promise<ApiPaginatedResponse<IJadwalRequestPublic>> {
         const params = new URLSearchParams()
         if (query?.status !== undefined) params.append('status', String(query.status))
+        if (query?.dari) params.append('dari', query.dari)
+        if (query?.sampai) params.append('sampai', query.sampai)
         if (query?.page) params.append('page', String(query.page))
         if (query?.limit) params.append('limit', String(query.limit))
 

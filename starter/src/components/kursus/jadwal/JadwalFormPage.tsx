@@ -137,7 +137,7 @@ const JadwalFormPage = ({
             setForm({
                 id_paket: '',
                 id_kelas: editData.id_kelas,
-                id_karyawan: editData.id_karyawan,
+                id_karyawan: editData.id_karyawan ?? '',
                 id_kategori_umur: editData.id_kategori_umur,
                 hari: editData.hari,
                 jam_mulai: editData.jam_mulai,
@@ -162,7 +162,6 @@ const JadwalFormPage = ({
     const validate = (): boolean => {
         const e: Partial<Record<keyof FormState, string>> = {}
         if (!form.id_kelas) e.id_kelas = 'Kelas wajib dipilih'
-        if (!form.id_karyawan) e.id_karyawan = 'Coach wajib dipilih'
         if (!form.id_kategori_umur) e.id_kategori_umur = 'Kategori umur wajib dipilih'
         if (!form.hari) e.hari = 'Hari wajib dipilih'
         if (!form.jam_mulai) e.jam_mulai = 'Jam mulai wajib diisi'
@@ -178,7 +177,7 @@ const JadwalFormPage = ({
         if (!validate()) return
         const base = {
             id_kelas: form.id_kelas,
-            id_karyawan: form.id_karyawan,
+            id_karyawan: form.id_karyawan || null, // null = tanpa coach (backend menormalkan ke NULL & mengosongkan nama)
             id_kategori_umur: form.id_kategori_umur,
             hari: form.hari,
             jam_mulai: form.jam_mulai,
@@ -257,17 +256,17 @@ const JadwalFormPage = ({
                             </FormItem>
 
                             <FormItem
-                                label="Coach"
-                                asterisk
+                                label="Coach Utama (opsional)"
                                 invalid={!!errors.id_karyawan}
                                 errorMessage={errors.id_karyawan}
                             >
                                 <Select<KaryawanOption>
-                                    placeholder="— Pilih Coach —"
+                                    placeholder="— Tanpa Coach Utama —"
                                     options={karyawanOptions}
                                     isLoading={loadingDropdowns}
+                                    isClearable
                                     value={karyawanOptions.find((o) => o.value === form.id_karyawan) ?? null}
-                                    onChange={(opt) => setForm((p) => ({ ...p, id_karyawan: (opt as KaryawanOption).value }))}
+                                    onChange={(opt) => setForm((p) => ({ ...p, id_karyawan: (opt as KaryawanOption | null)?.value ?? '' }))}
                                 />
                             </FormItem>
 

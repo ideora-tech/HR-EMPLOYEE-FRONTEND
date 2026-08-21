@@ -130,7 +130,7 @@ const TagihanForm = ({
                         .filter((j) => j.aktif === 1)
                         .map((j) => ({
                             value: j.id_jadwal_kelas,
-                            label: `${j.hari}, ${j.jam_mulai}–${j.jam_selesai} · ${j.nama_karyawan} (kuota: ${j.kuota})`,
+                            label: `${j.hari}, ${j.jam_mulai}–${j.jam_selesai} · ${j.nama_karyawan?.trim() || '(Tanpa Coach)'} (kuota: ${j.kuota})`,
                             jadwal: j,
                         }))
                 )

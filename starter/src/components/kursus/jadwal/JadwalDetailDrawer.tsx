@@ -92,7 +92,7 @@ const JadwalDetailDrawer = ({ open, jadwal, onClose, onRefresh }: JadwalDetailDr
 
                     {/* Info rows */}
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-xl px-3">
-                        <DetailRow icon={<HiOutlineUser />} label="Coach" value={jadwal.nama_karyawan} />
+                        <DetailRow icon={<HiOutlineUser />} label="Coach" value={jadwal.nama_karyawan?.trim() || '(Tanpa Coach)'} />
                         <DetailRow icon={<HiOutlineCalendar />} label="Hari" value={jadwal.hari} />
                         <DetailRow
                             icon={<HiOutlineClock />}

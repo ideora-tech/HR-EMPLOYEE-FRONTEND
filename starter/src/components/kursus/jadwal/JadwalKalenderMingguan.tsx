@@ -258,7 +258,7 @@ export default function JadwalKalenderMingguan() {
                                         >
                                             <p className="text-[10px] font-bold opacity-75">{jadwal.jam_mulai} – {jadwal.jam_selesai}</p>
                                             <p className="text-[11px] font-bold leading-tight">{jadwal.nama_kelas}</p>
-                                            <p className="text-[10px] opacity-70">{jadwal.nama_karyawan}</p>
+                                            <p className="text-[10px] opacity-70">{jadwal.nama_karyawan?.trim() || '(Tanpa Coach)'}</p>
                                             <div className="flex items-center justify-between mt-1">
                                                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${color.badge}`}>
                                                     {jadwal.nama_kategori_umur}
@@ -284,7 +284,7 @@ export default function JadwalKalenderMingguan() {
                                     >
                                         <p className="text-[10px] font-bold opacity-75">{sesi.jam_mulai} – {sesi.jam_selesai}</p>
                                         <p className="text-[11px] font-bold leading-tight">{sesi.nama_kelas}</p>
-                                        <p className="text-[10px] opacity-70">{sesi.nama_karyawan}</p>
+                                        <p className="text-[10px] opacity-70">{sesi.nama_karyawan?.trim() || '(Tanpa Coach)'}</p>
                                         <div className="mt-1">
                                             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full
                                                 ${sesi.status === 1 ? 'bg-amber-100 text-amber-700' : 'bg-orange-100 text-orange-700'}`}>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button, Dialog } from '@/components/ui'
 import type { IJadwalRequestPublic } from '@/@types/kursus.types'
+import { formatTanggal } from '@/utils/formatTanggal'
 
 interface ApproveRejectModalProps {
     open: boolean
@@ -28,6 +29,11 @@ const ApproveRejectModal = ({
     }, [open])
 
     const isApprove = mode === 'approve'
+
+    // Backend menolak approve untuk baris lama tanpa tanggal pertemuan
+    // (400 "Request lama tanpa tanggal pertemuan tidak bisa disetujui"),
+    // jadi tombolnya dimatikan sebelum request dikirim.
+    const tanggalKosong = isApprove && !!target && !target.tanggal
 
     const title = isApprove ? 'Setujui Request Jadwal?' : 'Tolak Request Jadwal?'
     const catatanLabel = isApprove ? 'Catatan Admin' : 'Alasan Penolakan'
@@ -58,6 +64,14 @@ const ApproveRejectModal = ({
                         </span>
                     </div>
                     <div className="flex gap-2">
+                        <span className="text-gray-500 dark:text-gray-400 w-28 shrink-0">
+                            Tanggal
+                        </span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-100">
+                            {formatTanggal(target.tanggal)}
+                        </span>
+                    </div>
+                    <div className="flex gap-2">
                         <span className="text-gray-500 dark:text-gray-400 w-28 shrink-0">Jadwal</span>
                         <span className="text-gray-800 dark:text-gray-100">
                             {target.jadwal.hari}, {target.jadwal.jam_mulai}–{target.jadwal.jam_selesai}
@@ -72,6 +86,13 @@ const ApproveRejectModal = ({
                         </div>
                     )}
                 </div>
+            )}
+
+            {tanggalKosong && (
+                <p className="mb-5 text-sm text-amber-600 dark:text-amber-400">
+                    Request lama ini tidak punya tanggal pertemuan sehingga tidak bisa
+                    disetujui. Minta coach mengajukan ulang untuk tanggal tertentu.
+                </p>
             )}
 
             <div className="flex flex-col gap-1 mb-6">
@@ -96,6 +117,7 @@ const ApproveRejectModal = ({
                 <Button
                     variant="solid"
                     loading={submitting}
+                    disabled={tanggalKosong}
                     customColorClass={() =>
                         isApprove
                             ? 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'
