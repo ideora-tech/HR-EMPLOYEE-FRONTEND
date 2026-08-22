@@ -887,6 +887,7 @@ export interface ICoachPublic {
     bio: string | null
     foto_url: string | null
     spesialisasi: string | null
+    username: string | null
     aktif: number
     dibuat_pada: string | null
     diubah_pada: string | null
@@ -895,6 +896,7 @@ export interface ICoachPublic {
 export interface ICreateCoach {
     id_karyawan: string
     password: string
+    username?: string
     tarif_per_sesi?: number
     no_rekening?: string
     nama_bank?: string
@@ -904,6 +906,8 @@ export interface ICreateCoach {
 }
 
 export interface IUpdateCoach {
+    username?: string
+    password?: string
     tarif_per_sesi?: number
     no_rekening?: string
     nama_bank?: string
