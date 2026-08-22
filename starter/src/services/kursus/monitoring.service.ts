@@ -10,11 +10,13 @@ import type {
 
 const MonitoringService = {
     async getPresensiSiswa(
-        query: Pick<IPresensiQuery, 'tanggal' | 'bulan' | 'page' | 'limit'>,
+        query: Pick<IPresensiQuery, 'tanggal' | 'bulan' | 'dari' | 'sampai' | 'page' | 'limit'>,
     ): Promise<ApiPaginatedResponse<IPresensi>> {
         const params = new URLSearchParams()
         if (query.tanggal) params.append('tanggal', query.tanggal)
         if (query.bulan) params.append('bulan', query.bulan)
+        if (query.dari) params.append('dari', query.dari)
+        if (query.sampai) params.append('sampai', query.sampai)
         if (query.page) params.append('page', String(query.page))
         if (query.limit) params.append('limit', String(query.limit))
 
@@ -30,11 +32,13 @@ const MonitoringService = {
     },
 
     async getAbsensiCoach(
-        query: Pick<IAbsensiCoachQuery, 'tanggal' | 'bulan' | 'page' | 'limit'>,
+        query: Pick<IAbsensiCoachQuery, 'tanggal' | 'bulan' | 'dari' | 'sampai' | 'page' | 'limit'>,
     ): Promise<ApiPaginatedResponse<IAbsensiCoachPublic>> {
         const params = new URLSearchParams()
         if (query.tanggal) params.append('tanggal', query.tanggal)
         if (query.bulan) params.append('bulan', query.bulan)
+        if (query.dari) params.append('dari', query.dari)
+        if (query.sampai) params.append('sampai', query.sampai)
         if (query.page) params.append('page', String(query.page))
         if (query.limit) params.append('limit', String(query.limit))
 

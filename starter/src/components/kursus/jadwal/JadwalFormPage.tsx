@@ -19,11 +19,12 @@ import type {
     ICreateJadwalKelas,
     IUpdateJadwalKelas,
 } from '@/@types/kursus.types'
+import type { MultiValue } from 'react-select'
 
 /* ─── option types ─────────────────────────────────────── */
 
 type PaketOption = { value: string; label: string }
-type KelasOption = { value: string; label: string }
+type KelasOption = { value: string; label: string; idPaket: string | null }
 type KaryawanOption = { value: string; label: string }
 type KategoriOption = { value: string; label: string }
 type HariOption = { value: string; label: string }
@@ -45,7 +46,7 @@ const HARI_OPTIONS: HariOption[] = [
 export interface JadwalFormPageProps {
     editData?: IJadwalKelas | null
     submitting?: boolean
-    onSubmit: (payload: ICreateJadwalKelas | IUpdateJadwalKelas) => void
+    onSubmit: (payload: ICreateJadwalKelas[] | IUpdateJadwalKelas) => void
     onCancel: () => void
 }
 
@@ -55,6 +56,7 @@ interface FormState {
     id_karyawan: string
     id_kategori_umur: string
     hari: string
+    hariList: string[]
     jam_mulai: string
     jam_selesai: string
     kuota: string
@@ -68,6 +70,7 @@ const INITIAL_STATE: FormState = {
     id_karyawan: '',
     id_kategori_umur: '',
     hari: '',
+    hariList: [],
     jam_mulai: '08:00',
     jam_selesai: '09:00',
     kuota: '1',
@@ -104,7 +107,13 @@ const JadwalFormPage = ({
                 PaketService.getAll({ aktif: 1, limit: 200 }),
             ])
             if (kelasRes.success)
-                setKelasOptions(kelasRes.data.map((k) => ({ value: k.id_kelas, label: k.nama_kelas })))
+                setKelasOptions(
+                    kelasRes.data.map((k) => ({
+                        value: k.id_kelas,
+                        label: k.nama_kelas,
+                        idPaket: k.id_paket ?? null,
+                    })),
+                )
             if (karyawanRes.success)
                 setKaryawanOptions(karyawanRes.data.map((k) => ({ value: k.id_karyawan, label: k.nama_karyawan })))
             if (paketRes.success)
@@ -140,6 +149,7 @@ const JadwalFormPage = ({
                 id_karyawan: editData.id_karyawan ?? '',
                 id_kategori_umur: editData.id_kategori_umur,
                 hari: editData.hari,
+                hariList: [],
                 jam_mulai: editData.jam_mulai,
                 jam_selesai: editData.jam_selesai,
                 kuota: String(editData.kuota),
@@ -153,9 +163,36 @@ const JadwalFormPage = ({
         setErrors({})
     }, [editData, loadKategori])
 
+    /* ─── prefill paket from the kelas being edited (dropdowns load async) ── */
+    useEffect(() => {
+        if (!editData) return
+        const kelasOpt = kelasOptions.find((o) => o.value === editData.id_kelas)
+        if (!kelasOpt || !kelasOpt.idPaket) return
+        setForm((p) => (p.id_paket === '' ? { ...p, id_paket: kelasOpt.idPaket as string } : p))
+    }, [editData, kelasOptions])
+
     const handleKelasChange = (idKelas: string) => {
         setForm((p) => ({ ...p, id_kelas: idKelas, id_kategori_umur: '' }))
         loadKategori(idKelas)
+    }
+
+    const handlePaketChange = (opt: PaketOption | null) => {
+        const newPaket = opt ? opt.value : ''
+        const currentKelas = kelasOptions.find((o) => o.value === form.id_kelas)
+        const kelasBelongsToNewPaket =
+            !newPaket || !currentKelas || currentKelas.idPaket === newPaket
+
+        if (!kelasBelongsToNewPaket) {
+            setForm((p) => ({
+                ...p,
+                id_paket: newPaket,
+                id_kelas: '',
+                id_kategori_umur: '',
+            }))
+            setKategoriOptions([])
+        } else {
+            setForm((p) => ({ ...p, id_paket: newPaket }))
+        }
     }
 
     /* ─── validation ───────────────────────────────────── */
@@ -163,7 +200,11 @@ const JadwalFormPage = ({
         const e: Partial<Record<keyof FormState, string>> = {}
         if (!form.id_kelas) e.id_kelas = 'Kelas wajib dipilih'
         if (!form.id_kategori_umur) e.id_kategori_umur = 'Kategori umur wajib dipilih'
-        if (!form.hari) e.hari = 'Hari wajib dipilih'
+        if (isEdit) {
+            if (!form.hari) e.hari = 'Hari wajib dipilih'
+        } else {
+            if (form.hariList.length === 0) e.hariList = 'Pilih minimal satu hari'
+        }
         if (!form.jam_mulai) e.jam_mulai = 'Jam mulai wajib diisi'
         if (!form.jam_selesai) e.jam_selesai = 'Jam selesai wajib diisi'
         if (!form.kuota || Number(form.kuota) < 1)
@@ -179,16 +220,22 @@ const JadwalFormPage = ({
             id_kelas: form.id_kelas,
             id_karyawan: form.id_karyawan || null, // null = tanpa coach (backend menormalkan ke NULL & mengosongkan nama)
             id_kategori_umur: form.id_kategori_umur,
-            hari: form.hari,
             jam_mulai: form.jam_mulai,
             jam_selesai: form.jam_selesai,
             kuota: Number(form.kuota),
             deskripsi: form.deskripsi.trim() || undefined,
         }
         if (isEdit) {
-            onSubmit({ ...base, aktif: form.aktif ? 1 : 0 } as IUpdateJadwalKelas)
+            onSubmit({ ...base, hari: form.hari, aktif: form.aktif ? 1 : 0 } as IUpdateJadwalKelas)
         } else {
-            onSubmit(base as ICreateJadwalKelas)
+            // urutkan Senin → Minggu, bukan urutan klik pengguna
+            const selectedHari = HARI_OPTIONS.filter((o) => form.hariList.includes(o.value)).map(
+                (o) => o.value,
+            )
+            const payloads: ICreateJadwalKelas[] = selectedHari.map(
+                (hari) => ({ ...base, hari }) as ICreateJadwalKelas,
+            )
+            onSubmit(payloads)
         }
     }
 
@@ -236,7 +283,7 @@ const JadwalFormPage = ({
                                     isLoading={loadingDropdowns}
                                     isClearable
                                     value={paketOptions.find((o) => o.value === form.id_paket) ?? null}
-                                    onChange={(opt) => setForm((p) => ({ ...p, id_paket: opt ? (opt as PaketOption).value : '' }))}
+                                    onChange={(opt) => handlePaketChange(opt as PaketOption | null)}
                                 />
                             </FormItem>
 
@@ -248,7 +295,11 @@ const JadwalFormPage = ({
                             >
                                 <Select<KelasOption>
                                     placeholder="— Pilih Kelas —"
-                                    options={kelasOptions}
+                                    options={
+                                        form.id_paket
+                                            ? kelasOptions.filter((o) => o.idPaket === form.id_paket)
+                                            : kelasOptions
+                                    }
                                     isLoading={loadingDropdowns}
                                     value={kelasOptions.find((o) => o.value === form.id_kelas) ?? null}
                                     onChange={(opt) => handleKelasChange((opt as KelasOption).value)}
@@ -295,19 +346,69 @@ const JadwalFormPage = ({
                             <h5 className="font-semibold">Jadwal Pelaksanaan</h5>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                            <FormItem
-                                label="Hari"
-                                asterisk
-                                invalid={!!errors.hari}
-                                errorMessage={errors.hari}
-                            >
-                                <Select<HariOption>
-                                    placeholder="— Pilih Hari —"
-                                    options={HARI_OPTIONS}
-                                    value={HARI_OPTIONS.find((o) => o.value === form.hari) ?? null}
-                                    onChange={(opt) => setForm((p) => ({ ...p, hari: (opt as HariOption).value }))}
-                                />
-                            </FormItem>
+                            {isEdit ? (
+                                <FormItem
+                                    label="Hari"
+                                    asterisk
+                                    invalid={!!errors.hari}
+                                    errorMessage={errors.hari}
+                                >
+                                    <Select<HariOption>
+                                        placeholder="— Pilih Hari —"
+                                        options={HARI_OPTIONS}
+                                        value={HARI_OPTIONS.find((o) => o.value === form.hari) ?? null}
+                                        onChange={(opt) => setForm((p) => ({ ...p, hari: (opt as HariOption).value }))}
+                                    />
+                                </FormItem>
+                            ) : (
+                                <FormItem
+                                    label="Hari"
+                                    asterisk
+                                    invalid={!!errors.hariList}
+                                    errorMessage={errors.hariList}
+                                    extra={
+                                        <span className="inline-flex items-center gap-2 ltr:ml-2 rtl:mr-2 normal-case font-normal">
+                                            <button
+                                                type="button"
+                                                className="text-xs text-primary hover:underline"
+                                                onClick={() =>
+                                                    setForm((p) => ({
+                                                        ...p,
+                                                        hariList: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'],
+                                                    }))
+                                                }
+                                            >
+                                                Senin–Jumat
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="text-xs text-primary hover:underline"
+                                                onClick={() =>
+                                                    setForm((p) => ({
+                                                        ...p,
+                                                        hariList: HARI_OPTIONS.map((o) => o.value),
+                                                    }))
+                                                }
+                                            >
+                                                Semua hari
+                                            </button>
+                                        </span>
+                                    }
+                                >
+                                    <Select<HariOption, true>
+                                        isMulti
+                                        placeholder="— Pilih Hari —"
+                                        options={HARI_OPTIONS}
+                                        value={HARI_OPTIONS.filter((o) => form.hariList.includes(o.value))}
+                                        onChange={(opts) =>
+                                            setForm((p) => ({
+                                                ...p,
+                                                hariList: (opts as MultiValue<HariOption>).map((o) => o.value),
+                                            }))
+                                        }
+                                    />
+                                </FormItem>
+                            )}
 
                             <FormItem
                                 label="Kuota"

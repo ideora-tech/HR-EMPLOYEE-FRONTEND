@@ -8,6 +8,7 @@ import { toast } from '@/components/ui/toast'
 import Notification from '@/components/ui/Notification'
 import DataTable from '@/components/shared/DataTable'
 import { parseApiError } from '@/utils/parseApiError'
+import { formatTanggal } from '@/utils/formatTanggal'
 import MonitoringService from '@/services/kursus/monitoring.service'
 import type { IPresensi, IAbsensiCoachPublic } from '@/@types/kursus.types'
 
@@ -20,11 +21,12 @@ function dateToStr(d: Date): string {
     return `${y}-${m}-${day}`
 }
 
-function fmtTanggal(str: string): string {
-    if (!str) return '-'
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-    const [y, m, d] = str.split('-')
-    return `${d} ${months[parseInt(m, 10) - 1]} ${y}`
+/** Default range: 7 hari terakhir (hari ini − 6 hari s/d hari ini). */
+function getDefaultRange(): [Date, Date] {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - 6)
+    return [start, end]
 }
 
 function fmtTime(val: string | null | undefined): string {
@@ -35,11 +37,10 @@ function fmtTime(val: string | null | undefined): string {
 
 // ─── status helpers ────────────────────────────────────────────────────────────
 
-const PRESENSI_STATUS: Record<number, { label: string; cls: string }> = {
-    1: { label: 'Hadir',       cls: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300' },
-    2: { label: 'Tidak Hadir', cls: 'bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-400' },
-    3: { label: 'Sakit',       cls: 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300' },
-    4: { label: 'Izin',        cls: 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-300' },
+function presensiBadge(status: number): { label: string; cls: string } {
+    return status === 1
+        ? { label: 'Hadir',       cls: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300' }
+        : { label: 'Tidak Hadir', cls: 'bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-400' }
 }
 
 function getCoachStatus(item: IAbsensiCoachPublic): { label: string; cls: string } {
@@ -71,8 +72,14 @@ const TABS: { key: TabKey; label: string }[] = [
 
 export default function MonitoringPage() {
     const [activeTab, setActiveTab] = useState<TabKey>('siswa')
-    const [tanggalDate, setTanggalDate] = useState<Date>(() => new Date())
-    const tanggal = dateToStr(tanggalDate)
+    const [range, setRange] = useState<[Date, Date]>(getDefaultRange)
+    // Nilai mentah picker: saat user baru memilih tanggal pertama, nilainya [start, null].
+    // Harus ikut disimpan agar picker (controlled) bisa menampilkan pilihan pertama;
+    // `range` (dan fetch) hanya berubah setelah kedua tanggal lengkap.
+    const [pickerValue, setPickerValue] = useState<[Date | null, Date | null]>(getDefaultRange)
+    const dari = dateToStr(range[0])
+    const sampai = dateToStr(range[1])
+    const subtitle = dari === sampai ? formatTanggal(dari) : `${formatTanggal(dari)} – ${formatTanggal(sampai)}`
 
     // Siswa state
     const [siswaList, setSiswaList]     = useState<IPresensi[]>([])
@@ -91,7 +98,7 @@ export default function MonitoringPage() {
     const fetchPresensi = useCallback(async (page = siswaPage) => {
         setLoadingSiswa(true)
         try {
-            const res = await MonitoringService.getPresensiSiswa({ tanggal, page, limit: siswaPageSize })
+            const res = await MonitoringService.getPresensiSiswa({ dari, sampai, page, limit: siswaPageSize })
             setSiswaList(res.data ?? [])
             setSiswaTotal(res.meta?.total ?? 0)
         } catch (err) {
@@ -99,12 +106,12 @@ export default function MonitoringPage() {
         } finally {
             setLoadingSiswa(false)
         }
-    }, [tanggal, siswaPage, siswaPageSize])
+    }, [dari, sampai, siswaPage, siswaPageSize])
 
     const fetchCoach = useCallback(async (page = coachPage) => {
         setLoadingCoach(true)
         try {
-            const res = await MonitoringService.getAbsensiCoach({ tanggal, page, limit: coachPageSize })
+            const res = await MonitoringService.getAbsensiCoach({ dari, sampai, page, limit: coachPageSize })
             setCoachList(res.data ?? [])
             setCoachTotal(res.meta?.total ?? 0)
         } catch (err) {
@@ -112,16 +119,18 @@ export default function MonitoringPage() {
         } finally {
             setLoadingCoach(false)
         }
-    }, [tanggal, coachPage, coachPageSize])
+    }, [dari, sampai, coachPage, coachPageSize])
 
-    useEffect(() => { setSiswaPage(1); fetchPresensi(1) }, [tanggal]) // eslint-disable-line react-hooks/exhaustive-deps
-    useEffect(() => { setCoachPage(1); fetchCoach(1) },   [tanggal]) // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => { setSiswaPage(1); fetchPresensi(1) }, [dari, sampai]) // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => { setCoachPage(1); fetchCoach(1) },   [dari, sampai]) // eslint-disable-line react-hooks/exhaustive-deps
 
     // ─── columns ─────────────────────────────────────────────────────────────
 
     const siswaColumns: ColumnDef<IPresensi>[] = [
         { header: 'No', id: 'no', size: 60,
           cell: ({ row }) => (siswaPage - 1) * siswaPageSize + row.index + 1 },
+        { header: 'Tanggal', id: 'tanggal', size: 120,
+          cell: ({ row }) => formatTanggal(row.original.tanggal) },
         { header: 'Nama Siswa', accessorKey: 'nama_siswa', size: 220,
           cell: ({ row }) => (
               <span className="font-medium text-gray-800 dark:text-gray-100">
@@ -139,7 +148,7 @@ export default function MonitoringPage() {
           } },
         { header: 'Status', id: 'status', size: 140,
           cell: ({ row }) => {
-              const s = PRESENSI_STATUS[row.original.status] ?? { label: '-', cls: '' }
+              const s = presensiBadge(row.original.status)
               return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${s.cls}`}>{s.label}</span>
           } },
     ]
@@ -147,6 +156,8 @@ export default function MonitoringPage() {
     const coachColumns: ColumnDef<IAbsensiCoachPublic>[] = [
         { header: 'No', id: 'no', size: 60,
           cell: ({ row }) => (coachPage - 1) * coachPageSize + row.index + 1 },
+        { header: 'Tanggal', id: 'tanggal', size: 120,
+          cell: ({ row }) => formatTanggal(row.original.tanggal) },
         { header: 'Nama Coach', id: 'coach', size: 220,
           cell: ({ row }) => (
               <span className="font-medium text-gray-800 dark:text-gray-100">
@@ -182,9 +193,7 @@ export default function MonitoringPage() {
 
     const siswaStats = {
         hadir:      siswaList.filter(e => e.status === 1).length,
-        tidakHadir: siswaList.filter(e => e.status === 2).length,
-        sakit:      siswaList.filter(e => e.status === 3).length,
-        izin:       siswaList.filter(e => e.status === 4).length,
+        tidakHadir: siswaList.filter(e => e.status === 2 || e.status === 3 || e.status === 4).length,
     }
     const coachStats = {
         checkin: coachList.filter(e => !!e.waktu_checkin).length,
@@ -202,18 +211,22 @@ export default function MonitoringPage() {
                     <div>
                         <h4 className="mb-0">Monitoring Kehadiran</h4>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                            {fmtTanggal(tanggal)}
+                            {subtitle}
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <DatePicker
-                            value={tanggalDate}
-                            onChange={(date) => {
-                                if (date) setTanggalDate(date)
+                        <DatePicker.DatePickerRange
+                            value={pickerValue}
+                            onChange={(value) => {
+                                setPickerValue(value)
+                                const [start, end] = value
+                                if (start && end) {
+                                    setRange(start <= end ? [start, end] : [end, start])
+                                }
                             }}
                             inputtable
                             clearable={false}
-                            placeholder="Pilih tanggal"
+                            placeholder="Pilih rentang tanggal"
                         />
                         <Button
                             size="sm"
@@ -256,8 +269,6 @@ export default function MonitoringPage() {
                                 <StatChip label="Total"       count={siswaList.length}      color="border-gray-200 text-gray-600 bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:bg-gray-700" />
                                 <StatChip label="Hadir"       count={siswaStats.hadir}      color="border-emerald-200 text-emerald-600 bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-400 dark:bg-emerald-500/10" />
                                 <StatChip label="Tidak Hadir" count={siswaStats.tidakHadir} color="border-red-200 text-red-500 bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:bg-red-500/10" />
-                                <StatChip label="Sakit"       count={siswaStats.sakit}      color="border-amber-200 text-amber-600 bg-amber-50 dark:border-amber-500/30 dark:text-amber-400 dark:bg-amber-500/10" />
-                                <StatChip label="Izin"        count={siswaStats.izin}       color="border-blue-200 text-blue-600 bg-blue-50 dark:border-blue-500/30 dark:text-blue-400 dark:bg-blue-500/10" />
                             </div>
                             <DataTable
                                 columns={siswaColumns}

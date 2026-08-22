@@ -700,6 +700,8 @@ export interface IPresensiQuery {
     search?: string
     bulan?: string                 // "YYYY-MM"
     tanggal?: string               // "YYYY-MM-DD"
+    dari?: string                  // "YYYY-MM-DD" — batas bawah tanggal, inklusif
+    sampai?: string                // "YYYY-MM-DD" — batas atas tanggal, inklusif
     id_jadwal_kelas?: string
     id_siswa?: string
     page?: number
@@ -1013,6 +1015,8 @@ export interface IAbsensiCoachQuery {
     limit?: number
     id_coach?: string
     tanggal?: string               // "YYYY-MM-DD"
+    dari?: string                  // "YYYY-MM-DD" — batas bawah tanggal, inklusif
+    sampai?: string                // "YYYY-MM-DD" — batas atas tanggal, inklusif
     bulan?: string                 // "YYYY-MM"
 }
 

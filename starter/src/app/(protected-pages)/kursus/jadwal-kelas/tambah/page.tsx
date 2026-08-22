@@ -14,20 +14,49 @@ const TambahJadwalKelasPage = () => {
     const router = useRouter()
     const [submitting, setSubmitting] = useState(false)
 
-    const handleSubmit = async (payload: ICreateJadwalKelas | IUpdateJadwalKelas) => {
+    const handleSubmit = async (payload: ICreateJadwalKelas[] | IUpdateJadwalKelas) => {
+        // Halaman ini hanya pernah render JadwalFormPage tanpa editData, sehingga
+        // JadwalFormPage selalu mengirim array (satu ICreateJadwalKelas per hari terpilih).
+        const items = payload as ICreateJadwalKelas[]
+        const failures: { hari: string; error: string }[] = []
+        let successCount = 0
+
         setSubmitting(true)
         try {
-            await JadwalKelasService.create(payload as ICreateJadwalKelas)
-            toast.push(
-                <Notification type="success" title={MESSAGES.SUCCESS.CREATED(ENTITY.JADWAL_KELAS)} />,
-            )
-            router.push(ROUTES.KURSUS_JADWAL)
-        } catch (err) {
-            toast.push(
-                <Notification type="danger" title={MESSAGES.ERROR.CREATE(ENTITY.JADWAL_KELAS)}>
-                    {parseApiError(err)}
-                </Notification>,
-            )
+            for (const item of items) {
+                try {
+                    await JadwalKelasService.create(item)
+                    successCount++
+                } catch (err) {
+                    failures.push({ hari: item.hari, error: parseApiError(err) })
+                }
+            }
+
+            if (failures.length === 0) {
+                toast.push(
+                    <Notification type="success" title={`${successCount} jadwal berhasil dibuat`} />,
+                )
+                router.push(ROUTES.KURSUS_JADWAL)
+                return
+            }
+
+            const failureText = failures.map((f) => `${f.hari} — ${f.error}`).join('; ')
+
+            if (successCount > 0) {
+                toast.push(
+                    <Notification
+                        type="warning"
+                        title={`${successCount} jadwal dibuat. Gagal: ${failureText}`}
+                    />,
+                )
+                router.push(ROUTES.KURSUS_JADWAL)
+            } else {
+                toast.push(
+                    <Notification type="danger" title={MESSAGES.ERROR.CREATE(ENTITY.JADWAL_KELAS)}>
+                        {failureText}
+                    </Notification>,
+                )
+            }
         } finally {
             setSubmitting(false)
         }

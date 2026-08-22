@@ -8,7 +8,7 @@ import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import { ROUTES } from '@/constants/route.constant'
-import type { IJadwalKelas, IUpdateJadwalKelas } from '@/@types/kursus.types'
+import type { IJadwalKelas, ICreateJadwalKelas, IUpdateJadwalKelas } from '@/@types/kursus.types'
 
 const EditJadwalKelasPage = () => {
     const router = useRouter()
@@ -35,11 +35,14 @@ const EditJadwalKelasPage = () => {
             .finally(() => setLoading(false))
     }, [id, router])
 
-    const handleSubmit = async (payload: IUpdateJadwalKelas) => {
+    const handleSubmit = async (payload: ICreateJadwalKelas[] | IUpdateJadwalKelas) => {
         if (!editData) return
+        // Halaman ini selalu render JadwalFormPage dengan editData, sehingga
+        // JadwalFormPage selalu mengirim satu IUpdateJadwalKelas (bukan array).
+        const data = payload as IUpdateJadwalKelas
         setSubmitting(true)
         try {
-            await JadwalKelasService.update(editData.id_jadwal_kelas, payload)
+            await JadwalKelasService.update(editData.id_jadwal_kelas, data)
             toast.push(
                 <Notification type="success" title={MESSAGES.SUCCESS.UPDATED(ENTITY.JADWAL_KELAS)} />,
             )
