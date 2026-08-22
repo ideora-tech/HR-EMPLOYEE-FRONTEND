@@ -26,7 +26,10 @@ import type { MultiValue } from 'react-select'
 type PaketOption = { value: string; label: string }
 type KelasOption = { value: string; label: string; idPaket: string | null }
 type KaryawanOption = { value: string; label: string }
-type KategoriOption = { value: string; label: string }
+type KategoriOption = { value: string; label: string; idPaket: string | null }
+/** Baris kategori umur yang dipakai sebagai jembatan paket ↔ kelas
+ *  (kursus_kelas.id_paket umumnya kosong; relasi nyata ada di kategori umur). */
+type KategoriRow = { id_kategori_umur: string; id_kelas: string; id_paket: string | null }
 type HariOption = { value: string; label: string }
 
 /* ─── constants ────────────────────────────────────────── */
@@ -93,7 +96,19 @@ const JadwalFormPage = ({
     const [kelasOptions, setKelasOptions] = useState<KelasOption[]>([])
     const [karyawanOptions, setKaryawanOptions] = useState<KaryawanOption[]>([])
     const [kategoriOptions, setKategoriOptions] = useState<KategoriOption[]>([])
+    const [kategoriAll, setKategoriAll] = useState<KategoriRow[]>([])
     const [loadingDropdowns, setLoadingDropdowns] = useState(false)
+
+    /** Kelas yang punya kategori umur (atau penanda langsung) untuk paket tertentu. */
+    const kelasIdsUntukPaket = useCallback(
+        (idPaket: string): Set<string> => {
+            const ids = new Set<string>()
+            kategoriAll.forEach((k) => { if (k.id_paket === idPaket) ids.add(k.id_kelas) })
+            kelasOptions.forEach((o) => { if (o.idPaket === idPaket) ids.add(o.value) })
+            return ids
+        },
+        [kategoriAll, kelasOptions],
+    )
 
     const isEdit = !!editData
 
@@ -101,11 +116,20 @@ const JadwalFormPage = ({
     const loadDropdowns = useCallback(async () => {
         setLoadingDropdowns(true)
         try {
-            const [kelasRes, karyawanRes, paketRes] = await Promise.all([
+            const [kelasRes, karyawanRes, paketRes, kategoriRes] = await Promise.all([
                 KelasService.getAll({ aktif: 1, limit: 200 }),
                 CoachService.getAll({ aktif: 1, limit: 200 }),
                 PaketService.getAll({ aktif: 1, limit: 200 }),
+                KategoriUmurService.getAll({ aktif: 1, limit: 500 }),
             ])
+            if (kategoriRes.success)
+                setKategoriAll(
+                    kategoriRes.data.map((k) => ({
+                        id_kategori_umur: k.id_kategori_umur,
+                        id_kelas: k.id_kelas,
+                        id_paket: k.id_paket ?? null,
+                    })),
+                )
             if (kelasRes.success)
                 setKelasOptions(
                     kelasRes.data.map((k) => ({
@@ -131,7 +155,13 @@ const JadwalFormPage = ({
         try {
             const res = await KategoriUmurService.getByKelas(idKelas)
             if (res.success)
-                setKategoriOptions(res.data.map((k) => ({ value: k.id_kategori_umur, label: k.nama_kategori_umur })))
+                setKategoriOptions(
+                    res.data.map((k) => ({
+                        value: k.id_kategori_umur,
+                        label: k.nama_kategori_umur,
+                        idPaket: k.id_paket ?? null,
+                    })),
+                )
         } catch {
             setKategoriOptions([])
         }
@@ -166,10 +196,13 @@ const JadwalFormPage = ({
     /* ─── prefill paket from the kelas being edited (dropdowns load async) ── */
     useEffect(() => {
         if (!editData) return
-        const kelasOpt = kelasOptions.find((o) => o.value === editData.id_kelas)
-        if (!kelasOpt || !kelasOpt.idPaket) return
-        setForm((p) => (p.id_paket === '' ? { ...p, id_paket: kelasOpt.idPaket as string } : p))
-    }, [editData, kelasOptions])
+        // Paket diambil dari kategori umur jadwal (relasi nyata), cadangan: penanda di kelas.
+        const dariKategori = kategoriAll.find((k) => k.id_kategori_umur === editData.id_kategori_umur)?.id_paket
+        const dariKelas = kelasOptions.find((o) => o.value === editData.id_kelas)?.idPaket
+        const idPaket = dariKategori ?? dariKelas
+        if (!idPaket) return
+        setForm((p) => (p.id_paket === '' ? { ...p, id_paket: idPaket } : p))
+    }, [editData, kelasOptions, kategoriAll])
 
     const handleKelasChange = (idKelas: string) => {
         setForm((p) => ({ ...p, id_kelas: idKelas, id_kategori_umur: '' }))
@@ -178,9 +211,8 @@ const JadwalFormPage = ({
 
     const handlePaketChange = (opt: PaketOption | null) => {
         const newPaket = opt ? opt.value : ''
-        const currentKelas = kelasOptions.find((o) => o.value === form.id_kelas)
         const kelasBelongsToNewPaket =
-            !newPaket || !currentKelas || currentKelas.idPaket === newPaket
+            !newPaket || !form.id_kelas || kelasIdsUntukPaket(newPaket).has(form.id_kelas)
 
         if (!kelasBelongsToNewPaket) {
             setForm((p) => ({
@@ -297,7 +329,7 @@ const JadwalFormPage = ({
                                     placeholder="— Pilih Kelas —"
                                     options={
                                         form.id_paket
-                                            ? kelasOptions.filter((o) => o.idPaket === form.id_paket)
+                                            ? kelasOptions.filter((o) => kelasIdsUntukPaket(form.id_paket).has(o.value))
                                             : kelasOptions
                                     }
                                     isLoading={loadingDropdowns}
@@ -329,7 +361,11 @@ const JadwalFormPage = ({
                             >
                                 <Select<KategoriOption>
                                     placeholder={form.id_kelas ? '— Pilih Kategori Umur —' : 'Pilih kelas dahulu'}
-                                    options={kategoriOptions}
+                                    options={
+                                        form.id_paket
+                                            ? kategoriOptions.filter((o) => o.idPaket === form.id_paket || o.idPaket === null)
+                                            : kategoriOptions
+                                    }
                                     isDisabled={!form.id_kelas}
                                     value={kategoriOptions.find((o) => o.value === form.id_kategori_umur) ?? null}
                                     onChange={(opt) => setForm((p) => ({ ...p, id_kategori_umur: (opt as KategoriOption).value }))}
