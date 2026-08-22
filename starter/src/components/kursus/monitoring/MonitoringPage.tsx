@@ -229,7 +229,7 @@ export default function MonitoringPage() {
                             {subtitle}
                         </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2 max-w-full">
                         <DatePicker.DatePickerRange
                             value={pickerValue}
                             onChange={(value) => {

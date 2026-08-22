@@ -388,8 +388,8 @@ const IzinPeranPage = () => {
                 bodyClass="p-0"
             >
                 {/* Selector row */}
-                <div className="flex items-center gap-3 px-4 pb-3">
-                    <div className="w-72 shrink-0">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pb-3">
+                    <div className="w-full sm:w-72 shrink-0">
                         <Select<PeranOption>
                             placeholder={
                                 loadingPeran ? 'Memuat peran...' : 'Pilih peran...'
@@ -407,7 +407,7 @@ const IzinPeranPage = () => {
 
                     {selectedPeran && (
                         <Input
-                            className="flex-1"
+                            className="flex-1 w-full"
                             placeholder="Cari nama menu..."
                             suffix={
                                 searchInput ? (

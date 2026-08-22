@@ -115,7 +115,7 @@ const SiswaPage = () => {
             <Card bodyClass="p-0">
                 <div className="flex items-center justify-between px-4 pt-4 pb-0 gap-3">
                     <h4>Manajemen Siswa</h4>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2 max-w-full">
                         <Button
                             size="sm"
                             variant="default"
@@ -147,9 +147,9 @@ const SiswaPage = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pt-4 pb-3">
                     <Input
-                        className="flex-1"
+                        className="flex-1 w-full"
                         placeholder="Cari nama, email, telepon... (tekan Enter)"
                         suffix={
                             searchInput ? (
@@ -180,7 +180,7 @@ const SiswaPage = () => {
                             }
                         }}
                     />
-                    <div className="w-44 shrink-0">
+                    <div className="w-full sm:w-44 shrink-0">
                         <Select<AktifOption>
                             options={AKTIF_OPTIONS}
                             value={AKTIF_OPTIONS.find((o) => o.value === aktifFilter) ?? AKTIF_OPTIONS[0]}

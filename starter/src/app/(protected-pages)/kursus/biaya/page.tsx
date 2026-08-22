@@ -234,9 +234,9 @@ const BiayaPage = () => {
                     {/* Tab: Biaya */}
                     {activeTab === 'biaya' && (
                         <>
-                            <div className="flex items-center gap-3 px-4 pb-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pb-3">
                                 <Input
-                                    className="flex-1"
+                                    className="flex-1 w-full"
                                     placeholder="Cari nama biaya... (tekan Enter)"
                                     suffix={
                                         biayaSearchInput ? (
@@ -255,7 +255,7 @@ const BiayaPage = () => {
                                     }}
                                 />
                                 <Select<AktifOption>
-                                    className="w-44"
+                                    className="w-full sm:w-44"
                                     placeholder="Semua Status"
                                     options={AKTIF_OPTIONS}
                                     value={AKTIF_OPTIONS.find((o) => o.value === biayaAktif) ?? AKTIF_OPTIONS[0]}
@@ -278,9 +278,9 @@ const BiayaPage = () => {
                     {/* Tab: Diskon */}
                     {activeTab === 'diskon' && (
                         <>
-                            <div className="flex items-center gap-3 px-4 pb-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pb-3">
                                 <Input
-                                    className="flex-1"
+                                    className="flex-1 w-full"
                                     placeholder="Cari kode / nama diskon... (tekan Enter)"
                                     suffix={
                                         diskonSearchInput ? (
@@ -299,7 +299,7 @@ const BiayaPage = () => {
                                     }}
                                 />
                                 <Select<AktifOption>
-                                    className="w-44"
+                                    className="w-full sm:w-44"
                                     placeholder="Semua Status"
                                     options={AKTIF_OPTIONS}
                                     value={AKTIF_OPTIONS.find((o) => o.value === diskonAktif) ?? AKTIF_OPTIONS[0]}

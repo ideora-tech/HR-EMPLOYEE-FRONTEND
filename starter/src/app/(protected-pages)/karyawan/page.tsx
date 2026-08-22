@@ -179,7 +179,8 @@ const KaryawanPage = () => {
                 header={{
                     content: <h4>Karyawan</h4>,
                     extra: (
-                        <div className="flex items-center gap-2">
+                        // Di layar sempit tombol turun baris, bukan mendorong kartu melebar.
+                        <div className="flex flex-wrap items-center justify-end gap-2 max-w-full">
                             <Button
                                 size="sm"
                                 variant="default"
@@ -221,9 +222,9 @@ const KaryawanPage = () => {
                 }}
                 bodyClass="p-0"
             >
-                <div className="flex items-center gap-3 px-4 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pb-3">
                     <Input
-                        className="flex-1"
+                        className="flex-1 w-full"
                         placeholder="Cari nama, NIK, email, telepon... (tekan Enter)"
                         suffix={
                             searchInput ? (
@@ -244,7 +245,7 @@ const KaryawanPage = () => {
                             if (e.key === 'Enter') handleSearchSubmit()
                         }}
                     />
-                    <div className="w-44 shrink-0">
+                    <div className="w-full sm:w-44 shrink-0">
                         <Select<AktifOption>
                             options={AKTIF_OPTIONS}
                             value={

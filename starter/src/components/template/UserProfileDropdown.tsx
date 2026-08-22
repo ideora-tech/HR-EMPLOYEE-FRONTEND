@@ -18,6 +18,26 @@ type DropdownList = {
 
 const dropdownItemList: DropdownList[] = []
 
+const ROLE_LABELS: Record<string, string> = {
+    SUPERADMIN: 'Super Admin',
+    OWNER: 'Owner',
+    HR_ADMIN: 'HR Admin',
+    FINANCE: 'Finance',
+    EMPLOYEE: 'Karyawan',
+    COACH: 'Coach',
+}
+
+const formatRole = (role?: string | null) => {
+    if (!role) return ''
+    return (
+        ROLE_LABELS[role] ??
+        role
+            .split('_')
+            .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+            .join(' ')
+    )
+}
+
 const _UserDropdown = () => {
     const { session } = useCurrentSession()
 
@@ -36,7 +56,15 @@ const _UserDropdown = () => {
             className="flex"
             toggleClassName="flex items-center"
             renderTitle={
-                <div className="cursor-pointer flex items-center">
+                <div className="cursor-pointer flex items-center gap-3">
+                    <div className="hidden md:flex flex-col items-end justify-center leading-tight">
+                        <span className="font-bold text-gray-900 dark:text-gray-100">
+                            {session?.user?.name || 'Anonymous'}
+                        </span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">
+                            {formatRole(session?.user?.role)}
+                        </span>
+                    </div>
                     <Avatar size={32} {...avatarProps} />
                 </div>
             }

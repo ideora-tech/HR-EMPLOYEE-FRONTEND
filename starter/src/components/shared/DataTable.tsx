@@ -373,7 +373,8 @@ function DataTable<T>(props: DataTableProps<T>) {
                     </TBody>
                 )}
             </Table>
-            <div className="flex items-center justify-between mt-4 px-4 pb-4">
+            {/* flex-wrap: di layar sempit pilihan "per page" turun ke baris berikutnya */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-4 px-4 pb-4">
                 <Pagination
                     pageSize={pageSize}
                     currentPage={pageIndex}

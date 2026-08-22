@@ -48,6 +48,7 @@ export const ROUTES = {
     KURSUS_PEMBAYARAN: '/kursus/pembayaran',
     KURSUS_MONITORING: '/kursus/monitoring',
     KURSUS_COACH: '/kursus/coach',
+    KURSUS_REMINDERS: '/kursus/reminders',
 
     LOG_ERROR: '/log-error',
     DEPARTEMEN: '/departemen',

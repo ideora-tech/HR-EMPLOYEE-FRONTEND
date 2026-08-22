@@ -139,9 +139,9 @@ const KaryawanKursusPage = () => {
                 }}
                 bodyClass="p-0"
             >
-                <div className="flex items-center gap-3 px-4 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pb-3">
                     <Input
-                        className="flex-1"
+                        className="flex-1 w-full"
                         placeholder="Cari nama atau email... (tekan Enter)"
                         suffix={
                             searchInput ? (
@@ -160,14 +160,14 @@ const KaryawanKursusPage = () => {
                         onChange={(e) => setSearchInput(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit() }}
                     />
-                    <div className="w-40 shrink-0">
+                    <div className="w-full sm:w-40 shrink-0">
                         <Select<AktifOption>
                             options={AKTIF_OPTIONS}
                             value={AKTIF_OPTIONS.find((o) => o.value === aktifFilter) ?? AKTIF_OPTIONS[0]}
                             onChange={(opt) => { setAktifFilter((opt as AktifOption).value); setPage(1) }}
                         />
                     </div>
-                    <div className="w-48 shrink-0">
+                    <div className="w-full sm:w-48 shrink-0">
                         <Select<JabatanOption>
                             options={jabatanOptions}
                             value={jabatanOptions.find((o) => o.value === jabatanFilter) ?? ALL_JABATAN}

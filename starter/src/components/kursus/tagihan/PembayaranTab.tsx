@@ -103,9 +103,9 @@ const PembayaranTab = () => {
 
     return (
         <>
-            <div className="flex items-center gap-3 px-4 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pb-3">
                 <Input
-                    className="flex-1"
+                    className="flex-1 w-full"
                     placeholder="Cari nama siswa... (tekan Enter)"
                     suffix={
                         searchInput ? (
@@ -125,7 +125,7 @@ const PembayaranTab = () => {
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit() }}
                 />
                 <Select
-                    className="w-48"
+                    className="w-full sm:w-48"
                     options={METODE_OPTIONS}
                     value={METODE_OPTIONS.find((o) => o.value === metodeFilter)}
                     onChange={(opt) => {

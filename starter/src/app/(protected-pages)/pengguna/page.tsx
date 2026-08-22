@@ -221,9 +221,9 @@ const PenggunaPage = () => {
                 bodyClass="p-0"
             >
                 {/* Filter row */}
-                <div className="flex items-center gap-3 px-4 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pb-3">
                     <Input
-                        className="flex-1"
+                        className="flex-1 w-full"
                         placeholder="Cari nama atau email... (tekan Enter)"
                         suffix={
                             searchInput ? (
@@ -244,7 +244,7 @@ const PenggunaPage = () => {
                             if (e.key === 'Enter') handleSearchSubmit()
                         }}
                     />
-                    <div className="w-44 shrink-0">
+                    <div className="w-full sm:w-44 shrink-0">
                         <Select<AktifOption>
                             options={AKTIF_OPTIONS}
                             value={

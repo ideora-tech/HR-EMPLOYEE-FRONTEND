@@ -169,9 +169,9 @@ const KaryawanExitPage = () => {
                 bodyClass="p-0"
             >
                 {/* ── filters ── */}
-                <div className="flex items-center gap-3 px-4 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pb-3">
                     <Input
-                        className="flex-1"
+                        className="flex-1 w-full"
                         placeholder="Cari nama atau NIK karyawan... (tekan Enter)"
                         suffix={
                             searchInput ? (
@@ -192,7 +192,7 @@ const KaryawanExitPage = () => {
                             if (e.key === 'Enter') handleSearchSubmit()
                         }}
                     />
-                    <div className="w-52 shrink-0">
+                    <div className="w-full sm:w-52 shrink-0">
                         <Select<JenisOption>
                             options={JENIS_OPTIONS}
                             value={

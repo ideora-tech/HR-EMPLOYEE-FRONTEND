@@ -135,9 +135,9 @@ const KelasTab = ({ pendingAdd, onPendingAddHandled }: KelasTabProps) => {
 
     return (
         <>
-            <div className="flex items-center gap-3 px-4 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pb-3">
                 <Input
-                    className="flex-1"
+                    className="flex-1 w-full"
                     placeholder="Cari nama kelas... (tekan Enter)"
                     suffix={
                         searchInput ? (
@@ -157,7 +157,7 @@ const KelasTab = ({ pendingAdd, onPendingAddHandled }: KelasTabProps) => {
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit() }}
                 />
                 <Select<AktifOption>
-                    className="w-44"
+                    className="w-full sm:w-44"
                     options={AKTIF_OPTIONS}
                     value={AKTIF_OPTIONS.find((o) => o.value === aktifFilter) ?? AKTIF_OPTIONS[0]}
                     onChange={(opt) => { setAktifFilter((opt as AktifOption).value); setCurrentPage(1) }}

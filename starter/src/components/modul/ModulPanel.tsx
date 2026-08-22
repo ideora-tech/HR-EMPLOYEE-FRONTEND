@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import {
     Button,
     Card,
@@ -19,12 +18,13 @@ import {
     HiOutlineSearch,
     HiOutlineX,
 } from 'react-icons/hi'
-import MenuTable from '@/components/menu/MenuTable'
-import MenuCard from '@/components/menu/MenuCard'
-import MenuService from '@/services/menu.service'
+import ModulTable from '@/components/modul/ModulTable'
+import ModulCard from '@/components/modul/ModulCard'
+import ModulForm from '@/components/modul/ModulForm'
+import ModulService from '@/services/modul.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
-import type { IMenu } from '@/@types/menu.types'
+import type { IModul, IModulCreate, IModulUpdate } from '@/@types/modul.types'
 
 type ViewMode = 'table' | 'card'
 type AktifOption = { value: '' | '1' | '0'; label: string }
@@ -35,10 +35,8 @@ const AKTIF_OPTIONS: AktifOption[] = [
     { value: '0', label: 'Nonaktif' },
 ]
 
-const MenuPage = () => {
-    const router = useRouter()
-    const [menuList, setMenuList] = useState<IMenu[]>([])
-    const [allMenus, setAllMenus] = useState<IMenu[]>([])
+const ModulPanel = () => {
+    const [modulList, setModulList] = useState<IModul[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [viewMode, setViewMode] = useState<ViewMode>('table')
@@ -50,32 +48,28 @@ const MenuPage = () => {
     const [pageSize, setPageSize] = useState(10)
     const [total, setTotal] = useState(0)
 
-    const [deleteTarget, setDeleteTarget] = useState<IMenu | null>(null)
+    const [formOpen, setFormOpen] = useState(false)
+    const [editTarget, setEditTarget] = useState<IModul | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<IModul | null>(null)
 
-    useEffect(() => {
-        MenuService.getAll({ limit: 500 })
-            .then((res) => { if (res.success) setAllMenus(res.data) })
-            .catch(() => {/* ignore */ })
-    }, [])
-
-    const fetchMenu = useCallback(async () => {
+    const fetchModul = useCallback(async () => {
         setLoading(true)
         try {
-            const res = await MenuService.getAll({
+            const res = await ModulService.getAll({
                 search: search || undefined,
                 aktif: aktifFilter !== '' ? Number(aktifFilter) : undefined,
                 page: currentPage,
                 limit: pageSize,
             })
             if (res.success) {
-                setMenuList(res.data)
+                setModulList(res.data)
                 setTotal(res.meta?.total ?? 0)
             }
         } catch (err) {
             toast.push(
                 <Notification
                     type="danger"
-                    title={MESSAGES.ERROR.FETCH(ENTITY.MENU)}
+                    title={MESSAGES.ERROR.FETCH(ENTITY.MODUL)}
                 >
                     {parseApiError(err)}
                 </Notification>,
@@ -86,8 +80,8 @@ const MenuPage = () => {
     }, [search, aktifFilter, currentPage, pageSize])
 
     useEffect(() => {
-        fetchMenu()
-    }, [fetchMenu])
+        fetchModul()
+    }, [fetchModul])
 
     const handleSearchSubmit = () => {
         setSearch(searchInput)
@@ -114,33 +108,77 @@ const MenuPage = () => {
         setCurrentPage(1)
     }, [])
 
-    const handleOpenEdit = useCallback(
-        (m: IMenu) => router.push(`/menu/${m.id_menu}/edit`),
-        [router],
-    )
+    const handleOpenEdit = useCallback((m: IModul) => {
+        setEditTarget(m)
+        setFormOpen(true)
+    }, [])
 
-    const handleOpenDelete = useCallback((m: IMenu) => {
+    const handleOpenDelete = useCallback((m: IModul) => {
         setDeleteTarget(m)
     }, [])
+
+    const handleSubmit = async (payload: IModulCreate | IModulUpdate) => {
+        setSubmitting(true)
+        try {
+            if (editTarget) {
+                await ModulService.update(
+                    editTarget.id_modul,
+                    payload as IModulUpdate,
+                )
+                toast.push(
+                    <Notification
+                        type="success"
+                        title={MESSAGES.SUCCESS.UPDATED(ENTITY.MODUL)}
+                    />,
+                )
+            } else {
+                await ModulService.create(payload as IModulCreate)
+                toast.push(
+                    <Notification
+                        type="success"
+                        title={MESSAGES.SUCCESS.CREATED(ENTITY.MODUL)}
+                    />,
+                )
+            }
+            setFormOpen(false)
+            setEditTarget(null)
+            fetchModul()
+        } catch (err) {
+            toast.push(
+                <Notification
+                    type="danger"
+                    title={
+                        editTarget
+                            ? MESSAGES.ERROR.UPDATE(ENTITY.MODUL)
+                            : MESSAGES.ERROR.CREATE(ENTITY.MODUL)
+                    }
+                >
+                    {parseApiError(err)}
+                </Notification>,
+            )
+        } finally {
+            setSubmitting(false)
+        }
+    }
 
     const handleDelete = async () => {
         if (!deleteTarget) return
         setSubmitting(true)
         try {
-            await MenuService.remove(deleteTarget.id_menu)
+            await ModulService.remove(deleteTarget.id_modul)
             toast.push(
                 <Notification
                     type="success"
-                    title={MESSAGES.SUCCESS.DELETED(ENTITY.MENU)}
+                    title={MESSAGES.SUCCESS.DELETED(ENTITY.MODUL)}
                 />,
             )
             setDeleteTarget(null)
-            fetchMenu()
+            fetchModul()
         } catch (err) {
             toast.push(
                 <Notification
                     type="danger"
-                    title={MESSAGES.ERROR.DELETE(ENTITY.MENU)}
+                    title={MESSAGES.ERROR.DELETE(ENTITY.MODUL)}
                 >
                     {parseApiError(err)}
                 </Notification>,
@@ -154,16 +192,19 @@ const MenuPage = () => {
         <div className="flex flex-col gap-4">
             <Card
                 header={{
-                    content: <h4>Manajemen Menu</h4>,
+                    content: <h4>Manajemen Modul</h4>,
                     extra: (
                         <Button
                             variant="solid"
                             size="sm"
                             customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                             icon={<HiPlusCircle />}
-                            onClick={() => router.push('/menu/tambah')}
+                            onClick={() => {
+                                setEditTarget(null)
+                                setFormOpen(true)
+                            }}
                         >
-                            Tambah Menu
+                            Tambah Modul
                         </Button>
                     ),
                     bordered: false,
@@ -174,7 +215,7 @@ const MenuPage = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pb-3">
                     <Input
                         className="flex-1 w-full"
-                        placeholder="Cari nama atau kode menu... (tekan Enter)"
+                        placeholder="Cari nama atau kode modul... (tekan Enter)"
                         suffix={
                             searchInput ? (
                                 <HiOutlineX
@@ -203,7 +244,9 @@ const MenuPage = () => {
                                 ) ?? AKTIF_OPTIONS[0]
                             }
                             onChange={(opt) =>
-                                handleFilterChange((opt as AktifOption).value)
+                                handleFilterChange(
+                                    (opt as AktifOption).value,
+                                )
                             }
                         />
                     </div>
@@ -211,8 +254,8 @@ const MenuPage = () => {
                         <button
                             title="Tabel"
                             className={`p-2 text-lg transition-colors ${viewMode === 'table'
-                                ? 'bg-indigo-600 text-white'
-                                : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
                                 }`}
                             onClick={() => setViewMode('table')}
                         >
@@ -221,8 +264,8 @@ const MenuPage = () => {
                         <button
                             title="Kartu"
                             className={`p-2 text-lg transition-colors ${viewMode === 'card'
-                                ? 'bg-indigo-600 text-white'
-                                : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
                                 }`}
                             onClick={() => setViewMode('card')}
                         >
@@ -233,9 +276,8 @@ const MenuPage = () => {
 
                 {/* Content */}
                 {viewMode === 'table' ? (
-                    <MenuTable
-                        data={menuList}
-                        allMenus={allMenus}
+                    <ModulTable
+                        data={modulList}
                         loading={loading}
                         pagingData={{
                             total,
@@ -251,16 +293,16 @@ const MenuPage = () => {
                     <div className="flex justify-center items-center py-16">
                         <Spinner size={36} />
                     </div>
-                ) : menuList.length === 0 ? (
+                ) : modulList.length === 0 ? (
                     <div className="text-center py-16 text-gray-400 text-sm">
-                        Belum ada data menu
+                        Belum ada data modul
                     </div>
                 ) : (
                     <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {menuList.map((menu) => (
-                            <MenuCard
-                                key={menu.id_menu}
-                                menu={menu}
+                        {modulList.map((modul) => (
+                            <ModulCard
+                                key={modul.id_modul}
+                                modul={modul}
                                 onEdit={handleOpenEdit}
                                 onDelete={handleOpenDelete}
                             />
@@ -269,11 +311,23 @@ const MenuPage = () => {
                 )}
             </Card>
 
+            {/* Form Modal */}
+            <ModulForm
+                open={formOpen}
+                editData={editTarget}
+                submitting={submitting}
+                onClose={() => {
+                    setFormOpen(false)
+                    setEditTarget(null)
+                }}
+                onSubmit={handleSubmit}
+            />
+
             {/* Delete Confirm */}
             <ConfirmDialog
                 isOpen={!!deleteTarget}
                 type="danger"
-                title="Hapus Menu?"
+                title="Hapus Modul?"
                 confirmText="Ya, Hapus"
                 cancelText="Batal"
                 confirmButtonProps={{
@@ -286,9 +340,9 @@ const MenuPage = () => {
                 onConfirm={handleDelete}
             >
                 <p className="text-sm">
-                    Menu{' '}
+                    Modul{' '}
                     <span className="font-semibold">
-                        &ldquo;{deleteTarget?.nama_menu}&rdquo;
+                        &ldquo;{deleteTarget?.nama_modul}&rdquo;
                     </span>{' '}
                     akan dihapus secara permanen. Tindakan ini tidak dapat
                     dibatalkan.
@@ -298,4 +352,4 @@ const MenuPage = () => {
     )
 }
 
-export default MenuPage
+export default ModulPanel
