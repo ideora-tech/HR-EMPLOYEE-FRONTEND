@@ -1,5 +1,7 @@
 import { Suspense } from 'react'
-import { Spinner } from '@/components/ui'
+// Import langsung (bukan barrel @/components/ui) — halaman ini server component,
+// barrel akan menarik seluruh komponen ui ke graph server dan gagal di build
+import Spinner from '@/components/ui/Spinner'
 import ModulTabs from '@/components/modul/ModulTabs'
 
 /**
