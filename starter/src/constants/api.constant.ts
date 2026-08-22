@@ -232,6 +232,7 @@ export const API_ENDPOINTS = {
         },
         ABSENSI_COACH_ADMIN: {
             BASE: `${PROXY}/kursus/admin/absensi-coach`,
+            REKAP_XLSX: `${PROXY}/kursus/admin/absensi-coach/rekap.xlsx`,
         },
         KURSUS_EVENTS: {
             STREAM: `${PROXY}/kursus/admin/events`,

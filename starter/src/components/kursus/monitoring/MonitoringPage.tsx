@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
-import { HiOutlineRefresh } from 'react-icons/hi'
+import { HiOutlineRefresh, HiOutlineDownload } from 'react-icons/hi'
 import { Card, Button, DatePicker } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import Notification from '@/components/ui/Notification'
@@ -29,10 +29,12 @@ function getDefaultRange(): [Date, Date] {
     return [start, end]
 }
 
+/** Ambil jam (HH:mm) dari "YYYY-MM-DD HH:mm:ss" (mysql2 dateStrings), ISO "…THH:mm:ss", atau "HH:mm:ss". */
 function fmtTime(val: string | null | undefined): string {
     if (!val) return '-'
-    if (val.includes('T')) return val.split('T')[1]?.slice(0, 5) ?? '-'
-    return val.slice(0, 5)
+    const sep = val.includes('T') ? 'T' : val.includes(' ') ? ' ' : null
+    const jam = sep ? val.split(sep).pop() ?? '' : val
+    return jam.length >= 5 && jam[2] === ':' ? jam.slice(0, 5) : jam || '-'
 }
 
 // ─── status helpers ────────────────────────────────────────────────────────────
@@ -94,6 +96,7 @@ export default function MonitoringPage() {
     const [coachPage, setCoachPage]     = useState(1)
     const [coachPageSize]               = useState(20)
     const [coachTotal, setCoachTotal]   = useState(0)
+    const [downloadingRekap, setDownloadingRekap] = useState(false)
 
     const fetchPresensi = useCallback(async (page = siswaPage) => {
         setLoadingSiswa(true)
@@ -120,6 +123,18 @@ export default function MonitoringPage() {
             setLoadingCoach(false)
         }
     }, [dari, sampai, coachPage, coachPageSize])
+
+    const handleDownloadRekapCoach = useCallback(async () => {
+        setDownloadingRekap(true)
+        try {
+            await MonitoringService.downloadRekapCoach({ dari, sampai })
+            toast.push(<Notification type="success" title="Rekap coach diunduh" />)
+        } catch (err) {
+            toast.push(<Notification type="danger" title={parseApiError(err)} />)
+        } finally {
+            setDownloadingRekap(false)
+        }
+    }, [dari, sampai])
 
     useEffect(() => { setSiswaPage(1); fetchPresensi(1) }, [dari, sampai]) // eslint-disable-line react-hooks/exhaustive-deps
     useEffect(() => { setCoachPage(1); fetchCoach(1) },   [dari, sampai]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -289,6 +304,16 @@ export default function MonitoringPage() {
                                 <StatChip label="Checkin" count={coachStats.checkin} color="border-emerald-200 text-emerald-600 bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-400 dark:bg-emerald-500/10" />
                                 <StatChip label="Selesai" count={coachStats.selesai} color="border-violet-200 text-violet-600 bg-violet-50 dark:border-violet-500/30 dark:text-violet-400 dark:bg-violet-500/10" />
                                 <StatChip label="Belum"   count={coachStats.belum}   color="border-red-200 text-red-500 bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:bg-red-500/10" />
+                                <Button
+                                    className="ml-auto"
+                                    size="sm"
+                                    variant="default"
+                                    icon={<HiOutlineDownload />}
+                                    loading={downloadingRekap}
+                                    onClick={handleDownloadRekapCoach}
+                                >
+                                    Unduh Excel
+                                </Button>
                             </div>
                             <DataTable
                                 columns={coachColumns}
