@@ -58,7 +58,8 @@ const QueryTabs = ({ tabs, defaultValue }: QueryTabsProps) => {
                     </Tabs.TabNav>
                 ))}
             </Tabs.TabList>
-            <div className="mt-4">
+            {/* Rapat ke konten: tab list langsung diikuti tabel/kartu di bawahnya */}
+            <div className="mt-2">
                 {tabs.map((t) => (
                     <Tabs.TabContent key={t.value} value={t.value}>
                         {t.content}

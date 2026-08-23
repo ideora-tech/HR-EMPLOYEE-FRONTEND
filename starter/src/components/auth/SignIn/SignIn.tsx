@@ -31,7 +31,7 @@ const SignIn = ({
                     Selamat Datang!
                 </h2>
                 <p style={{ color: '#6A6484', fontSize: '14px' }}>
-                    Masuk ke akun IdeoraHR Anda
+                    Masuk ke akun Sky Dance Anda
                 </p>
             </div>
             {message && (

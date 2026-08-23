@@ -5,8 +5,8 @@ import Spinner from '@/components/ui/Spinner'
 import ModulTabs from '@/components/modul/ModulTabs'
 
 /**
- * Halaman pengaturan modul — tiga tab dalam satu halaman:
- * Modul · Akses Modul · Menu Modul (tab aktif lewat query `?tab=`).
+ * Halaman pengaturan modul — lima tab dalam satu halaman:
+ * Paket · Modul · Akses Modul · Menu Modul · Menu (tab aktif lewat query `?tab=`).
  * Suspense diperlukan karena ModulTabs memakai useSearchParams.
  */
 const ModulPage = () => (

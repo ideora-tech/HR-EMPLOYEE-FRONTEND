@@ -4,9 +4,9 @@ export const AKSI_LIST: AksiType[] = ['VIEW', 'CREATE', 'UPDATE', 'DELETE']
 
 export interface IzinPeranMenuItem {
     id_menu: string
-    path: string
+    path: string | null
     nama_menu: string
-    kode_modul: string
+    kode_modul: string | null // null = menu global → dikelompokkan sebagai "GLOBAL"
     aksi: AksiType[]
 }
 
