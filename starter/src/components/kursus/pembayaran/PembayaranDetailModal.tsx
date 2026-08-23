@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Dialog, Button } from '@/components/ui'
+import { Dialog, Button, Input } from '@/components/ui'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { HiOutlineDocumentDownload, HiOutlineTrash, HiOutlinePhotograph, HiOutlineExternalLink } from 'react-icons/hi'
 import { formatRupiah } from '@/utils/formatNumber'
@@ -35,11 +35,12 @@ interface Props {
     deleteLoading: boolean
     onClose: () => void
     onCetak: () => void
-    onDelete: () => void
+    onDelete: (alasan: string) => void
 }
 
 const PembayaranDetailModal = ({ pembayaran, cetakLoading, deleteLoading, onClose, onCetak, onDelete }: Props) => {
     const [showConfirm, setShowConfirm] = useState(false)
+    const [alasanHapus, setAlasanHapus] = useState('')
 
     if (!pembayaran) return null
 
@@ -189,14 +190,18 @@ const PembayaranDetailModal = ({ pembayaran, cetakLoading, deleteLoading, onClos
                 cancelText="Batal"
                 confirmButtonProps={{
                     loading: deleteLoading,
+                    disabled: !alasanHapus.trim(),
                     customColorClass: () =>
                         'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white border-red-500',
                 }}
-                onClose={() => setShowConfirm(false)}
-                onCancel={() => setShowConfirm(false)}
+                onClose={() => { setShowConfirm(false); setAlasanHapus('') }}
+                onCancel={() => { setShowConfirm(false); setAlasanHapus('') }}
                 onConfirm={() => {
+                    const alasan = alasanHapus.trim()
+                    if (!alasan) return
                     setShowConfirm(false)
-                    onDelete()
+                    setAlasanHapus('')
+                    onDelete(alasan)
                 }}
             >
                 <p className="text-sm">
@@ -204,6 +209,19 @@ const PembayaranDetailModal = ({ pembayaran, cetakLoading, deleteLoading, onClos
                     <span className="font-semibold">&ldquo;{noBukti}&rdquo;</span>{' '}
                     akan dihapus dan status tagihan akan diperbarui ulang.
                 </p>
+                <div className="mt-3">
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                        Alasan penghapusan <span className="text-red-500">*</span>
+                    </p>
+                    <Input
+                        textArea
+                        rows={2}
+                        placeholder="Mis. salah input nominal, dicatat ulang"
+                        value={alasanHapus}
+                        maxLength={255}
+                        onChange={(e) => setAlasanHapus(e.target.value)}
+                    />
+                </div>
             </ConfirmDialog>
         </>
     )

@@ -141,11 +141,11 @@ const PembayaranListPageInner = () => {
         }
     }
 
-    const handleDeletePembayaran = async () => {
+    const handleDeletePembayaran = async (alasan: string) => {
         if (!viewTarget) return
         setDeletePembayaranLoading(true)
         try {
-            await PembayaranService.remove(viewTarget.id_pembayaran)
+            await PembayaranService.remove(viewTarget.id_pembayaran, alasan)
             toast.push(<Notification type="success" title="Pembayaran berhasil dihapus" />)
             const idTagihan = viewTarget.id_tagihan
             setViewTarget(null)

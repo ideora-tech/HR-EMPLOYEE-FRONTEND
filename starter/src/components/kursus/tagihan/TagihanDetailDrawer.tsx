@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Button, Drawer, Notification, toast, Dialog } from '@/components/ui'
+import { Button, Drawer, Notification, toast, Dialog, Input } from '@/components/ui'
 import { HiOutlinePlus, HiOutlineTrash, HiOutlineCash, HiOutlineUser, HiOutlineTag, HiOutlineDocumentDownload, HiOutlineX } from 'react-icons/hi'
 import PembayaranService from '@/services/kursus/pembayaran.service'
 import TagihanService from '@/services/kursus/tagihan.service'
@@ -43,6 +43,7 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
     const [formOpen, setFormOpen] = useState(false)
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [deleteConfirm, setDeleteConfirm] = useState(false)
+    const [alasanHapus, setAlasanHapus] = useState('')
     const [deleting, setDeleting] = useState(false)
     const [batalkanConfirm, setBatalkanConfirm] = useState(false)
     const [batalkanLoading, setBatalkanLoading] = useState(false)
@@ -87,14 +88,17 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
 
     const handleDeleteConfirm = async () => {
         if (!deletingId) return
+        const alasan = alasanHapus.trim()
+        if (!alasan) return
         setDeleting(true)
         try {
-            await PembayaranService.remove(deletingId)
+            await PembayaranService.remove(deletingId, alasan)
             toast.push(
                 <Notification type="success" title={MESSAGES.SUCCESS.DELETED(ENTITY.PEMBAYARAN)} />,
             )
             setDeleteConfirm(false)
             setDeletingId(null)
+            setAlasanHapus('')
             await reloadPayments()
         } catch (err) {
             toast.push(
@@ -383,21 +387,35 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                 <div className="flex flex-col gap-4">
                     <h5 className="font-semibold">Hapus Pembayaran</h5>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Data pembayaran akan dihapus dan saldo tagihan otomatis diperbarui. Lanjutkan?
+                        Data pembayaran akan dihapus dan saldo tagihan otomatis diperbarui
+                        (tagihan lunas kembali ke belum lunas). Lanjutkan?
                     </p>
+                    <div>
+                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                            Alasan penghapusan <span className="text-red-500">*</span>
+                        </p>
+                        <Input
+                            textArea
+                            rows={2}
+                            placeholder="Mis. salah input nominal, dicatat ulang"
+                            value={alasanHapus}
+                            maxLength={255}
+                            onChange={(e) => setAlasanHapus(e.target.value)}
+                        />
+                    </div>
                     <div className="flex justify-end gap-2">
                         <Button
                             variant="plain"
-                            onClick={() => setDeleteConfirm(false)}
+                            onClick={() => { setDeleteConfirm(false); setAlasanHapus('') }}
                             disabled={deleting}
                         >
                             Batal
                         </Button>
                         <Button
                             variant="solid"
-                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
-                            color="red"
+                            customColorClass={() => 'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white border-red-500'}
                             loading={deleting}
+                            disabled={!alasanHapus.trim()}
                             onClick={handleDeleteConfirm}
                         >
                             Ya, Hapus

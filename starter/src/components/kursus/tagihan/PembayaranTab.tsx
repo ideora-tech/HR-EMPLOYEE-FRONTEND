@@ -76,15 +76,20 @@ const PembayaranTab = () => {
         setCurrentPage(1)
     }
 
+    const [alasanHapus, setAlasanHapus] = useState('')
+
     const handleDelete = async () => {
         if (!deleteTarget) return
+        const alasan = alasanHapus.trim()
+        if (!alasan) return
         setSubmitting(true)
         try {
-            await PembayaranService.remove(deleteTarget.id_pembayaran)
+            await PembayaranService.remove(deleteTarget.id_pembayaran, alasan)
             toast.push(
                 <Notification type="success" title={MESSAGES.SUCCESS.DELETED(ENTITY.PEMBAYARAN)} />,
             )
             setDeleteTarget(null)
+            setAlasanHapus('')
             fetchData()
         } catch (err) {
             toast.push(
@@ -167,13 +172,27 @@ const PembayaranTab = () => {
                 cancelText="Batal"
                 confirmButtonProps={{
                     loading: submitting,
+                    disabled: !alasanHapus.trim(),
                     customColorClass: () =>
                         'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white border-red-500',
                 }}
-                onClose={() => setDeleteTarget(null)}
-                onCancel={() => setDeleteTarget(null)}
+                onClose={() => { setDeleteTarget(null); setAlasanHapus('') }}
+                onCancel={() => { setDeleteTarget(null); setAlasanHapus('') }}
                 onConfirm={handleDelete}
             >
+                <div className="mb-3">
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                        Alasan penghapusan <span className="text-red-500">*</span>
+                    </p>
+                    <Input
+                        textArea
+                        rows={2}
+                        placeholder="Mis. salah input nominal, dicatat ulang"
+                        value={alasanHapus}
+                        maxLength={255}
+                        onChange={(e) => setAlasanHapus(e.target.value)}
+                    />
+                </div>
                 <p className="text-sm">
                     Data pembayaran{' '}
                     {deleteTarget?.tagihan?.nama_siswa && (

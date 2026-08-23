@@ -77,10 +77,12 @@ const PembayaranService = {
         })
     },
 
-    async remove(id: string): Promise<ApiResponse<null>> {
-        return ApiService.fetchDataWithAxios<ApiResponse<null>>({
+    /** Hapus pembayaran — alasan wajib (jejak audit koreksi transaksi) */
+    async remove(id: string, alasan: string): Promise<ApiResponse<null>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<null>, { alasan: string }>({
             url: API_ENDPOINTS.KURSUS.PEMBAYARAN.BY_ID(id),
             method: 'DELETE',
+            data: { alasan },
         })
     },
 
