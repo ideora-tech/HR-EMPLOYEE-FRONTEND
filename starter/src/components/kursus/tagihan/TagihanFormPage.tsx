@@ -157,7 +157,7 @@ const TagihanFormPage = ({
                 setDiskonOptions(
                     res.data.map((d: IDiskon) => ({
                         value: d.id_diskon,
-                        label: `${d.nama_diskon} (${d.persentase ? d.persentase + '%' : formatRupiah(d.harga ?? 0)}) - s.d. ${d.berlaku_sampai}`,
+                        label: `${d.nama_diskon} (${d.persentase ? d.persentase + '%' : formatRupiah(d.harga ?? 0)})${d.berlaku_sampai ? ` - s.d. ${d.berlaku_sampai}` : ''}`,
                     })),
                 )
             }

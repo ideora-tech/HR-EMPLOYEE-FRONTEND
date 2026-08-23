@@ -10,7 +10,11 @@
   
   .dialog-overlay {
     transition: all 0.15s ease-in-out;
-    @apply inset-0 fixed z-40 bg-black/60 dark:bg-black/80 backdrop-blur-md;
+    /* overflow-y-auto: dialog yang lebih tinggi dari layar (HP) bisa digulir di dalam
+       overlay sehingga tombol aksi di bawah tetap terjangkau — berlaku untuk semua
+       Dialog/ConfirmDialog di aplikasi tanpa mengubah komponen template. */
+    @apply inset-0 fixed z-40 bg-black/60 dark:bg-black/80 backdrop-blur-md overflow-y-auto overscroll-contain;
+    -webkit-overflow-scrolling: touch;
   }
   
   .dialog-overlay-after-open {

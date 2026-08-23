@@ -74,10 +74,16 @@ const DiskonTable = ({
                 size: 200,
                 cell: ({ row }: CellContext<IDiskon, unknown>) => {
                     const { berlaku_mulai, berlaku_sampai } = row.original
-                    if (!berlaku_mulai && !berlaku_sampai) return <span className="text-gray-400">-</span>
+                    if (!berlaku_mulai && !berlaku_sampai) return <span className="text-gray-400">Tanpa batas</span>
+                    // Periode opsional: salah satu sisi boleh kosong
+                    const label = berlaku_mulai && berlaku_sampai
+                        ? `${formatTanggal(berlaku_mulai)} – ${formatTanggal(berlaku_sampai)}`
+                        : berlaku_mulai
+                            ? `Mulai ${formatTanggal(berlaku_mulai)}`
+                            : `s.d. ${formatTanggal(berlaku_sampai)}`
                     return (
                         <span className="text-sm text-gray-600 dark:text-gray-300">
-                            {formatTanggal(berlaku_mulai)} – {formatTanggal(berlaku_sampai)}
+                            {label}
                         </span>
                     )
                 },

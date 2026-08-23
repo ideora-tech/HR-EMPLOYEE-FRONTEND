@@ -350,8 +350,16 @@ export interface IDaftarSiswa {
     tagihan?: IDaftarSiswaItem[]
     id_diskon?: string
     kode_diskon?: string
+    /** Diskon manual tanpa master data — isi persentase ATAU nominal */
+    diskon_manual?: IDiskonManual
     is_trial?: number
     id_jadwal_kelas_trial?: string
+}
+
+export interface IDiskonManual {
+    nama?: string
+    persentase?: number
+    nominal?: number
 }
 
 export interface IDaftarSiswaResponse {

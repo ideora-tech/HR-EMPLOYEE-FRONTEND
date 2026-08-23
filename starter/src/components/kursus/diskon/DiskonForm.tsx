@@ -51,7 +51,9 @@ const toDate = (val: string | null | undefined): Date | null => {
 
 const toDateStr = (d: Date | null): string | undefined => {
     if (!d) return undefined
-    return d.toISOString().split('T')[0]
+    // Pakai tanggal lokal — toISOString() menggeser ke UTC sehingga 1 Sep (WIB) terkirim sebagai 31 Agu.
+    const p = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
 const DiskonForm = ({
@@ -93,6 +95,7 @@ const DiskonForm = ({
             e.persentase = 'Persentase 0–100'
         if (form.harga && (isNaN(parseRupiah(form.harga)) || parseRupiah(form.harga) < 0))
             e.harga = 'Nominal harus angka positif'
+        // Periode berlaku opsional; bila keduanya diisi, akhir tidak boleh sebelum mulai
         if (form.berlaku_mulai && form.berlaku_sampai && form.berlaku_sampai < form.berlaku_mulai)
             e.berlaku_sampai = 'Tanggal akhir tidak boleh sebelum tanggal mulai'
         setErrors(e)
@@ -199,7 +202,7 @@ const DiskonForm = ({
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                    <FormItem label="Berlaku Mulai">
+                    <FormItem label="Berlaku Mulai" extra="Opsional">
                         <DatePicker
                             placeholder="Pilih tanggal mulai"
                             value={form.berlaku_mulai}
@@ -211,6 +214,7 @@ const DiskonForm = ({
 
                     <FormItem
                         label="Berlaku Sampai"
+                        extra="Opsional"
                         invalid={!!errors.berlaku_sampai}
                         errorMessage={errors.berlaku_sampai}
                     >

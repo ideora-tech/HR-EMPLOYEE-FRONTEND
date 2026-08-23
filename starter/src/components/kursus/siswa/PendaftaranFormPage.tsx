@@ -110,10 +110,15 @@ const PendaftaranFormPage = ({
     const [isTrial, setIsTrial] = useState(false)
     const [selectedJadwalTrial, setSelectedJadwalTrial] = useState<SelectOption | null>(null)
 
-    const [diskonMode, setDiskonMode] = useState<'none' | 'dropdown' | 'kode'>('none')
+    const [diskonMode, setDiskonMode] = useState<'none' | 'dropdown' | 'kode' | 'manual'>('none')
     const [selectedDiskon, setSelectedDiskon] = useState<SelectOption | null>(null)
     const [kodeDiskon, setKodeDiskon] = useState('')
+    // Diskon manual (tanpa master data)
+    const [manualTipe, setManualTipe] = useState<'persen' | 'nominal'>('persen')
+    const [manualNilai, setManualNilai] = useState('')
+    const [manualNama, setManualNama] = useState('')
     const [diskonOptions, setDiskonOptions] = useState<SelectOption[]>([])
+    const [diskonMap, setDiskonMap] = useState<Record<string, IDiskon>>({})
     const [loadingDiskon, setLoadingDiskon] = useState(false)
 
     const [biayaOptions, setBiayaOptions] = useState<SelectOption[]>([])
@@ -171,9 +176,10 @@ const PendaftaranFormPage = ({
                 setDiskonOptions(
                     res.data.map((d: IDiskon) => ({
                         value: d.id_diskon,
-                        label: `${d.nama_diskon} (${d.persentase ? d.persentase + '%' : formatRupiah(d.harga ?? 0)}) - s.d. ${d.berlaku_sampai}`,
+                        label: `${d.nama_diskon} (${d.persentase ? d.persentase + '%' : formatRupiah(d.harga ?? 0)})${d.berlaku_sampai ? ` - s.d. ${d.berlaku_sampai}` : ''}`,
                     })),
                 )
+                setDiskonMap(Object.fromEntries(res.data.map((d: IDiskon) => [d.id_diskon, d])))
             }
         } catch {
             //
@@ -226,6 +232,11 @@ const PendaftaranFormPage = ({
             if (tagihanRows.length === 0) e.tagihan_global = 'Minimal satu tagihan wajib diisi'
             if (diskonMode === 'dropdown' && !selectedDiskon) e.diskon = 'Pilih diskon dari daftar'
             if (diskonMode === 'kode' && !kodeDiskon.trim()) e.diskon = 'Kode promo tidak boleh kosong'
+            if (diskonMode === 'manual') {
+                const nilai = Number(manualNilai.replace(/[^0-9.]/g, ''))
+                if (!manualNilai.trim() || Number.isNaN(nilai) || nilai <= 0) e.diskon = 'Isi nilai diskon lebih dari 0'
+                else if (manualTipe === 'persen' && nilai > 100) e.diskon = 'Persentase maksimal 100'
+            }
         }
 
         setErrors(e)
@@ -273,6 +284,14 @@ const PendaftaranFormPage = ({
             tagihan,
             ...(diskonMode === 'dropdown' && selectedDiskon && { id_diskon: selectedDiskon.value }),
             ...(diskonMode === 'kode' && kodeDiskon.trim() && { kode_diskon: kodeDiskon.trim() }),
+            ...(diskonMode === 'manual' && {
+                diskon_manual: {
+                    ...(manualNama.trim() && { nama: manualNama.trim() }),
+                    ...(manualTipe === 'persen'
+                        ? { persentase: Number(manualNilai.replace(/[^0-9.]/g, '')) }
+                        : { nominal: Number(manualNilai.replace(/[^0-9]/g, '')) }),
+                },
+            }),
         })
     }
 
@@ -280,6 +299,27 @@ const PendaftaranFormPage = ({
         (acc, r) => acc + (r.id_biaya && biayaMap[r.id_biaya] ? biayaMap[r.id_biaya].harga_biaya : 0),
         0,
     )
+
+    // Estimasi potongan (sama dengan aturan backend: persentase > nominal, tidak melebihi total).
+    // Kode promo tidak bisa dihitung di sini (butuh lookup server) → hanya dropdown & manual.
+    const estimasiDiskon = (() => {
+        if (estimasiTotal <= 0) return 0
+        if (diskonMode === 'dropdown' && selectedDiskon && diskonMap[selectedDiskon.value]) {
+            const d = diskonMap[selectedDiskon.value]
+            if (d.persentase) return Math.round(estimasiTotal * (Number(d.persentase) / 100))
+            if (d.harga !== null) return Math.min(d.harga, estimasiTotal)
+            return 0
+        }
+        if (diskonMode === 'manual') {
+            const nilai = Number(manualNilai.replace(/[^0-9.]/g, ''))
+            if (!nilai || nilai <= 0) return 0
+            return manualTipe === 'persen'
+                ? Math.round(estimasiTotal * (Math.min(nilai, 100) / 100))
+                : Math.min(Math.floor(nilai), estimasiTotal)
+        }
+        return 0
+    })()
+    const estimasiSetelahDiskon = Math.max(0, estimasiTotal - estimasiDiskon)
 
     return (
         <form
@@ -508,7 +548,7 @@ const PendaftaranFormPage = ({
                             <div className="flex flex-col gap-3">
                                 {/* Mode selector */}
                                 <div className="flex gap-2">
-                                    {(['none', 'dropdown', 'kode'] as const).map((mode) => (
+                                    {(['none', 'dropdown', 'kode', 'manual'] as const).map((mode) => (
                                         <button
                                             key={mode}
                                             type="button"
@@ -516,6 +556,8 @@ const PendaftaranFormPage = ({
                                                 setDiskonMode(mode)
                                                 setSelectedDiskon(null)
                                                 setKodeDiskon('')
+                                                setManualNilai('')
+                                                setManualNama('')
                                                 setErrors((p) => { const n = { ...p }; delete n.diskon; return n })
                                             }}
                                             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${diskonMode === mode
@@ -523,7 +565,7 @@ const PendaftaranFormPage = ({
                                                 : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
                                                 }`}
                                         >
-                                            {mode === 'none' ? 'Tanpa Diskon' : mode === 'dropdown' ? 'Pilih Diskon' : 'Kode Promo'}
+                                            {mode === 'none' ? 'Tanpa Diskon' : mode === 'dropdown' ? 'Pilih Diskon' : mode === 'kode' ? 'Kode Promo' : 'Diskon Manual'}
                                         </button>
                                     ))}
                                 </div>
@@ -555,6 +597,60 @@ const PendaftaranFormPage = ({
                                             onChange={(e) => setKodeDiskon(e.target.value.toUpperCase())}
                                         />
                                     </FormItem>
+                                )}
+
+                                {diskonMode === 'manual' && (
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex gap-2">
+                                            {(['persen', 'nominal'] as const).map((tipe) => (
+                                                <button
+                                                    key={tipe}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setManualTipe(tipe)
+                                                        setManualNilai('')
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${manualTipe === tipe
+                                                        ? 'bg-[#E9F3FF] text-[#2a85ff] border-[#d0e6ff] dark:bg-[#E9F3FF]/10 dark:border-[#E9F3FF]/20 dark:text-[#7BB8FF]'
+                                                        : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                                        }`}
+                                                >
+                                                    {tipe === 'persen' ? 'Persentase (%)' : 'Nominal (Rp)'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <FormItem
+                                                label={manualTipe === 'persen' ? 'Besar diskon (%)' : 'Besar diskon (Rp)'}
+                                                invalid={!!errors.diskon}
+                                                errorMessage={errors.diskon}
+                                            >
+                                                <Input
+                                                    placeholder={manualTipe === 'persen' ? 'mis. 10' : 'mis. 50000'}
+                                                    value={manualNilai}
+                                                    inputMode="numeric"
+                                                    onChange={(e) =>
+                                                        setManualNilai(
+                                                            manualTipe === 'persen'
+                                                                ? e.target.value.replace(/[^0-9.]/g, '')
+                                                                : e.target.value.replace(/[^0-9]/g, ''),
+                                                        )
+                                                    }
+                                                />
+                                            </FormItem>
+                                            <FormItem label="Keterangan (opsional)">
+                                                <Input
+                                                    placeholder="mis. Potongan saudara kandung"
+                                                    value={manualNama}
+                                                    maxLength={100}
+                                                    onChange={(e) => setManualNama(e.target.value)}
+                                                />
+                                            </FormItem>
+                                        </div>
+                                        <p className="text-xs text-gray-400">
+                                            Diskon manual tidak memakai master diskon; nilainya dipotong dari total tagihan dan tercatat di tagihan.
+                                        </p>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -717,11 +813,27 @@ const PendaftaranFormPage = ({
 
                                 {/* Estimasi total */}
                                 {estimasiTotal > 0 && (
-                                    <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-100 dark:border-gray-700">
-                                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Estimasi Total</span>
-                                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
-                                            {formatRupiah(estimasiTotal)}
-                                        </span>
+                                    <div className="px-5 py-3 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-1">
+                                        {estimasiDiskon > 0 && (
+                                            <>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-xs text-gray-500">Subtotal</span>
+                                                    <span className="text-xs text-gray-600 dark:text-gray-300">{formatRupiah(estimasiTotal)}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-xs text-gray-500">
+                                                        Diskon{diskonMode === 'manual' ? ' (manual)' : ''}
+                                                    </span>
+                                                    <span className="text-xs text-emerald-600">- {formatRupiah(estimasiDiskon)}</span>
+                                                </div>
+                                            </>
+                                        )}
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Estimasi Total</span>
+                                            <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                                                {formatRupiah(estimasiSetelahDiskon)}
+                                            </span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
