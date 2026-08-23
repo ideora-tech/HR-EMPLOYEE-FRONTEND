@@ -27,7 +27,8 @@ const validateCredential = async (values: SignInCredential) => {
 
         return {
             id: user.id,
-            userName: user.name,
+            // Backend mengirim nama_pengguna/username — tidak ada field `name`
+            userName: user.nama_pengguna ?? user.username ?? '',
             email: user.email,
             avatar: '',
             role: user.role,

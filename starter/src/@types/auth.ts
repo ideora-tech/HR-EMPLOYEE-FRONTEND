@@ -9,10 +9,12 @@ export type BackendLoginResponse = {
     data: {
         user: {
             id: string
-            name: string
-            email: string
+            username: string | null
+            nama_pengguna: string
+            email: string | null
             role: string
-            company_id: string
+            company_id: string | null
+            harus_ganti_password?: number
         }
         tokens: {
             access_token: string

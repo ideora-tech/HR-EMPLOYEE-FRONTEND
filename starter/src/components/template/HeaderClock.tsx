@@ -21,15 +21,15 @@ const HeaderClock = () => {
     }, [])
 
     if (!now) {
-        return <div className="hidden sm:block w-44" aria-hidden="true" />
+        return <div className="w-32 sm:w-44" aria-hidden="true" />
     }
 
     return (
-        <div className="hidden sm:flex flex-col justify-center leading-tight ml-1">
-            <span className="font-bold text-base text-gray-900 dark:text-gray-100 tabular-nums">
+        <div className="flex flex-col justify-center leading-tight ml-1">
+            <span className="font-bold text-sm sm:text-base text-gray-900 dark:text-gray-100 tabular-nums">
                 {pad(now.getHours())}:{pad(now.getMinutes())}:{pad(now.getSeconds())}
             </span>
-            <span className="text-xs text-gray-400 dark:text-gray-500">
+            <span className="text-[11px] sm:text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
                 {HARI[now.getDay()]}, {now.getDate()} {BULAN[now.getMonth()]} {now.getFullYear()}
             </span>
         </div>
