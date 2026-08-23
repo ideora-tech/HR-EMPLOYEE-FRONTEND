@@ -13,6 +13,7 @@ export const PERAN_TAB = {
 /** Satu halaman untuk pengaturan akses: Peran dan Izin Peran. (Manajemen Menu pindah ke halaman Modul.) */
 const PeranTabs = () => (
     <QueryTabs
+        title="Peran & Akses"
         defaultValue={PERAN_TAB.PERAN}
         tabs={[
             { value: PERAN_TAB.PERAN, label: 'Peran', content: <PeranPanel /> },

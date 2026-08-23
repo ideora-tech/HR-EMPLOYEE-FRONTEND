@@ -22,6 +22,7 @@ export const MODUL_TAB = {
  */
 const ModulTabs = () => (
     <QueryTabs
+        title="Pengaturan Modul"
         defaultValue={MODUL_TAB.MODUL}
         tabs={[
             { value: MODUL_TAB.PAKET, label: 'Paket', content: <PaketPanel /> },

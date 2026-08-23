@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { Card, Input, Select, Notification, Spinner, toast } from '@/components/ui'
+import { Input, Select, Notification, Spinner, toast } from '@/components/ui'
+import TabPanelCard from '@/components/shared/TabPanelCard'
 import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import IzinPeranService from '@/services/izin-peran.service'
 import PeranService from '@/services/peran.service'
@@ -12,6 +13,9 @@ import type { IPeran } from '@/@types/peran.types'
 
 type PermMap = Record<string, Set<AksiType>>
 type PeranOption = { value: string; label: string }
+
+/** Kunci grup untuk menu yang belum dikaitkan ke modul mana pun */
+const TANPA_MODUL = '__tanpa_modul__'
 
 const AKSI_LABEL: Record<AksiType, string> = {
     VIEW: 'Lihat',
@@ -349,10 +353,16 @@ const IzinPeranPanel = () => {
 
         const map: Record<string, IzinPeranMenuItem[]> = {}
         for (const m of filtered) {
-            const key = m.kode_modul || 'GLOBAL'
+            const key = m.kode_modul || TANPA_MODUL
             map[key] = [...(map[key] ?? []), m]
         }
-        return map
+        // Modul urut abjad; menu tanpa modul selalu paling bawah
+        const urut = Object.keys(map).sort((a, b) => {
+            if (a === TANPA_MODUL) return 1
+            if (b === TANPA_MODUL) return -1
+            return a.localeCompare(b)
+        })
+        return Object.fromEntries(urut.map((k) => [k, map[k]]))
     }, [menus, searchMenu])
 
     const peranOptions: PeranOption[] = peranList.map((p) => ({
@@ -375,7 +385,7 @@ const IzinPeranPanel = () => {
 
     return (
         <div className="flex flex-col gap-4">
-            <Card
+            <TabPanelCard
                 header={{
                     content: <h4>Izin Peran</h4>,
                     extra: selectedPeran && !loadingMatrix ? (
@@ -501,7 +511,17 @@ const IzinPeranPanel = () => {
                                                     colSpan={6}
                                                     className="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest"
                                                 >
-                                                    {kode_modul}
+                                                    {kode_modul === TANPA_MODUL ? (
+                                                        <>
+                                                            Tanpa modul
+                                                            <span className="ml-2 normal-case tracking-normal font-normal text-gray-400">
+                                                                — hanya tampil untuk superadmin; user perusahaan tidak melihat menu ini.
+                                                                Kaitkan ke modul di Pengaturan Modul → Menu Modul.
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        kode_modul
+                                                    )}
                                                 </td>
                                             </tr>
 
@@ -582,7 +602,7 @@ const IzinPeranPanel = () => {
                         </table>
                     </div>
                 )}
-            </Card>
+            </TabPanelCard>
         </div>
     )
 }

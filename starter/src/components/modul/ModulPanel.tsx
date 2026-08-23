@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
     Button,
-    Card,
     Input,
     Select,
     Notification,
     Spinner,
     toast,
 } from '@/components/ui'
+import TabPanelCard from '@/components/shared/TabPanelCard'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import {
     HiPlusCircle,
@@ -190,7 +190,7 @@ const ModulPanel = () => {
 
     return (
         <div className="flex flex-col gap-4">
-            <Card
+            <TabPanelCard
                 header={{
                     content: <h4>Manajemen Modul</h4>,
                     extra: (
@@ -309,7 +309,7 @@ const ModulPanel = () => {
                         ))}
                     </div>
                 )}
-            </Card>
+            </TabPanelCard>
 
             {/* Form Modal */}
             <ModulForm

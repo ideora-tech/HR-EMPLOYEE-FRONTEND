@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Card, Notification, Spinner, Tag, toast } from '@/components/ui'
+import { Notification, Spinner, Tag, toast } from '@/components/ui'
+import TabPanelCard from '@/components/shared/TabPanelCard'
 import AksesModulService from '@/services/akses-modul.service'
 import ModulService from '@/services/modul.service'
 import PaketService from '@/services/paket.service'
@@ -210,7 +211,7 @@ const AksesModulPanel = () => {
 
     return (
         <div className="flex flex-col gap-4">
-            <Card
+            <TabPanelCard
                 header={{
                     content: <h4>Konfigurasi Akses Modul per Paket</h4>,
                     extra: (
@@ -318,7 +319,7 @@ const AksesModulPanel = () => {
                         </table>
                     </div>
                 )}
-            </Card>
+            </TabPanelCard>
         </div>
     )
 }

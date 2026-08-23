@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Card, Input, Notification, Spinner, Tag, toast } from '@/components/ui'
+import { Input, Notification, Spinner, Tag, toast } from '@/components/ui'
+import TabPanelCard from '@/components/shared/TabPanelCard'
 import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import MenuService from '@/services/menu.service'
 import ModulService from '@/services/modul.service'
@@ -202,7 +203,7 @@ const MenuModulPanel = () => {
 
     return (
         <div className="flex flex-col gap-4">
-            <Card
+            <TabPanelCard
                 header={{
                     content: <h4>Konfigurasi Menu per Modul</h4>,
                     extra: (
@@ -368,7 +369,7 @@ const MenuModulPanel = () => {
                         </table>
                     </div>
                 )}
-            </Card>
+            </TabPanelCard>
         </div>
     )
 }
