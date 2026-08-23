@@ -97,6 +97,7 @@ export default function MonitoringPage() {
     const [coachPageSize]               = useState(20)
     const [coachTotal, setCoachTotal]   = useState(0)
     const [downloadingRekap, setDownloadingRekap] = useState(false)
+    const [downloadingRekapSiswa, setDownloadingRekapSiswa] = useState(false)
 
     const fetchPresensi = useCallback(async (page = siswaPage) => {
         setLoadingSiswa(true)
@@ -133,6 +134,18 @@ export default function MonitoringPage() {
             toast.push(<Notification type="danger" title={parseApiError(err)} />)
         } finally {
             setDownloadingRekap(false)
+        }
+    }, [dari, sampai])
+
+    const handleDownloadRekapSiswa = useCallback(async () => {
+        setDownloadingRekapSiswa(true)
+        try {
+            await MonitoringService.downloadRekapSiswa({ dari, sampai })
+            toast.push(<Notification type="success" title="Rekap siswa diunduh" />)
+        } catch (err) {
+            toast.push(<Notification type="danger" title={parseApiError(err)} />)
+        } finally {
+            setDownloadingRekapSiswa(false)
         }
     }, [dari, sampai])
 
@@ -284,6 +297,16 @@ export default function MonitoringPage() {
                                 <StatChip label="Total"       count={siswaList.length}      color="border-gray-200 text-gray-600 bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:bg-gray-700" />
                                 <StatChip label="Hadir"       count={siswaStats.hadir}      color="border-emerald-200 text-emerald-600 bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-400 dark:bg-emerald-500/10" />
                                 <StatChip label="Tidak Hadir" count={siswaStats.tidakHadir} color="border-red-200 text-red-500 bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:bg-red-500/10" />
+                                <Button
+                                    className="ml-auto"
+                                    size="sm"
+                                    variant="default"
+                                    icon={<HiOutlineDownload />}
+                                    loading={downloadingRekapSiswa}
+                                    onClick={handleDownloadRekapSiswa}
+                                >
+                                    Unduh Excel
+                                </Button>
                             </div>
                             <DataTable
                                 columns={siswaColumns}

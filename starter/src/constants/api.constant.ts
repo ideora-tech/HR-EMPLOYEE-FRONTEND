@@ -192,6 +192,7 @@ export const API_ENDPOINTS = {
         },
         PRESENSI: {
             BASE: `${PROXY}/kursus/presensi`,
+            REKAP_XLSX: `${PROXY}/kursus/presensi/rekap.xlsx`,
             BY_ID: (id: string) => `${PROXY}/kursus/presensi/${id}`,
             BY_JADWAL: (idJadwal: string) => `${PROXY}/kursus/presensi/jadwal/${idJadwal}`,
             BY_SISWA: (idSiswa: string) => `${PROXY}/kursus/presensi/siswa/${idSiswa}`,

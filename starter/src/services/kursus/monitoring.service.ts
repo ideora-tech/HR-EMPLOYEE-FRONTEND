@@ -53,6 +53,25 @@ const MonitoringService = {
         })
     },
 
+    /** Unduh rekap kehadiran siswa (Excel) untuk rentang tanggal tertentu */
+    async downloadRekapSiswa(query: { dari: string; sampai: string }): Promise<void> {
+        const params = new URLSearchParams()
+        params.append('dari', query.dari)
+        params.append('sampai', query.sampai)
+
+        const res = await ApiService.fetchDataWithAxios<Blob>({
+            url: `${API_ENDPOINTS.KURSUS.PRESENSI.REKAP_XLSX}?${params.toString()}`,
+            method: 'GET',
+            responseType: 'blob',
+        })
+        const url = URL.createObjectURL(res)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `rekap-siswa-${query.dari}_${query.sampai}.xlsx`
+        a.click()
+        URL.revokeObjectURL(url)
+    },
+
     /** Unduh rekap absensi coach (Excel) untuk rentang tanggal tertentu */
     async downloadRekapCoach(query: { dari: string; sampai: string }): Promise<void> {
         const params = new URLSearchParams()
