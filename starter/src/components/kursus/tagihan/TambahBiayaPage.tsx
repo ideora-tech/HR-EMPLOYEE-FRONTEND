@@ -12,6 +12,7 @@ import {
     HiOutlineTag,
     HiOutlineAcademicCap,
     HiOutlineClipboardCheck,
+    HiOutlinePencilAlt,
 } from 'react-icons/hi'
 import KelasService from '@/services/kursus/kelas.service'
 import BiayaService from '@/services/kursus/biaya.service'
@@ -25,7 +26,7 @@ import type { IKelas, IBiaya, IJadwalKelas, ITagihan } from '@/@types/kursus.typ
 type KelasOption = { value: string; label: string; kelas: IKelas }
 type BiayaOption = { value: string; label: string; biaya: IBiaya }
 type JadwalOption = { value: string; label: string; jadwal: IJadwalKelas }
-type JenisBiaya = 'KELAS' | 'PENDAFTARAN'
+type JenisBiaya = 'KELAS' | 'PENDAFTARAN' | 'LAINNYA'
 
 const JENIS_LABEL: Record<string, string> = {
     PENDAFTARAN: 'Pendaftaran',
@@ -44,7 +45,7 @@ const TambahBiayaPage = () => {
     const [jenis, setJenis] = useState<JenisBiaya>('KELAS')
     const [submitting, setSubmitting] = useState(false)
     const [hargaOverride, setHargaOverride] = useState('')
-    const [errors, setErrors] = useState<{ kelas?: string; biaya?: string }>({})
+    const [errors, setErrors] = useState<{ kelas?: string; biaya?: string; nama?: string; harga?: string }>({})
 
     /* ── mode KELAS ── */
     const [kelasOptions, setKelasOptions] = useState<KelasOption[]>([])
@@ -55,6 +56,10 @@ const TambahBiayaPage = () => {
     const [loadingBiayaJadwal, setLoadingBiayaJadwal] = useState(false)
     const [selectedBiaya, setSelectedBiaya] = useState<BiayaOption | null>(null)
     const [selectedJadwal, setSelectedJadwal] = useState<JadwalOption | null>(null)
+
+    /* ── mode LAINNYA (biaya diketik manual, tanpa master) ── */
+    const [namaLainnya, setNamaLainnya] = useState('')
+    const [hargaLainnya, setHargaLainnya] = useState('')
 
     /* ── mode PENDAFTARAN ── */
     const [pendaftaranOptions, setPendaftaranOptions] = useState<BiayaOption[]>([])
@@ -164,6 +169,8 @@ const TambahBiayaPage = () => {
         setSelectedBiaya(null)
         setSelectedJadwal(null)
         setSelectedPendaftaran(null)
+        setNamaLainnya('')
+        setHargaLainnya('')
         setHargaOverride('')
         setErrors({})
         setBiayaOptions([])
@@ -176,6 +183,9 @@ const TambahBiayaPage = () => {
         if (jenis === 'KELAS') {
             if (!selectedKelas) e.kelas = 'Pilih kelas terlebih dahulu'
             if (!selectedBiaya) e.biaya = 'Pilih biaya'
+        } else if (jenis === 'LAINNYA') {
+            if (!namaLainnya.trim()) e.nama = 'Isi nama biaya'
+            if (!hargaLainnya || parseRupiah(hargaLainnya) <= 0) e.harga = 'Isi harga yang valid'
         } else {
             if (!selectedPendaftaran) e.biaya = 'Pilih biaya pendaftaran'
         }
@@ -185,17 +195,19 @@ const TambahBiayaPage = () => {
 
     const handleSubmit = async () => {
         if (!idTagihan || !validate()) return
-        const idBiaya =
-            jenis === 'KELAS' ? selectedBiaya!.value : selectedPendaftaran!.value
         setSubmitting(true)
         try {
-            const res = await TagihanService.addDetail(idTagihan, {
-                id_biaya: idBiaya,
-                ...(jenis === 'KELAS' && selectedJadwal
-                    ? { id_jadwal_kelas: selectedJadwal.value }
-                    : {}),
-                ...(hargaOverride ? { harga_akhir: parseRupiah(hargaOverride) } : {}),
-            })
+            const payload =
+                jenis === 'LAINNYA'
+                    ? { nama_biaya: namaLainnya.trim(), harga_akhir: parseRupiah(hargaLainnya) }
+                    : {
+                          id_biaya: jenis === 'KELAS' ? selectedBiaya!.value : selectedPendaftaran!.value,
+                          ...(jenis === 'KELAS' && selectedJadwal
+                              ? { id_jadwal_kelas: selectedJadwal.value }
+                              : {}),
+                          ...(hargaOverride ? { harga_akhir: parseRupiah(hargaOverride) } : {}),
+                      }
+            const res = await TagihanService.addDetail(idTagihan, payload)
             if (res.success) {
                 toast.push(<Notification type="success" title="Baris biaya berhasil ditambahkan" />)
                 router.push(`${ROUTES.KURSUS_TAGIHAN_CATAT_PEMBAYARAN}?id=${idTagihan}`)
@@ -217,7 +229,8 @@ const TambahBiayaPage = () => {
     const j = selectedJadwal?.jadwal
 
     const selectedHarga = b?.harga_biaya ?? 0
-    const activeOption = jenis === 'KELAS' ? selectedBiaya : selectedPendaftaran
+    const activeOption = jenis === 'KELAS' ? selectedBiaya : jenis === 'PENDAFTARAN' ? selectedPendaftaran : null
+    const lainnyaSiap = jenis === 'LAINNYA' && namaLainnya.trim() !== '' && hargaLainnya !== ''
 
     if (!idTagihan) {
         return (
@@ -266,7 +279,7 @@ const TambahBiayaPage = () => {
                         <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">
                             Jenis Biaya
                         </p>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             {(
                                 [
                                     {
@@ -280,6 +293,12 @@ const TambahBiayaPage = () => {
                                         icon: <HiOutlineClipboardCheck className="text-xl" />,
                                         title: 'Biaya Pendaftaran',
                                         desc: 'Biaya administrasi pendaftaran siswa',
+                                    },
+                                    {
+                                        val: 'LAINNYA' as JenisBiaya,
+                                        icon: <HiOutlinePencilAlt className="text-xl" />,
+                                        title: 'Biaya Lainnya',
+                                        desc: 'Ketik nama & harga secara manual',
                                     },
                                 ] as const
                             ).map(({ val, icon, title, desc }) => {
@@ -441,6 +460,28 @@ const TambahBiayaPage = () => {
                         </FormItem>
                     )}
 
+                    {/* ── Form: mode LAINNYA (manual) ── */}
+                    {jenis === 'LAINNYA' && (
+                        <>
+                            <FormItem label="Nama Biaya" asterisk invalid={!!errors.nama} errorMessage={errors.nama}>
+                                <Input
+                                    placeholder="Mis. Seragam tari, Kostum pentas"
+                                    value={namaLainnya}
+                                    maxLength={100}
+                                    onChange={(e) => setNamaLainnya(e.target.value)}
+                                />
+                            </FormItem>
+                            <FormItem label="Harga" asterisk invalid={!!errors.harga} errorMessage={errors.harga}>
+                                <Input
+                                    prefix={<span className="text-gray-500 font-medium">Rp</span>}
+                                    placeholder="0"
+                                    value={hargaLainnya}
+                                    onChange={(e) => setHargaLainnya(formatRupiahInput(e.target.value))}
+                                />
+                            </FormItem>
+                        </>
+                    )}
+
                     {/* ── Info card ringkasan ── */}
                     {(b?.nama_kelas || b?.nama_paket || b?.nama_kategori_umur || j) && (
                         <div className="rounded-xl border border-[#d0e6ff] dark:border-[#E9F3FF]/20 bg-[#E9F3FF]/60 dark:bg-[#E9F3FF]/10 px-4 py-3 flex flex-wrap gap-x-5 gap-y-2">
@@ -510,7 +551,7 @@ const TambahBiayaPage = () => {
                             'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'
                         }
                         loading={submitting}
-                        disabled={!activeOption}
+                        disabled={!activeOption && !lainnyaSiap}
                         onClick={handleSubmit}
                     >
                         Tambah Biaya

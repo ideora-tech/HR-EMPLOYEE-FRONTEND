@@ -38,6 +38,11 @@ const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormP
     const [submitting, setSubmitting] = useState(false)
     const [hargaOverride, setHargaOverride] = useState('')
 
+    /* ── mode: dari master biaya, atau biaya lainnya diketik manual ── */
+    const [mode, setMode] = useState<'master' | 'manual'>('master')
+    const [namaManual, setNamaManual] = useState('')
+    const [hargaManual, setHargaManual] = useState('')
+
     const [kelasOptions, setKelasOptions] = useState<KelasOption[]>([])
     const [loadingKelas, setLoadingKelas] = useState(false)
     const [selectedKelas, setSelectedKelas] = useState<KelasOption | null>(null)
@@ -48,7 +53,7 @@ const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormP
     const [selectedBiaya, setSelectedBiaya] = useState<BiayaOption | null>(null)
     const [selectedJadwal, setSelectedJadwal] = useState<JadwalOption | null>(null)
 
-    const [errors, setErrors] = useState<{ kelas?: string; biaya?: string }>({})
+    const [errors, setErrors] = useState<{ kelas?: string; biaya?: string; nama?: string; harga?: string }>({})
 
     const loadKelas = useCallback(async () => {
         setLoadingKelas(true)
@@ -115,6 +120,9 @@ const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormP
             setBiayaOptions([])
             setJadwalOptions([])
             setHargaOverride('')
+            setMode('master')
+            setNamaManual('')
+            setHargaManual('')
             setErrors({})
             loadKelas()
         }
@@ -130,8 +138,13 @@ const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormP
 
     const validate = () => {
         const e: typeof errors = {}
-        if (!selectedKelas) e.kelas = 'Pilih kelas terlebih dahulu'
-        if (!selectedBiaya) e.biaya = 'Pilih biaya'
+        if (mode === 'manual') {
+            if (!namaManual.trim()) e.nama = 'Isi nama biaya'
+            if (!hargaManual || parseRupiah(hargaManual) <= 0) e.harga = 'Isi harga yang valid'
+        } else {
+            if (!selectedKelas) e.kelas = 'Pilih kelas terlebih dahulu'
+            if (!selectedBiaya) e.biaya = 'Pilih biaya'
+        }
         setErrors(e)
         return Object.keys(e).length === 0
     }
@@ -140,11 +153,15 @@ const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormP
         if (!tagihan || !validate()) return
         setSubmitting(true)
         try {
-            const res = await TagihanService.addDetail(tagihan.id_tagihan, {
-                id_biaya: selectedBiaya!.value,
-                ...(selectedJadwal ? { id_jadwal_kelas: selectedJadwal.value } : {}),
-                ...(hargaOverride ? { harga_akhir: parseRupiah(hargaOverride) } : {}),
-            })
+            const payload =
+                mode === 'manual'
+                    ? { nama_biaya: namaManual.trim(), harga_akhir: parseRupiah(hargaManual) }
+                    : {
+                          id_biaya: selectedBiaya!.value,
+                          ...(selectedJadwal ? { id_jadwal_kelas: selectedJadwal.value } : {}),
+                          ...(hargaOverride ? { harga_akhir: parseRupiah(hargaOverride) } : {}),
+                      }
+            const res = await TagihanService.addDetail(tagihan.id_tagihan, payload)
             if (res.success) {
                 toast.push(<Notification type="success" title="Baris biaya berhasil ditambahkan" />)
                 onSaved(res.data)
@@ -169,7 +186,51 @@ const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormP
             <h5 className="mb-6">Tambah Baris Biaya</h5>
             <div className="flex flex-col gap-4">
 
+                {/* Sumber biaya: master atau ketik manual */}
+                <div className="grid grid-cols-2 gap-2">
+                    {([
+                        { val: 'master' as const, label: 'Dari Master Biaya' },
+                        { val: 'manual' as const, label: 'Biaya Lainnya (ketik manual)' },
+                    ]).map(({ val, label }) => (
+                        <button
+                            key={val}
+                            type="button"
+                            onClick={() => { setMode(val); setErrors({}) }}
+                            className={[
+                                'px-3 py-2 rounded-lg border text-sm font-medium transition-colors',
+                                mode === val
+                                    ? 'border-[#2a85ff] bg-[#E9F3FF] text-[#2a85ff] dark:bg-[#E9F3FF]/10'
+                                    : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300',
+                            ].join(' ')}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+
+                {mode === 'manual' && (
+                    <>
+                        <FormItem label="Nama Biaya" asterisk invalid={!!errors.nama} errorMessage={errors.nama}>
+                            <Input
+                                placeholder="Mis. Seragam tari, Kostum pentas"
+                                value={namaManual}
+                                maxLength={100}
+                                onChange={(e) => setNamaManual(e.target.value)}
+                            />
+                        </FormItem>
+                        <FormItem label="Harga" asterisk invalid={!!errors.harga} errorMessage={errors.harga}>
+                            <Input
+                                prefix={<span className="text-gray-500 font-medium">Rp</span>}
+                                placeholder="0"
+                                value={hargaManual}
+                                onChange={(e) => setHargaManual(formatRupiahInput(e.target.value))}
+                            />
+                        </FormItem>
+                    </>
+                )}
+
                 {/* Step 1: Kelas */}
+                {mode === 'master' && (
                 <FormItem label="Kelas" asterisk invalid={!!errors.kelas} errorMessage={errors.kelas}>
                     <Select<KelasOption>
                         placeholder={loadingKelas ? 'Memuat kelas…' : 'Pilih kelas'}
@@ -180,6 +241,7 @@ const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormP
                         isClearable
                     />
                 </FormItem>
+                )}
 
                 {/* Step 2: Biaya (muncul setelah kelas dipilih) */}
                 {selectedKelas && (
@@ -294,7 +356,7 @@ const TambahDetailForm = ({ open, tagihan, onClose, onSaved }: TambahDetailFormP
                     variant="solid"
                     customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
                     loading={submitting}
-                    disabled={!selectedBiaya}
+                    disabled={mode === 'manual' ? !namaManual.trim() || !hargaManual : !selectedBiaya}
                     onClick={handleSubmit}
                 >
                     Tambah

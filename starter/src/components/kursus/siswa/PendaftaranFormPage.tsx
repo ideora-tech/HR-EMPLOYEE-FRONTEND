@@ -110,9 +110,9 @@ const PendaftaranFormPage = ({
     const [isTrial, setIsTrial] = useState(false)
     const [selectedJadwalTrial, setSelectedJadwalTrial] = useState<SelectOption | null>(null)
 
-    const [diskonMode, setDiskonMode] = useState<'none' | 'dropdown' | 'kode' | 'manual'>('none')
+    // Kode promo sengaja tidak ditawarkan saat pendaftaran — pilih dari master atau diskon manual
+    const [diskonMode, setDiskonMode] = useState<'none' | 'dropdown' | 'manual'>('none')
     const [selectedDiskon, setSelectedDiskon] = useState<SelectOption | null>(null)
-    const [kodeDiskon, setKodeDiskon] = useState('')
     // Diskon manual (tanpa master data)
     const [manualTipe, setManualTipe] = useState<'persen' | 'nominal'>('persen')
     const [manualNilai, setManualNilai] = useState('')
@@ -231,7 +231,6 @@ const PendaftaranFormPage = ({
             })
             if (tagihanRows.length === 0) e.tagihan_global = 'Minimal satu tagihan wajib diisi'
             if (diskonMode === 'dropdown' && !selectedDiskon) e.diskon = 'Pilih diskon dari daftar'
-            if (diskonMode === 'kode' && !kodeDiskon.trim()) e.diskon = 'Kode promo tidak boleh kosong'
             if (diskonMode === 'manual') {
                 const nilai = Number(manualNilai.replace(/[^0-9.]/g, ''))
                 if (!manualNilai.trim() || Number.isNaN(nilai) || nilai <= 0) e.diskon = 'Isi nilai diskon lebih dari 0'
@@ -283,7 +282,6 @@ const PendaftaranFormPage = ({
             ...baseFields,
             tagihan,
             ...(diskonMode === 'dropdown' && selectedDiskon && { id_diskon: selectedDiskon.value }),
-            ...(diskonMode === 'kode' && kodeDiskon.trim() && { kode_diskon: kodeDiskon.trim() }),
             ...(diskonMode === 'manual' && {
                 diskon_manual: {
                     ...(manualNama.trim() && { nama: manualNama.trim() }),
@@ -548,14 +546,13 @@ const PendaftaranFormPage = ({
                             <div className="flex flex-col gap-3">
                                 {/* Mode selector */}
                                 <div className="flex gap-2">
-                                    {(['none', 'dropdown', 'kode', 'manual'] as const).map((mode) => (
+                                    {(['none', 'dropdown', 'manual'] as const).map((mode) => (
                                         <button
                                             key={mode}
                                             type="button"
                                             onClick={() => {
                                                 setDiskonMode(mode)
                                                 setSelectedDiskon(null)
-                                                setKodeDiskon('')
                                                 setManualNilai('')
                                                 setManualNama('')
                                                 setErrors((p) => { const n = { ...p }; delete n.diskon; return n })
@@ -565,7 +562,7 @@ const PendaftaranFormPage = ({
                                                 : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
                                                 }`}
                                         >
-                                            {mode === 'none' ? 'Tanpa Diskon' : mode === 'dropdown' ? 'Pilih Diskon' : mode === 'kode' ? 'Kode Promo' : 'Diskon Manual'}
+                                            {mode === 'none' ? 'Tanpa Diskon' : mode === 'dropdown' ? 'Pilih Diskon' : 'Diskon Manual'}
                                         </button>
                                     ))}
                                 </div>
@@ -582,19 +579,6 @@ const PendaftaranFormPage = ({
                                             isClearable
                                             value={selectedDiskon}
                                             onChange={(opt) => setSelectedDiskon(opt as SelectOption | null)}
-                                        />
-                                    </FormItem>
-                                )}
-
-                                {diskonMode === 'kode' && (
-                                    <FormItem
-                                        invalid={!!errors.diskon}
-                                        errorMessage={errors.diskon}
-                                    >
-                                        <Input
-                                            placeholder="Masukkan kode promo"
-                                            value={kodeDiskon}
-                                            onChange={(e) => setKodeDiskon(e.target.value.toUpperCase())}
                                         />
                                     </FormItem>
                                 )}

@@ -6,7 +6,6 @@ import {
     Card,
     DatePicker,
     FormItem,
-    Input,
     Notification,
     Select,
     toast,
@@ -77,9 +76,9 @@ const TagihanFormPage = ({
 
     const [tagihanRows, setTagihanRows] = useState<TagihanItem[]>([newTagihanItem()])
 
-    const [diskonMode, setDiskonMode] = useState<'none' | 'dropdown' | 'kode'>('none')
+    // Kode promo sengaja tidak ditawarkan saat pembuatan tagihan — cukup pilih dari master diskon
+    const [diskonMode, setDiskonMode] = useState<'none' | 'dropdown'>('none')
     const [selectedDiskon, setSelectedDiskon] = useState<SelectOption | null>(null)
-    const [kodeDiskon, setKodeDiskon] = useState('')
     const [diskonOptions, setDiskonOptions] = useState<SelectOption[]>([])
     const [loadingDiskon, setLoadingDiskon] = useState(false)
 
@@ -234,9 +233,6 @@ const TagihanFormPage = ({
         if (diskonMode === 'dropdown' && !selectedDiskon) {
             e.diskon = 'Pilih diskon dari daftar'
         }
-        if (diskonMode === 'kode' && !kodeDiskon.trim()) {
-            e.diskon = 'Kode promo tidak boleh kosong'
-        }
 
         setErrors(e)
         return Object.keys(e).length === 0
@@ -256,7 +252,6 @@ const TagihanFormPage = ({
                 ...(row.periode.trim() && { periode: row.periode.trim() }),
             })),
             ...(diskonMode === 'dropdown' && selectedDiskon && { id_diskon: selectedDiskon.value }),
-            ...(diskonMode === 'kode' && kodeDiskon.trim() && { kode_diskon: kodeDiskon.trim() }),
         }
 
         onSubmit(payload)
@@ -328,14 +323,13 @@ const TagihanFormPage = ({
 
                         <div className="flex flex-col gap-3">
                             <div className="flex gap-2">
-                                {(['none', 'dropdown', 'kode'] as const).map((mode) => (
+                                {(['none', 'dropdown'] as const).map((mode) => (
                                     <button
                                         key={mode}
                                         type="button"
                                         onClick={() => {
                                             setDiskonMode(mode)
                                             setSelectedDiskon(null)
-                                            setKodeDiskon('')
                                             setErrors((p) => {
                                                 const n = { ...p }
                                                 delete n.diskon
@@ -348,11 +342,7 @@ const TagihanFormPage = ({
                                                 : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
                                         }`}
                                     >
-                                        {mode === 'none'
-                                            ? 'Tanpa Diskon'
-                                            : mode === 'dropdown'
-                                              ? 'Pilih Diskon'
-                                              : 'Kode Promo'}
+                                        {mode === 'none' ? 'Tanpa Diskon' : 'Pilih Diskon'}
                                     </button>
                                 ))}
                             </div>
@@ -367,18 +357,6 @@ const TagihanFormPage = ({
                                         value={selectedDiskon}
                                         onChange={(opt) =>
                                             setSelectedDiskon(opt as SelectOption | null)
-                                        }
-                                    />
-                                </FormItem>
-                            )}
-
-                            {diskonMode === 'kode' && (
-                                <FormItem invalid={!!errors.diskon} errorMessage={errors.diskon}>
-                                    <Input
-                                        placeholder="Masukkan kode promo"
-                                        value={kodeDiskon}
-                                        onChange={(e) =>
-                                            setKodeDiskon(e.target.value.toUpperCase())
                                         }
                                     />
                                 </FormItem>

@@ -395,7 +395,9 @@ export interface ITagihanDetailItem {
 }
 
 export interface IAddDetailTagihan {
-    id_biaya: string
+    /** UUID master biaya. Kosongkan untuk biaya lainnya (manual) — isi nama_biaya + harga_akhir. */
+    id_biaya?: string
+    nama_biaya?: string
     id_jadwal_kelas?: string
     periode?: string
     harga_akhir?: number

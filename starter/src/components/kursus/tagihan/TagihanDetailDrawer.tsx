@@ -47,6 +47,8 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
     const [batalkanConfirm, setBatalkanConfirm] = useState(false)
     const [batalkanLoading, setBatalkanLoading] = useState(false)
     const [kwitansiLoading, setKwitansiLoading] = useState(false)
+    const [hapusDiskonConfirm, setHapusDiskonConfirm] = useState(false)
+    const [hapusDiskonLoading, setHapusDiskonLoading] = useState(false)
 
     /* ── Load riwayat pembayaran ── */
     useEffect(() => {
@@ -122,6 +124,26 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
             )
         } finally {
             setBatalkanLoading(false)
+        }
+    }
+
+    /** Lepas diskon yang sudah diterapkan — backend mengembalikan total ke harga kotor. */
+    const handleHapusDiskon = async () => {
+        if (!tagihan) return
+        setHapusDiskonLoading(true)
+        try {
+            await TagihanService.applyDiskon(tagihan.id_tagihan, { id_diskon: null })
+            toast.push(<Notification type="success" title="Diskon dihapus dari tagihan" />)
+            setHapusDiskonConfirm(false)
+            onChanged()
+        } catch (err) {
+            toast.push(
+                <Notification type="danger" title="Gagal menghapus diskon">
+                    {parseApiError(err)}
+                </Notification>,
+            )
+        } finally {
+            setHapusDiskonLoading(false)
         }
     }
 
@@ -208,10 +230,22 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                                             <span>Harga biaya</span>
                                             <span>{formatRupiah((tagihan.total_harga) + (tagihan.nominal_diskon ?? 0))}</span>
                                         </div>
-                                        <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-                                            <span>
+                                        <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                                            <span className="flex items-center gap-1.5">
                                                 Diskon — {tagihan.nama_diskon}
                                                 {tagihan.persen_diskon ? ` (${tagihan.persen_diskon}%)` : ''}
+                                                {/* Diskon bisa dilepas selama tagihan belum lunas/batal */}
+                                                {!readOnly && tagihan.status !== 3 && tagihan.status !== 4 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setHapusDiskonConfirm(true)}
+                                                        className="inline-flex items-center justify-center w-5 h-5 rounded text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                                                        title="Hapus diskon"
+                                                        aria-label="Hapus diskon"
+                                                    >
+                                                        <HiOutlineX className="text-sm" />
+                                                    </button>
+                                                )}
                                             </span>
                                             <span>− {formatRupiah(tagihan.nominal_diskon ?? 0)}</span>
                                         </div>
@@ -400,6 +434,39 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                             onClick={handleBatalkan}
                         >
                             Ya, Batalkan
+                        </Button>
+                    </div>
+                </div>
+            </Dialog>
+
+            {/* ── Konfirmasi hapus diskon ── */}
+            <Dialog
+                isOpen={hapusDiskonConfirm}
+                onClose={() => setHapusDiskonConfirm(false)}
+                onRequestClose={() => setHapusDiskonConfirm(false)}
+            >
+                <div className="flex flex-col gap-4">
+                    <h5 className="font-semibold">Hapus Diskon</h5>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Diskon <span className="font-semibold">{tagihan?.nama_diskon}</span>
+                        {' '}({formatRupiah(tagihan?.nominal_diskon ?? 0)}) akan dilepas dan total tagihan
+                        kembali ke harga semula. Lanjutkan?
+                    </p>
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            variant="plain"
+                            onClick={() => setHapusDiskonConfirm(false)}
+                            disabled={hapusDiskonLoading}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            variant="solid"
+                            customColorClass={() => 'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white border-red-500'}
+                            loading={hapusDiskonLoading}
+                            onClick={handleHapusDiskon}
+                        >
+                            Ya, Hapus Diskon
                         </Button>
                     </div>
                 </div>
