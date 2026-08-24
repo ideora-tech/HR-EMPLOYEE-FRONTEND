@@ -312,6 +312,7 @@ export default function MonitoringPage() {
                                 columns={siswaColumns}
                                 data={siswaList}
                                 loading={loadingSiswa}
+                                noData={!loadingSiswa && siswaList.length === 0}
                                 pagingData={{ pageSize: siswaPageSize, pageIndex: siswaPage, total: siswaTotal }}
                                 onPaginationChange={p => { setSiswaPage(p); fetchPresensi(p) }}
                                 onSelectChange={() => {}}
@@ -342,6 +343,7 @@ export default function MonitoringPage() {
                                 columns={coachColumns}
                                 data={coachList}
                                 loading={loadingCoach}
+                                noData={!loadingCoach && coachList.length === 0}
                                 pagingData={{ pageSize: coachPageSize, pageIndex: coachPage, total: coachTotal }}
                                 onPaginationChange={p => { setCoachPage(p); fetchCoach(p) }}
                                 onSelectChange={() => {}}

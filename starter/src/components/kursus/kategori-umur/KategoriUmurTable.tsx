@@ -36,14 +36,14 @@ const KategoriUmurTable = ({
                     (pagingData.pageIndex - 1) * pagingData.pageSize + row.index + 1,
             },
             {
-                header: 'Nama Kategori',
+                header: 'Umur',
                 accessorKey: 'nama_kategori_umur',
                 cell: ({ row }: CellContext<IKategoriUmur, unknown>) => (
                     <span className="font-semibold">{row.original.nama_kategori_umur}</span>
                 ),
             },
             {
-                header: 'Kelas',
+                header: 'Kategori',
                 accessorKey: 'nama_kelas',
                 size: 140,
                 cell: ({ row }: CellContext<IKategoriUmur, unknown>) =>

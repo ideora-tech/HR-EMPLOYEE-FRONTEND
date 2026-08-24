@@ -98,7 +98,7 @@ const KategoriUmurTab = () => {
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pb-3">
                 <Input
                     className="flex-1 w-full"
-                    placeholder="Cari nama kategori... (tekan Enter)"
+                    placeholder="Cari umur... (tekan Enter)"
                     suffix={
                         searchInput ? (
                             <HiOutlineX
