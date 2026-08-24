@@ -228,7 +228,7 @@ const KaryawanFormPage = ({
                 telepon: editData.telepon ?? '',
                 tanggal_masuk: strToDate(editData.tanggal_masuk),
                 status_kepegawaian: editData.status_kepegawaian ?? '',
-                peran: 'EMPLOYEE',
+                peran: editData.peran_akun ?? 'EMPLOYEE',
                 gaji_pokok: editData.gaji_pokok != null ? String(editData.gaji_pokok) : '',
                 alamat: editData.alamat ?? '',
                 foto_url: normalizeFotoUrl(editData.foto_url),
@@ -252,7 +252,7 @@ const KaryawanFormPage = ({
     const handleSubmit = () => {
         if (!validate()) return
 
-        const base: ICreateKaryawan = {
+        const base = {
             nik: form.nik.trim() || undefined,
             nama_karyawan: form.nama.trim(),
             jenis_kelamin: form.jenis_kelamin ? (Number(form.jenis_kelamin) as 1 | 2) : undefined,
@@ -261,15 +261,17 @@ const KaryawanFormPage = ({
             telepon: form.telepon.trim() || undefined,
             tanggal_masuk: form.tanggal_masuk ? dateToStr(form.tanggal_masuk) : undefined,
             status_kepegawaian: (form.status_kepegawaian as StatusKepegawaian) || undefined,
-            peran: form.peran,
             gaji_pokok: form.gaji_pokok ? Number(form.gaji_pokok) : undefined,
             alamat: form.alamat.trim() || undefined,
         }
 
         if (isEdit) {
-            onSubmit({ ...base, aktif: form.aktif ? 1 : 0 } as IUpdateKaryawan, fotoFile)
+            onSubmit(
+                { ...base, peran: form.peran, aktif: form.aktif ? 1 : 0 } as IUpdateKaryawan,
+                fotoFile,
+            )
         } else {
-            onSubmit(base, fotoFile)
+            onSubmit({ ...base, peran: form.peran } as ICreateKaryawan, fotoFile)
         }
     }
 

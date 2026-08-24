@@ -68,6 +68,7 @@ export interface IKaryawan {
     aktif: number
     dibuat_pada: string
     diubah_pada: string | null
+    peran_akun: string | null
     jabatan: { id_jabatan: string; nama_jabatan: string; level: number | null } | null
     departemen: { id_departemen: string; nama_departemen: string } | null
 }

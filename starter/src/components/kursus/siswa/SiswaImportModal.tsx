@@ -11,9 +11,12 @@ interface SiswaImportModalProps {
     open: boolean
     onClose: () => void
     onSuccess: () => void
+    /** Dipanggil segera setelah ada baris yang berhasil diimport — untuk refresh daftar
+     *  di belakang modal hasil, tanpa menunggu tombol "Selesai" atau cara menutup modal. */
+    onImported?: () => void
 }
 
-const SiswaImportModal = ({ open, onClose, onSuccess }: SiswaImportModalProps) => {
+const SiswaImportModal = ({ open, onClose, onSuccess, onImported }: SiswaImportModalProps) => {
     const [fileList, setFileList] = useState<File[]>([])
     const [uploading, setUploading] = useState(false)
     const [result, setResult] = useState<IImportResult | null>(null)
@@ -33,6 +36,8 @@ const SiswaImportModal = ({ open, onClose, onSuccess }: SiswaImportModalProps) =
             const res = await SiswaService.importExcel(fileList[0])
             if (res.success) {
                 setResult(res.data)
+                // Data sudah tersimpan di server → daftar siswa langsung disegarkan
+                if (res.data.berhasil > 0) onImported?.()
             }
         } catch (err) {
             toast.push(

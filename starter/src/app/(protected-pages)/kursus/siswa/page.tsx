@@ -210,6 +210,7 @@ const SiswaPage = () => {
             <SiswaImportModal
                 open={importOpen}
                 onClose={() => setImportOpen(false)}
+                onImported={fetchData}
                 onSuccess={() => {
                     setImportOpen(false)
                     fetchData()
