@@ -1,0 +1,67 @@
+/* Dunia visual /profil (Sky Dance Academy) — dinamai khusus (sky-*) supaya
+   tidak bentrok dengan token global app.css milik aplikasi utama.
+   Arah "standar kategori": template dance-studio konvensional, warna berani
+   diambil dari logo (ungu/pink/navy/gold), latar terang, tanpa motif
+   abstrak langit malam. */
+
+.sky-profile {
+    --sky-bg: #ffffff;
+    --sky-surface: #f8f5fc;
+    --sky-ink: #1c1440;
+    --sky-body: #4b3f73;
+    --sky-primary: #b0529c;
+    --sky-primary-deep: #8a3b83;
+    --sky-violet: #4a3b7a;
+    --sky-navy: #16204a;
+    --sky-gold: #f2b705;
+    --sky-star: #ffffff;
+
+    background-color: var(--sky-bg);
+    color: var(--sky-body);
+}
+
+.sky-profile ::selection {
+    background-color: var(--sky-primary);
+    color: #ffffff;
+}
+
+.sky-profile :focus-visible {
+    outline: 2px solid var(--sky-primary);
+    outline-offset: 2px;
+}
+
+.sky-profile {
+    scrollbar-color: var(--sky-primary) var(--sky-surface);
+}
+
+.sky-profile ::-webkit-scrollbar {
+    width: 10px;
+}
+
+.sky-profile ::-webkit-scrollbar-track {
+    background: var(--sky-surface);
+}
+
+.sky-profile ::-webkit-scrollbar-thumb {
+    background-color: var(--sky-primary);
+    border-radius: 9999px;
+    border: 2px solid var(--sky-surface);
+}
+
+.sky-hero-gradient {
+    background: linear-gradient(
+        135deg,
+        var(--sky-navy) 0%,
+        var(--sky-violet) 58%,
+        var(--sky-primary-deep) 100%
+    );
+}
+
+.sky-cta-banner-gradient {
+    background: linear-gradient(
+        135deg,
+        var(--sky-navy) 0%,
+        var(--sky-violet) 55%,
+        var(--sky-primary) 100%
+    );
+}
