@@ -20,6 +20,7 @@ import {
 } from 'react-icons/hi'
 import SiswaTable from '@/components/kursus/siswa/SiswaTable'
 import SiswaImportModal from '@/components/kursus/siswa/SiswaImportModal'
+import AssignKelasModal from '@/components/kursus/siswa/AssignKelasModal'
 import SiswaService from '@/services/kursus/siswa.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
@@ -51,6 +52,9 @@ const SiswaPage = () => {
     const [deleteTarget, setDeleteTarget] = useState<ISiswa | null>(null)
     const [importOpen, setImportOpen] = useState(false)
     const [downloading, setDownloading] = useState(false)
+
+    const [selectedSiswa, setSelectedSiswa] = useState<ISiswa[]>([])
+    const [assignBulkOpen, setAssignBulkOpen] = useState(false)
 
     const handleDownloadTemplate = async () => {
         setDownloading(true)
@@ -108,6 +112,24 @@ const SiswaPage = () => {
         } finally {
             setSubmitting(false)
         }
+    }
+
+    const handleCheckBoxChange = (checked: boolean, row: ISiswa) => {
+        setSelectedSiswa((prev) => {
+            if (checked) {
+                if (prev.some((s) => s.id_siswa === row.id_siswa)) return prev
+                return [...prev, row]
+            }
+            return prev.filter((s) => s.id_siswa !== row.id_siswa)
+        })
+    }
+
+    const handleSelectAllChange = (checked: boolean, pageRows: ISiswa[]) => {
+        setSelectedSiswa((prev) => {
+            const pageIds = new Set(pageRows.map((r) => r.id_siswa))
+            const rest = prev.filter((s) => !pageIds.has(s.id_siswa))
+            return checked ? [...rest, ...pageRows] : rest
+        })
     }
 
     return (
@@ -192,6 +214,30 @@ const SiswaPage = () => {
                     </div>
                 </div>
 
+                {selectedSiswa.length > 0 && (
+                    <div className="mx-4 mb-3 flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20">
+                        <p className="text-sm text-violet-700 dark:text-violet-300">
+                            <span className="font-semibold">{selectedSiswa.length}</span> siswa dipilih
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <Button size="sm" variant="plain" onClick={() => setSelectedSiswa([])}>
+                                Batal
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="solid"
+                                customColorClass={() =>
+                                    'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'
+                                }
+                                icon={<HiOutlineClipboardCheck />}
+                                onClick={() => setAssignBulkOpen(true)}
+                            >
+                                Assign ke Kelas
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
                 <SiswaTable
                     data={list}
                     loading={loading}
@@ -204,6 +250,9 @@ const SiswaPage = () => {
                     onDetail={(item) => router.push(ROUTES.KURSUS_SISWA_DETAIL(item.id_siswa))}
                     onEdit={(item) => router.push(ROUTES.KURSUS_SISWA_EDIT(item.id_siswa))}
                     onDelete={setDeleteTarget}
+                    selectedIds={selectedSiswa.map((s) => s.id_siswa)}
+                    onCheckBoxChange={handleCheckBoxChange}
+                    onSelectAllChange={handleSelectAllChange}
                 />
             </Card>
 
@@ -213,6 +262,17 @@ const SiswaPage = () => {
                 onImported={fetchData}
                 onSuccess={() => {
                     setImportOpen(false)
+                    fetchData()
+                }}
+            />
+
+            <AssignKelasModal
+                isOpen={assignBulkOpen}
+                siswaList={selectedSiswa}
+                onClose={() => setAssignBulkOpen(false)}
+                onSuccess={() => {
+                    setAssignBulkOpen(false)
+                    setSelectedSiswa([])
                     fetchData()
                 }}
             />

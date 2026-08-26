@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { Button, Dialog, FormItem, Input, Select } from '@/components/ui'
-import { HiOutlineExclamationCircle } from 'react-icons/hi'
+import { HiOutlineExclamationCircle, HiOutlineCheckCircle, HiOutlineXCircle } from 'react-icons/hi'
 import { parseApiError } from '@/utils/parseApiError'
 import { formatRupiah } from '@/utils/formatNumber'
 import KelasService from '@/services/kursus/kelas.service'
@@ -14,14 +14,20 @@ import type { ISiswa, IKelas, IKategoriUmur, IJadwalKelas, IBiaya } from '@/@typ
 
 interface AssignKelasModalProps {
     isOpen: boolean
-    siswa: ISiswa | null
+    siswaList: ISiswa[]
     onClose: () => void
     onSuccess: () => void
 }
 
 type SelectOption = { value: string; label: string }
 
-const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModalProps) => {
+interface AssignOutcome {
+    siswa: ISiswa
+    success: boolean
+    message?: string
+}
+
+const AssignKelasModal = ({ isOpen, siswaList, onClose, onSuccess }: AssignKelasModalProps) => {
     const [kelasList, setKelasList] = useState<SelectOption[]>([])
     const [jadwalList, setJadwalList] = useState<IJadwalKelas[]>([])
     const [kategoriList, setKategoriList] = useState<IKategoriUmur[]>([])
@@ -38,6 +44,7 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
     const [submitting, setSubmitting] = useState(false)
     const [isTrial, setIsTrial] = useState(false)
     const [error, setError] = useState('')
+    const [results, setResults] = useState<AssignOutcome[] | null>(null)
 
     // Reset on open
     useEffect(() => {
@@ -54,6 +61,7 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
         setTotalSesiAutoFilled(false)
         setError('')
         setIsTrial(false)
+        setResults(null)
 
         KelasService.getAll({ aktif: 1, limit: 200 }).then((res) => {
             setKelasList(res.data.map((k: IKelas) => ({ value: k.id_kelas, label: k.nama_kelas })))
@@ -148,7 +156,7 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
     }
 
     const handleSubmit = async () => {
-        if (!siswa || !selectedKelas) {
+        if (!selectedKelas) {
             setError('Pilih kelas terlebih dahulu')
             return
         }
@@ -163,27 +171,33 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
         setSubmitting(true)
         setError('')
         try {
-            if (isTrial) {
-                // Trial: hanya buat catat_kelas_siswa, tanpa tagihan
-                await CatatKelasSiswaService.create({
-                    id_siswa: siswa.id_siswa,
-                    id_jadwal_kelas: selectedJadwal.value,
-                    ...(totalSesi !== '' ? { total_sesi: Number(totalSesi) } : {}),
-                    is_trial: 1,
-                })
-            } else {
-                // Reguler: buat catat_kelas_siswa + tagihan dalam 1 transaksi
-                await CatatKelasSiswaService.adminEnroll({
-                    id_siswa: siswa.id_siswa,
-                    id_jadwal_kelas: selectedJadwal.value,
-                    id_biaya: selectedBiaya!.value,
-                    ...(totalSesi !== '' ? { total_sesi: Number(totalSesi) } : {}),
-                })
+            const outcomes: AssignOutcome[] = []
+            // Sequential agar satu kegagalan tidak menghentikan proses siswa lain
+            for (const siswa of siswaList) {
+                try {
+                    if (isTrial) {
+                        // Trial: hanya buat catat_kelas_siswa, tanpa tagihan
+                        await CatatKelasSiswaService.create({
+                            id_siswa: siswa.id_siswa,
+                            id_jadwal_kelas: selectedJadwal.value,
+                            ...(totalSesi !== '' ? { total_sesi: Number(totalSesi) } : {}),
+                            is_trial: 1,
+                        })
+                    } else {
+                        // Reguler: buat catat_kelas_siswa + tagihan dalam 1 transaksi
+                        await CatatKelasSiswaService.adminEnroll({
+                            id_siswa: siswa.id_siswa,
+                            id_jadwal_kelas: selectedJadwal.value,
+                            id_biaya: selectedBiaya!.value,
+                            ...(totalSesi !== '' ? { total_sesi: Number(totalSesi) } : {}),
+                        })
+                    }
+                    outcomes.push({ siswa, success: true })
+                } catch (err: unknown) {
+                    outcomes.push({ siswa, success: false, message: parseApiError(err) })
+                }
             }
-            onSuccess()
-            onClose()
-        } catch (err: unknown) {
-            setError(parseApiError(err))
+            setResults(outcomes)
         } finally {
             setSubmitting(false)
         }
@@ -192,21 +206,77 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
     return (
         <Dialog
             isOpen={isOpen}
-            onClose={onClose}
-            onRequestClose={onClose}
+            onClose={results !== null ? onSuccess : onClose}
+            onRequestClose={results !== null ? onSuccess : onClose}
             width={600}
             style={{ overlay: { display: 'flex', alignItems: 'center', justifyContent: 'center' } }}
         >
             <h5 className="mb-1">Input Kelas</h5>
-            {siswa && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
-                    Siswa:{' '}
-                    <span className="font-semibold text-gray-700 dark:text-gray-200">
-                        {siswa.nama_siswa}
-                    </span>
-                </p>
+            {siswaList.length > 0 && (
+                <div className="mb-5">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                        Menambahkan{' '}
+                        <span className="font-semibold text-gray-700 dark:text-gray-200">
+                            {siswaList.length} siswa
+                        </span>{' '}
+                        ke kelas
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                        {siswaList.map((s) => (
+                            <span
+                                key={s.id_siswa}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                            >
+                                {s.nama_siswa}
+                            </span>
+                        ))}
+                    </div>
+                </div>
             )}
 
+            {results !== null ? (
+                <div className="flex flex-col gap-4">
+                    <div className="max-h-72 overflow-y-auto flex flex-col gap-2 pr-1">
+                        {results.map((r) => (
+                            <div
+                                key={r.siswa.id_siswa}
+                                className="flex items-start justify-between gap-3 p-3 rounded-lg border border-gray-100 dark:border-gray-700"
+                            >
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                    {r.siswa.nama_siswa}
+                                </span>
+                                {r.success ? (
+                                    <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
+                                        <HiOutlineCheckCircle className="text-base" />
+                                        Berhasil
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-1 text-xs font-semibold text-red-500 dark:text-red-400 text-right">
+                                        <HiOutlineXCircle className="text-base flex-shrink-0" />
+                                        {r.message}
+                                    </span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {results.filter((r) => r.success).length} berhasil,{' '}
+                        {results.filter((r) => !r.success).length} gagal
+                    </p>
+
+                    <div className="flex justify-end mt-2">
+                        <Button
+                            variant="solid"
+                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                            onClick={onSuccess}
+                        >
+                            Selesai
+                        </Button>
+                    </div>
+                </div>
+            ) : (
+                <>
             <div className="flex flex-col gap-4">
                 {/* Kelas */}
                 <FormItem
@@ -371,6 +441,8 @@ const AssignKelasModal = ({ isOpen, siswa, onClose, onSuccess }: AssignKelasModa
                     {isTrial ? 'Daftar Trial' : 'Assign & Buat Tagihan'}
                 </Button>
             </div>
+                </>
+            )}
         </Dialog>
     )
 }

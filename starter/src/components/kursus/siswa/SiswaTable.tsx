@@ -22,6 +22,9 @@ interface SiswaTableProps {
     onEdit: (item: ISiswa) => void
     onDelete: (item: ISiswa) => void
     onDetail: (item: ISiswa) => void
+    selectedIds: string[]
+    onCheckBoxChange: (checked: boolean, row: ISiswa) => void
+    onSelectAllChange: (checked: boolean, pageRows: ISiswa[]) => void
 }
 
 const SiswaTable = ({
@@ -33,6 +36,9 @@ const SiswaTable = ({
     onEdit,
     onDelete,
     onDetail,
+    selectedIds,
+    onCheckBoxChange,
+    onSelectAllChange,
 }: SiswaTableProps) => {
     const columns: ColumnDef<ISiswa>[] = useMemo(
         () => [
@@ -187,6 +193,16 @@ const SiswaTable = ({
             pagingData={pagingData}
             onPaginationChange={onPaginationChange}
             onSelectChange={onSelectChange}
+            selectable
+            checkboxChecked={(row) => selectedIds.includes((row as ISiswa).id_siswa)}
+            onCheckBoxChange={(checked, row) => onCheckBoxChange(checked, row as ISiswa)}
+            indeterminateCheckboxChecked={(rows) =>
+                rows.length > 0 &&
+                rows.every((r) => selectedIds.includes((r.original as ISiswa).id_siswa))
+            }
+            onIndeterminateCheckBoxChange={(checked, rows) =>
+                onSelectAllChange(checked, rows.map((r) => r.original as ISiswa))
+            }
         />
     )
 }
