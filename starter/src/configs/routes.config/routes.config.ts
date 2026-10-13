@@ -17,11 +17,6 @@ export const publicRoutes: Routes = {
         key: 'profil',
         authority: [],
     },
-    // SEMENTARA — hapus bersama halaman zz-repro-kedip
-    '/zz-repro-kedip': {
-        key: 'zzReproKedip',
-        authority: [],
-    },
 }
 
 export const authRoutes = authRoute
