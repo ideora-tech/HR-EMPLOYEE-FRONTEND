@@ -11,6 +11,7 @@ import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { ITagihan, IPembayaran } from '@/@types/kursus.types'
 import PembayaranForm from './PembayaranForm'
 import KonfirmasiPanel from './KonfirmasiPanel'
+import BatalkanTagihanDialog from './BatalkanTagihanDialog'
 
 /* ─── helpers ────────────────────────────────────────────── */
 
@@ -111,11 +112,11 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
         }
     }
 
-    const handleBatalkan = async () => {
+    const handleBatalkan = async (alasan: string) => {
         if (!tagihan) return
         setBatalkanLoading(true)
         try {
-            await TagihanService.batalkan(tagihan.id_tagihan)
+            await TagihanService.batalkan(tagihan.id_tagihan, alasan)
             toast.push(<Notification type="success" title="Tagihan berhasil dibatalkan" />)
             setBatalkanConfirm(false)
             onChanged()
@@ -284,6 +285,11 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                             {tagihan.deskripsi && (
                                 <p className="text-sm text-gray-400 italic">&quot;{tagihan.deskripsi}&quot;</p>
                             )}
+                            {tagihan.status === 4 && tagihan.alasan_batal && (
+                                <p className="text-sm text-red-500 dark:text-red-400">
+                                    <span className="font-semibold">Alasan batal:</span> {tagihan.alasan_batal}
+                                </p>
+                            )}
 
                             {/* Action buttons */}
                             {!readOnly && (
@@ -424,38 +430,13 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
                 </div>
             </Dialog>
 
-            {/* ── Konfirmasi batalkan tagihan ── */}
-            <Dialog
-                isOpen={batalkanConfirm}
+            {/* ── Konfirmasi batalkan tagihan (alasan wajib) ── */}
+            <BatalkanTagihanDialog
+                tagihan={batalkanConfirm ? tagihan : null}
+                loading={batalkanLoading}
                 onClose={() => setBatalkanConfirm(false)}
-                onRequestClose={() => setBatalkanConfirm(false)}
-            >
-                <div className="flex flex-col gap-4">
-                    <h5 className="font-semibold">Batalkan Tagihan</h5>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Tagihan akan dibatalkan (status = Dibatalkan). Tindakan ini hanya bisa dilakukan
-                        jika belum ada pembayaran yang dikonfirmasi. Lanjutkan?
-                    </p>
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            variant="plain"
-                            onClick={() => setBatalkanConfirm(false)}
-                            disabled={batalkanLoading}
-                        >
-                            Batal
-                        </Button>
-                        <Button
-                            variant="solid"
-                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
-                            color="red"
-                            loading={batalkanLoading}
-                            onClick={handleBatalkan}
-                        >
-                            Ya, Batalkan
-                        </Button>
-                    </div>
-                </div>
-            </Dialog>
+                onConfirm={handleBatalkan}
+            />
 
             {/* ── Konfirmasi hapus diskon ── */}
             <Dialog

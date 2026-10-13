@@ -436,6 +436,8 @@ export interface ITagihan {
     aktif: number
     dibuat_pada: string
     diubah_pada: string | null
+    alasan_batal?: string | null    // terisi bila status = 4 (Dibatalkan)
+    dibatalkan_pada?: string | null
     detail?: ITagihanDetailItem[]
 }
 

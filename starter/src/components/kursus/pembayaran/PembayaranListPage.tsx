@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Card, Input, Select, Button, Notification, toast, Pagination } from '@/components/ui'
-import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { HiOutlineSearch, HiOutlineX, HiPlusCircle } from 'react-icons/hi'
 import TagihanService from '@/services/kursus/tagihan.service'
 import PembayaranService from '@/services/kursus/pembayaran.service'
 import TagihanFormPage from '@/components/kursus/tagihan/TagihanFormPage'
+import BatalkanTagihanDialog from '@/components/kursus/tagihan/BatalkanTagihanDialog'
 import PembayaranDetailModal from './PembayaranDetailModal'
 import { parseApiError } from '@/utils/parseApiError'
 import { formatRupiah } from '@/utils/formatNumber'
@@ -68,8 +68,8 @@ const PembayaranListPageInner = () => {
     const [viewTarget, setViewTarget] = useState<IPembayaran | null>(null)
     const [deletePembayaranLoading, setDeletePembayaranLoading] = useState(false)
 
-    // ── delete tagihan ──
-    const [deleteTarget, setDeleteTarget] = useState<ITagihan | null>(null)
+    // ── batalkan tagihan ──
+    const [batalkanTarget, setBatalkanTarget] = useState<ITagihan | null>(null)
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -164,16 +164,17 @@ const PembayaranListPageInner = () => {
         }
     }
 
-    const handleDelete = async () => {
-        if (!deleteTarget) return
+    const handleBatalkan = async (alasan: string) => {
+        if (!batalkanTarget) return
+        const idTagihan = batalkanTarget.id_tagihan
         setSubmitting(true)
         try {
-            await TagihanService.remove(deleteTarget.id_tagihan)
-            toast.push(<Notification type="success" title="Tagihan berhasil dihapus" />)
-            setDeleteTarget(null)
+            await TagihanService.batalkan(idTagihan, alasan)
+            toast.push(<Notification type="success" title="Tagihan berhasil dibatalkan" />)
+            setBatalkanTarget(null)
             setPembayaranCache((prev) => {
                 const next = { ...prev }
-                delete next[deleteTarget.id_tagihan]
+                delete next[idTagihan]
                 return next
             })
             fetchData()
@@ -327,7 +328,7 @@ const PembayaranListPageInner = () => {
                                     cetakLoadingId={cetakLoadingId}
                                     cetakPembayaranLoadingId={cetakPembayaranLoadingId}
                                     onToggle={() => handleToggle(tagihan.id_tagihan)}
-                                    onDelete={setDeleteTarget}
+                                    onBatalkan={setBatalkanTarget}
                                     onCetak={handleCetak}
                                     onViewPembayaran={handleViewPembayaran}
                                     onCetakPembayaran={handleCetakPembayaran}
@@ -371,28 +372,13 @@ const PembayaranListPageInner = () => {
                 onDelete={handleDeletePembayaran}
             />
 
-            {/* Delete tagihan confirmation */}
-            <ConfirmDialog
-                isOpen={!!deleteTarget}
-                type="danger"
-                title="Hapus Tagihan?"
-                confirmText="Ya, Hapus"
-                cancelText="Batal"
-                confirmButtonProps={{
-                    loading: submitting,
-                    customColorClass: () =>
-                        'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white border-red-500',
-                }}
-                onClose={() => setDeleteTarget(null)}
-                onCancel={() => setDeleteTarget(null)}
-                onConfirm={handleDelete}
-            >
-                <p className="text-sm">
-                    Tagihan untuk{' '}
-                    <span className="font-semibold">&ldquo;{deleteTarget?.nama_siswa}&rdquo;</span>{' '}
-                    akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
-                </p>
-            </ConfirmDialog>
+            {/* Batalkan tagihan (alasan wajib) */}
+            <BatalkanTagihanDialog
+                tagihan={batalkanTarget}
+                loading={submitting}
+                onClose={() => setBatalkanTarget(null)}
+                onConfirm={handleBatalkan}
+            />
         </div>
     )
 }

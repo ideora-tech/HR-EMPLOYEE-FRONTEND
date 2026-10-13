@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { HiChevronRight, HiChevronDown, HiOutlineCreditCard, HiOutlineTrash, HiOutlineDocumentDownload } from 'react-icons/hi'
+import { HiChevronRight, HiChevronDown, HiOutlineCreditCard, HiOutlineBan, HiOutlineDocumentDownload } from 'react-icons/hi'
 import { Spinner, Tooltip } from '@/components/ui'
 import { formatRupiah } from '@/utils/formatNumber'
 import { ROUTES } from '@/constants/route.constant'
@@ -24,7 +24,7 @@ interface TagihanGroupRowProps {
     cetakLoadingId: string | null
     cetakPembayaranLoadingId: string | null
     onToggle: () => void
-    onDelete: (tagihan: ITagihan) => void
+    onBatalkan: (tagihan: ITagihan) => void
     onCetak: (tagihan: ITagihan) => void
     onViewPembayaran: (p: IPembayaran) => void
     onCetakPembayaran: (p: IPembayaran) => void
@@ -39,7 +39,7 @@ const TagihanGroupRow = ({
     cetakLoadingId,
     cetakPembayaranLoadingId,
     onToggle,
-    onDelete,
+    onBatalkan,
     onCetak,
     onViewPembayaran,
     onCetakPembayaran,
@@ -123,18 +123,32 @@ const TagihanGroupRow = ({
                             </Tooltip>
                         )}
 
-                        {/* Hapus */}
-                        <Tooltip title="Hapus Tagihan">
-                            <span
-                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
-                                onClick={() => onDelete(tagihan)}
-                            >
-                                <HiOutlineTrash className="text-lg" />
-                            </span>
-                        </Tooltip>
+                        {/* Batalkan (alasan wajib) — tidak tersedia bila sudah dibatalkan */}
+                        {tagihan.status !== 4 && (
+                            <Tooltip title="Batalkan Tagihan">
+                                <span
+                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
+                                    onClick={() => onBatalkan(tagihan)}
+                                >
+                                    <HiOutlineBan className="text-lg" />
+                                </span>
+                            </Tooltip>
+                        )}
                     </div>
                 </td>
             </tr>
+
+            {/* alasan pembatalan */}
+            {expanded && tagihan.status === 4 && (
+                <tr className="bg-red-50/60 dark:bg-red-500/10 border-b border-gray-100 dark:border-gray-700/50">
+                    <td colSpan={8} className="py-3 pl-10 text-xs text-red-600 dark:text-red-400">
+                        <span className="font-semibold">Dibatalkan</span>
+                        {tagihan.alasan_batal
+                            ? <>: {tagihan.alasan_batal}</>
+                            : <span className="italic"> — tanpa alasan tercatat</span>}
+                    </td>
+                </tr>
+            )}
 
             {/* empty state after expand */}
             {expanded && !loadingExpand && pembayaran.length === 0 && (

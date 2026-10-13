@@ -129,10 +129,11 @@ const TagihanService = {
         })
     },
 
-    async batalkan(id: string): Promise<ApiResponse<ITagihan>> {
-        const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>>({
+    async batalkan(id: string, alasan: string): Promise<ApiResponse<ITagihan>> {
+        const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>, { alasan: string }>({
             url: API_ENDPOINTS.KURSUS.TAGIHAN.BATALKAN(id),
             method: 'PATCH',
+            data: { alasan },
         })
         return { ...res, data: normalizeTagihan(res.data) }
     },
