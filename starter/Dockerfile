@@ -1,7 +1,9 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+# package-lock.json dibuat dengan npm 11 (laptop). npm 10 bawaan node:20
+# menolaknya ("Missing: @swc/helpers ... from lock file"), jadi samakan dulu.
+RUN npm install -g npm@11 && npm ci
 
 FROM node:20-alpine AS build
 WORKDIR /app

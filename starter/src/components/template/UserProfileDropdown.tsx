@@ -62,7 +62,7 @@ const _UserDropdown = () => {
                             {session?.user?.name || 'Anonymous'}
                         </span>
                         <span className="text-xs text-gray-400 dark:text-gray-500">
-                            {formatRole(session?.user?.role)}
+                            {session?.user?.namaPeran ?? formatRole(session?.user?.role)}
                         </span>
                     </div>
                     <Avatar size={32} {...avatarProps} />

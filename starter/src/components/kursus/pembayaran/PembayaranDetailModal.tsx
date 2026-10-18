@@ -36,9 +36,10 @@ interface Props {
     onClose: () => void
     onCetak: () => void
     onDelete: (alasan: string) => void
+    bolehHapus: boolean
 }
 
-const PembayaranDetailModal = ({ pembayaran, cetakLoading, deleteLoading, onClose, onCetak, onDelete }: Props) => {
+const PembayaranDetailModal = ({ pembayaran, cetakLoading, deleteLoading, onClose, onCetak, onDelete, bolehHapus }: Props) => {
     const [showConfirm, setShowConfirm] = useState(false)
     const [alasanHapus, setAlasanHapus] = useState('')
 
@@ -154,17 +155,19 @@ const PembayaranDetailModal = ({ pembayaran, cetakLoading, deleteLoading, onClos
 
                 {/* Actions */}
                 <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                    <Button
-                        variant="plain"
-                        customColorClass={() =>
-                            'text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 border-transparent'
-                        }
-                        icon={<HiOutlineTrash />}
-                        loading={deleteLoading}
-                        onClick={() => setShowConfirm(true)}
-                    >
-                        Hapus
-                    </Button>
+                    {bolehHapus && (
+                        <Button
+                            variant="plain"
+                            customColorClass={() =>
+                                'text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 border-transparent'
+                            }
+                            icon={<HiOutlineTrash />}
+                            loading={deleteLoading}
+                            onClick={() => setShowConfirm(true)}
+                        >
+                            Hapus
+                        </Button>
+                    )}
                     <div className="flex gap-2">
                         <Button variant="plain" onClick={onClose}>Tutup</Button>
                         <Button

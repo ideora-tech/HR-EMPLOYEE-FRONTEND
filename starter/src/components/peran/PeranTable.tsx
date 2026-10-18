@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import DataTable from '@/components/shared/DataTable'
 import { Tag, Tooltip } from '@/components/ui'
-import { HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi'
+import { HiOutlineKey, HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
 import type { IPeran } from '@/@types/peran.types'
 
@@ -13,9 +13,14 @@ interface PeranTableProps {
     pagingData: { total: number; pageIndex: number; pageSize: number }
     onPaginationChange: (page: number) => void
     onSelectChange: (pageSize: number) => void
+    onAturIzin: (peran: IPeran) => void
     onEdit: (peran: IPeran) => void
     onDelete: (peran: IPeran) => void
+    bolehUbah: boolean
+    bolehHapus: boolean
 }
+
+const TOMBOL = 'cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors'
 
 const PeranTable = ({
     data,
@@ -23,8 +28,11 @@ const PeranTable = ({
     pagingData,
     onPaginationChange,
     onSelectChange,
+    onAturIzin,
     onEdit,
     onDelete,
+    bolehUbah,
+    bolehHapus,
 }: PeranTableProps) => {
     const columns: ColumnDef<IPeran>[] = useMemo(
         () => [
@@ -33,22 +41,25 @@ const PeranTable = ({
                 id: 'no',
                 size: 70,
                 cell: ({ row }: CellContext<IPeran, unknown>) =>
-                    (pagingData.pageIndex - 1) * pagingData.pageSize +
-                    row.index +
-                    1,
+                    (pagingData.pageIndex - 1) * pagingData.pageSize + row.index + 1,
             },
             {
                 header: 'Nama Peran',
                 accessorKey: 'nama_peran',
-                size: 280,
+                size: 260,
                 cell: ({ row }: CellContext<IPeran, unknown>) => (
-                    <span className="font-semibold">{row.original.nama_peran}</span>
+                    <div className="flex items-center gap-2">
+                        <span className="font-semibold">{row.original.nama_peran}</span>
+                        {row.original.is_sistem === 1 && (
+                            <Tag className="bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">Bawaan</Tag>
+                        )}
+                    </div>
                 ),
             },
             {
                 header: 'Kode',
                 accessorKey: 'kode_peran',
-                size: 160,
+                size: 150,
                 cell: ({ row }: CellContext<IPeran, unknown>) => (
                     <Tag className="bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-100">
                         {row.original.kode_peran}
@@ -56,9 +67,26 @@ const PeranTable = ({
                 ),
             },
             {
+                header: 'Jumlah Izin',
+                id: 'izin',
+                size: 140,
+                cell: ({ row }: CellContext<IPeran, unknown>) =>
+                    row.original.is_sistem === 1 ? (
+                        <span className="text-gray-500">Semua izin paket</span>
+                    ) : (
+                        <span>{row.original.kode_izin?.length ?? 0} izin</span>
+                    ),
+            },
+            {
+                header: 'Pengguna',
+                id: 'pengguna',
+                size: 110,
+                cell: ({ row }: CellContext<IPeran, unknown>) => <span>{row.original.jumlah_pengguna ?? 0}</span>,
+            },
+            {
                 header: 'Status',
                 accessorKey: 'aktif',
-                size: 140,
+                size: 120,
                 cell: ({ row }: CellContext<IPeran, unknown>) => (
                     <Tag
                         className={
@@ -74,30 +102,45 @@ const PeranTable = ({
             {
                 header: '',
                 id: 'action',
-                size: 100,
-                cell: ({ row }: CellContext<IPeran, unknown>) => (
-                    <div className="flex items-center justify-end gap-2">
-                        <Tooltip title="Edit">
-                            <span
-                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
-                                onClick={() => onEdit(row.original)}
-                            >
-                                <HiOutlinePencilAlt className="text-lg" />
-                            </span>
-                        </Tooltip>
-                        <Tooltip title="Hapus">
-                            <span
-                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
-                                onClick={() => onDelete(row.original)}
-                            >
-                                <HiOutlineTrash className="text-lg" />
-                            </span>
-                        </Tooltip>
-                    </div>
-                ),
+                size: 130,
+                cell: ({ row }: CellContext<IPeran, unknown>) => {
+                    const owner = row.original.is_sistem === 1
+                    return (
+                        <div className="flex items-center justify-end gap-2">
+                            <Tooltip title={owner || !bolehUbah ? 'Lihat Izin' : 'Atur Izin'}>
+                                <span
+                                    className={`${TOMBOL} bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-500/20 dark:text-violet-300`}
+                                    onClick={() => onAturIzin(row.original)}
+                                >
+                                    <HiOutlineKey className="text-lg" />
+                                </span>
+                            </Tooltip>
+                            {bolehUbah && !owner && (
+                                <Tooltip title="Ubah Nama/Status">
+                                    <span
+                                        className={`${TOMBOL} bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300`}
+                                        onClick={() => onEdit(row.original)}
+                                    >
+                                        <HiOutlinePencilAlt className="text-lg" />
+                                    </span>
+                                </Tooltip>
+                            )}
+                            {bolehHapus && !owner && (
+                                <Tooltip title="Hapus">
+                                    <span
+                                        className={`${TOMBOL} bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400`}
+                                        onClick={() => onDelete(row.original)}
+                                    >
+                                        <HiOutlineTrash className="text-lg" />
+                                    </span>
+                                </Tooltip>
+                            )}
+                        </div>
+                    )
+                },
             },
         ],
-        [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete],
+        [pagingData.pageIndex, pagingData.pageSize, onAturIzin, onEdit, onDelete, bolehUbah, bolehHapus],
     )
 
     return (

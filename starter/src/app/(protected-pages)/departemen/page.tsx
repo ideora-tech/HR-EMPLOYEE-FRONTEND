@@ -7,6 +7,7 @@ import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import DepartemenTable from '@/components/departemen/DepartemenTable'
 import DepartemenForm from '@/components/departemen/DepartemenForm'
 import DepartemenService from '@/services/departemen.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { IDepartemen, ICreateDepartemen, IUpdateDepartemen } from '@/@types/organisasi.types'
@@ -20,6 +21,10 @@ const AKTIF_OPTIONS: AktifOption[] = [
 ]
 
 const DepartemenPage = () => {
+    const { punya } = useIzin()
+    const bolehTambah = punya('departemen.create')
+    const bolehUbah = punya('departemen.update')
+    const bolehHapus = punya('departemen.delete')
     const [list, setList] = useState<IDepartemen[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -158,7 +163,7 @@ const DepartemenPage = () => {
             <Card
                 header={{
                     content: <h4>Manajemen Departemen</h4>,
-                    extra: (
+                    extra: bolehTambah && (
                         <Button
                             variant="solid"
                             size="sm"
@@ -222,6 +227,8 @@ const DepartemenPage = () => {
                     }}
                     onEdit={handleOpenEdit}
                     onDelete={setDeleteTarget}
+                    bolehUbah={bolehUbah}
+                    bolehHapus={bolehHapus}
                 />
             </Card>
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { Tag, Button } from '@/components/ui'
-import { HiOutlinePencilAlt, HiOutlineTrash, HiOutlineAcademicCap } from 'react-icons/hi'
+import { HiOutlinePencilAlt, HiOutlineTrash, HiOutlineAcademicCap, HiOutlineKey } from 'react-icons/hi'
 import type { ISiswa } from '@/@types/kursus.types'
 
 interface SiswaDetailHeaderProps {
@@ -9,6 +9,10 @@ interface SiswaDetailHeaderProps {
     onEdit: () => void
     onInputKelas: () => void
     onHapus: () => void
+    onPasswordAplikasi: () => void
+    bolehInputKelas: boolean
+    bolehUbah: boolean
+    bolehHapus: boolean
 }
 
 const formatDate = (raw: string | null): string => {
@@ -31,7 +35,16 @@ const InfoItem = ({ label, value }: { label: string; value: string }) => (
     </div>
 )
 
-const SiswaDetailHeader = ({ siswa, onEdit, onInputKelas, onHapus }: SiswaDetailHeaderProps) => {
+const SiswaDetailHeader = ({
+    siswa,
+    onEdit,
+    onInputKelas,
+    onHapus,
+    onPasswordAplikasi,
+    bolehInputKelas,
+    bolehUbah,
+    bolehHapus,
+}: SiswaDetailHeaderProps) => {
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-5">
             <div className="flex items-start justify-between gap-4">
@@ -57,36 +70,56 @@ const SiswaDetailHeader = ({ siswa, onEdit, onInputKelas, onHapus }: SiswaDetail
                         <InfoItem label="Jenis Kelamin" value={formatJK(siswa.jenis_kelamin)} />
                         <InfoItem label="Tanggal Lahir" value={formatDate(siswa.tanggal_lahir)} />
                         {siswa.alamat && <InfoItem label="Alamat" value={siswa.alamat} />}
+                        <InfoItem
+                            label="Akun Aplikasi"
+                            value={siswa.punya_akun_aplikasi === 1 ? 'Aktif' : 'Belum diatur'}
+                        />
                     </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                        size="sm"
-                        variant="default"
-                        icon={<HiOutlineAcademicCap />}
-                        onClick={onInputKelas}
-                    >
-                        Input Kelas
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="default"
-                        icon={<HiOutlinePencilAlt />}
-                        onClick={onEdit}
-                    >
-                        Edit
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="default"
-                        icon={<HiOutlineTrash />}
-                        customColorClass={() =>
-                            'border-red-200 text-red-500 hover:bg-red-50 active:bg-red-100 dark:border-red-500/30 dark:hover:bg-red-500/10'
-                        }
-                        onClick={onHapus}
-                    >
-                        Hapus
-                    </Button>
+                    {bolehInputKelas && (
+                        <Button
+                            size="sm"
+                            variant="default"
+                            icon={<HiOutlineAcademicCap />}
+                            onClick={onInputKelas}
+                        >
+                            Input Kelas
+                        </Button>
+                    )}
+                    {bolehUbah && (
+                        <Button
+                            size="sm"
+                            variant="default"
+                            icon={<HiOutlineKey />}
+                            onClick={onPasswordAplikasi}
+                        >
+                            Password Aplikasi
+                        </Button>
+                    )}
+                    {bolehUbah && (
+                        <Button
+                            size="sm"
+                            variant="default"
+                            icon={<HiOutlinePencilAlt />}
+                            onClick={onEdit}
+                        >
+                            Edit
+                        </Button>
+                    )}
+                    {bolehHapus && (
+                        <Button
+                            size="sm"
+                            variant="default"
+                            icon={<HiOutlineTrash />}
+                            customColorClass={() =>
+                                'border-red-200 text-red-500 hover:bg-red-50 active:bg-red-100 dark:border-red-500/30 dark:hover:bg-red-500/10'
+                            }
+                            onClick={onHapus}
+                        >
+                            Hapus
+                        </Button>
+                    )}
                 </div>
             </div>
         </div>

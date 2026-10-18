@@ -7,6 +7,7 @@ import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import KategoriUmurTable from '@/components/kursus/kategori-umur/KategoriUmurTable'
 import KategoriUmurService from '@/services/kursus/kategori-umur.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import { ROUTES } from '@/constants/route.constant'
@@ -22,6 +23,7 @@ const AKTIF_OPTIONS: AktifOption[] = [
 
 const KategoriUmurTab = () => {
     const router = useRouter()
+    const { punya } = useIzin()
     const [list, setList] = useState<IKategoriUmur[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -132,6 +134,8 @@ const KategoriUmurTab = () => {
                 onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
                 onEdit={(item) => router.push(ROUTES.KURSUS_KATEGORI_UMUR_EDIT(item.id_kategori_umur))}
                 onDelete={setDeleteTarget}
+                bolehUbah={punya('kursus_kategori_umur.update')}
+                bolehHapus={punya('kursus_kategori_umur.delete')}
             />
 
             <ConfirmDialog

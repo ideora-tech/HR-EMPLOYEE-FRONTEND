@@ -7,6 +7,7 @@ import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import PaketTable from '@/components/kursus/paket/PaketTable'
 import PaketForm from '@/components/kursus/paket/PaketForm'
 import PaketService from '@/services/kursus/paket.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { IPaket, ICreatePaket, IUpdatePaket } from '@/@types/kursus.types'
@@ -25,6 +26,7 @@ interface PaketKursusTabProps {
 }
 
 const PaketKursusTab = ({ pendingAdd, onPendingAddHandled }: PaketKursusTabProps) => {
+    const { punya } = useIzin()
     const [list, setList] = useState<IPaket[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -172,6 +174,8 @@ const PaketKursusTab = ({ pendingAdd, onPendingAddHandled }: PaketKursusTabProps
                 onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
                 onEdit={(item) => { setEditData(item); setFormOpen(true) }}
                 onDelete={setDeleteTarget}
+                bolehUbah={punya('kursus_paket.update')}
+                bolehHapus={punya('kursus_paket.delete')}
             />
 
             <PaketForm

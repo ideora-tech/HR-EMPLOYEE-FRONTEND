@@ -16,6 +16,8 @@ interface CoachTableProps {
     onPageSizeChange: (pageSize: number) => void
     onEdit: (row: ICoachPublic) => void
     onDelete: (row: ICoachPublic) => void
+    bolehUbah: boolean
+    bolehHapus: boolean
 }
 
 const CoachTable = ({
@@ -26,6 +28,8 @@ const CoachTable = ({
     onPageSizeChange,
     onEdit,
     onDelete,
+    bolehUbah,
+    bolehHapus,
 }: CoachTableProps) => {
     const columns: ColumnDef<ICoachPublic>[] = useMemo(
         () => [
@@ -102,27 +106,31 @@ const CoachTable = ({
                 size: 100,
                 cell: ({ row }: CellContext<ICoachPublic, unknown>) => (
                     <div className="flex items-center justify-end gap-2">
-                        <Tooltip title="Edit">
-                            <span
-                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
-                                onClick={() => onEdit(row.original)}
-                            >
-                                <HiOutlinePencilAlt className="text-lg" />
-                            </span>
-                        </Tooltip>
-                        <Tooltip title="Hapus">
-                            <span
-                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
-                                onClick={() => onDelete(row.original)}
-                            >
-                                <HiOutlineTrash className="text-lg" />
-                            </span>
-                        </Tooltip>
+                        {bolehUbah && (
+                            <Tooltip title="Edit">
+                                <span
+                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
+                                    onClick={() => onEdit(row.original)}
+                                >
+                                    <HiOutlinePencilAlt className="text-lg" />
+                                </span>
+                            </Tooltip>
+                        )}
+                        {bolehHapus && (
+                            <Tooltip title="Hapus">
+                                <span
+                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
+                                    onClick={() => onDelete(row.original)}
+                                >
+                                    <HiOutlineTrash className="text-lg" />
+                                </span>
+                            </Tooltip>
+                        )}
                     </div>
                 ),
             },
         ],
-        [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete],
+        [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete, bolehUbah, bolehHapus],
     )
 
     return (

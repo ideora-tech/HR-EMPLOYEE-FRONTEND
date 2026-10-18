@@ -9,6 +9,7 @@ import PembayaranService from '@/services/kursus/pembayaran.service'
 import TagihanFormPage from '@/components/kursus/tagihan/TagihanFormPage'
 import BatalkanTagihanDialog from '@/components/kursus/tagihan/BatalkanTagihanDialog'
 import PembayaranDetailModal from './PembayaranDetailModal'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { formatRupiah } from '@/utils/formatNumber'
 import TagihanGroupRow from './TagihanGroupRow'
@@ -32,10 +33,13 @@ const PembayaranListPageInner = () => {
     const searchParams = useSearchParams()
     const prefillSiswaId = searchParams.get('id_siswa') ?? undefined
     const prefillJadwalId = searchParams.get('id_jadwal') ?? undefined
+    const { punya } = useIzin()
+    // createBulk menambah item ke-2 dst. & diskon lewat endpoint ubah tagihan, jadi butuh keduanya.
+    const bolehBuatTagihan = punya('kursus_tagihan.create') && punya('kursus_tagihan.update')
 
     // ── view mode ──
     const [view, setView] = useState<'list' | 'create'>(() =>
-        prefillSiswaId ? 'create' : 'list',
+        prefillSiswaId && bolehBuatTagihan ? 'create' : 'list',
     )
     const [submitting, setSubmitting] = useState(false)
 
@@ -242,7 +246,7 @@ const PembayaranListPageInner = () => {
             <Card
                 header={{
                     content: <h4>Riwayat Tagihan & Pembayaran</h4>,
-                    extra: (
+                    extra: bolehBuatTagihan && (
                         <Button
                             variant="solid"
                             size="sm"
@@ -332,6 +336,8 @@ const PembayaranListPageInner = () => {
                                     onCetak={handleCetak}
                                     onViewPembayaran={handleViewPembayaran}
                                     onCetakPembayaran={handleCetakPembayaran}
+                                    bolehCatatPembayaran={punya('kursus_pembayaran.create')}
+                                    bolehBatalkan={punya('kursus_tagihan.batalkan')}
                                 />
                             ))}
                         </tbody>
@@ -370,6 +376,7 @@ const PembayaranListPageInner = () => {
                 onClose={() => setViewTarget(null)}
                 onCetak={() => viewTarget && handleCetakPembayaran(viewTarget)}
                 onDelete={handleDeletePembayaran}
+                bolehHapus={punya('kursus_pembayaran.delete')}
             />
 
             {/* Batalkan tagihan (alasan wajib) */}

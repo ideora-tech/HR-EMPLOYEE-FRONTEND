@@ -22,6 +22,7 @@ import SiswaTable from '@/components/kursus/siswa/SiswaTable'
 import SiswaImportModal from '@/components/kursus/siswa/SiswaImportModal'
 import AssignKelasModal from '@/components/kursus/siswa/AssignKelasModal'
 import SiswaService from '@/services/kursus/siswa.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { ISiswa } from '@/@types/kursus.types'
@@ -37,6 +38,12 @@ const AKTIF_OPTIONS: AktifOption[] = [
 
 const SiswaPage = () => {
     const router = useRouter()
+    const { punya } = useIzin()
+    const bolehTambah = punya('kursus_siswa.create')
+    const bolehUbah = punya('kursus_siswa.update')
+    const bolehHapus = punya('kursus_siswa.delete')
+    const bolehAssignKelas = punya('kursus_kelas_siswa.create')
+    const bolehKonversiTrial = punya('kursus_kelas_siswa.update')
 
     const [list, setList] = useState<ISiswa[]>([])
     const [loading, setLoading] = useState(false)
@@ -137,36 +144,38 @@ const SiswaPage = () => {
             <Card bodyClass="p-0">
                 <div className="flex items-center justify-between px-4 pt-4 pb-0 gap-3">
                     <h4>Manajemen Siswa</h4>
-                    <div className="flex flex-wrap items-center justify-end gap-2 max-w-full">
-                        <Button
-                            size="sm"
-                            variant="default"
-                            icon={<HiOutlineDownload />}
-                            loading={downloading}
-                            onClick={handleDownloadTemplate}
-                        >
-                            Template
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="default"
-                            icon={<HiOutlineUpload />}
-                            onClick={() => setImportOpen(true)}
-                        >
-                            Import
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="solid"
-                            customColorClass={() =>
-                                'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'
-                            }
-                            icon={<HiOutlineClipboardCheck />}
-                            onClick={() => router.push(ROUTES.KURSUS_SISWA_DAFTAR)}
-                        >
-                            Daftarkan Siswa
-                        </Button>
-                    </div>
+                    {bolehTambah && (
+                        <div className="flex flex-wrap items-center justify-end gap-2 max-w-full">
+                            <Button
+                                size="sm"
+                                variant="default"
+                                icon={<HiOutlineDownload />}
+                                loading={downloading}
+                                onClick={handleDownloadTemplate}
+                            >
+                                Template
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="default"
+                                icon={<HiOutlineUpload />}
+                                onClick={() => setImportOpen(true)}
+                            >
+                                Import
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="solid"
+                                customColorClass={() =>
+                                    'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'
+                                }
+                                icon={<HiOutlineClipboardCheck />}
+                                onClick={() => router.push(ROUTES.KURSUS_SISWA_DAFTAR)}
+                            >
+                                Daftarkan Siswa
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 pt-4 pb-3">
@@ -214,7 +223,7 @@ const SiswaPage = () => {
                     </div>
                 </div>
 
-                {selectedSiswa.length > 0 && (
+                {bolehAssignKelas && selectedSiswa.length > 0 && (
                     <div className="mx-4 mb-3 flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-100 dark:border-violet-500/20">
                         <p className="text-sm text-violet-700 dark:text-violet-300">
                             <span className="font-semibold">{selectedSiswa.length}</span> siswa dipilih
@@ -253,6 +262,10 @@ const SiswaPage = () => {
                     selectedIds={selectedSiswa.map((s) => s.id_siswa)}
                     onCheckBoxChange={handleCheckBoxChange}
                     onSelectAllChange={handleSelectAllChange}
+                    bolehUbah={bolehUbah}
+                    bolehHapus={bolehHapus}
+                    bolehAssignKelas={bolehAssignKelas}
+                    bolehKonversiTrial={bolehKonversiTrial}
                 />
             </Card>
 

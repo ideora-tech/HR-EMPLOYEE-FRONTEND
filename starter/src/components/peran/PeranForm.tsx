@@ -68,11 +68,10 @@ const PeranForm = ({
 
     const handleSubmit = () => {
         if (!validate()) return
-        const payload: IPeranCreate = {
-            kode_peran: form.kode_peran.trim().toUpperCase(),
-            nama_peran: form.nama_peran.trim(),
-            aktif: form.aktif ? 1 : 0,
-        }
+        // Kode peran tidak bisa diubah setelah dibuat (pengguna terhubung ke peran lewat ID-nya).
+        const payload: IPeranCreate | IPeranUpdate = isEdit
+            ? { nama_peran: form.nama_peran.trim(), aktif: form.aktif ? 1 : 0 }
+            : { kode_peran: form.kode_peran.trim().toUpperCase(), nama_peran: form.nama_peran.trim(), aktif: form.aktif ? 1 : 0 }
         onSubmit(payload)
     }
 
@@ -95,12 +94,13 @@ const PeranForm = ({
                     errorMessage={errors.kode_peran}
                     extra={
                         <span className="text-xs text-gray-400">
-                            Akan diubah ke huruf kapital otomatis
+                            {isEdit ? 'Kode tidak bisa diubah' : 'Huruf kapital, angka, atau garis bawah'}
                         </span>
                     }
                 >
                     <Input
-                        placeholder="contoh: HR_ADMIN, FINANCE, MANAGER"
+                        placeholder="contoh: ADMIN_KURSUS, FINANCE"
+                        disabled={isEdit}
                         value={form.kode_peran}
                         invalid={!!errors.kode_peran}
                         onChange={(e) =>

@@ -12,6 +12,7 @@ import {
 } from 'react-icons/hi'
 import DataTable from '@/components/shared/DataTable'
 import ReminderService from '@/services/kursus/reminder.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
 import type { IReminderItem } from '@/@types/kursus.types'
@@ -43,6 +44,8 @@ type TabKey = 'sesi_habis' | 'akan_habis'
 const buildColumns = (
     onTandai: (idCatat: string) => void,
     onGenerateTagihan: (item: IReminderItem) => void,
+    bolehTandai: boolean,
+    bolehBuatTagihan: boolean,
 ): ColumnDef<IReminderItem>[] => [
     {
         header: 'No',
@@ -129,7 +132,7 @@ const buildColumns = (
         size: 100,
         cell: ({ row }: CellContext<IReminderItem, unknown>) => (
             <div className="flex items-center justify-end gap-2">
-                {row.original.status_reminder === 0 && (
+                {bolehTandai && row.original.status_reminder === 0 && (
                     <Tooltip title="Tandai Sudah Dihubungi">
                         <span
                             className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/20 dark:text-emerald-300 dark:hover:bg-emerald-500/30 transition-colors"
@@ -139,14 +142,16 @@ const buildColumns = (
                         </span>
                     </Tooltip>
                 )}
-                <Tooltip title="Generate Tagihan Perpanjangan">
-                    <span
-                        className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
-                        onClick={() => onGenerateTagihan(row.original)}
-                    >
-                        <HiOutlinePlusCircle className="text-lg" />
-                    </span>
-                </Tooltip>
+                {bolehBuatTagihan && (
+                    <Tooltip title="Generate Tagihan Perpanjangan">
+                        <span
+                            className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
+                            onClick={() => onGenerateTagihan(row.original)}
+                        >
+                            <HiOutlinePlusCircle className="text-lg" />
+                        </span>
+                    </Tooltip>
+                )}
             </div>
         ),
     },
@@ -155,6 +160,9 @@ const buildColumns = (
 /* ─── main component ─────────────────────────────────────── */
 
 const ReminderTable = () => {
+    const { punya } = useIzin()
+    const bolehTandai = punya('kursus_reminder.update')
+    const bolehBuatTagihan = punya('kursus_tagihan.create')
     const [allItems, setAllItems] = useState<IReminderItem[]>([])
     const [loading, setLoading] = useState(false)
     const [threshold, setThreshold] = useState('3')
@@ -214,8 +222,8 @@ const ReminderTable = () => {
     }, [])
 
     const columns = useMemo(
-        () => buildColumns(handleTandai, handleOpenDrawer),
-        [handleTandai, handleOpenDrawer],
+        () => buildColumns(handleTandai, handleOpenDrawer, bolehTandai, bolehBuatTagihan),
+        [handleTandai, handleOpenDrawer, bolehTandai, bolehBuatTagihan],
     )
 
     const grouped = useMemo(

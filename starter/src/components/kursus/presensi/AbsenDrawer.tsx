@@ -11,6 +11,7 @@ import {
 } from 'react-icons/hi'
 import PresensiService from '@/services/kursus/presensi.service'
 import SiswaSesiPenggantiService from '@/services/kursus/siswa-sesi-pengganti.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import JadwalkanPenggantiModal from './JadwalkanPenggantiModal'
@@ -101,6 +102,9 @@ const AbsenDrawer = ({
     onClose,
     onSaved,
 }: AbsenDrawerProps) => {
+    const { punya } = useIzin()
+    const bolehAbsen = punya('kursus_presensi.create')
+    const bolehJadwalkanPengganti = punya('kursus_sesi_pengganti.create')
     const [rows, setRows] = useState<AbsenRow[]>([])
     const [loading, setLoading] = useState(false)
     const [saving, setSaving] = useState(false)
@@ -308,7 +312,7 @@ const AbsenDrawer = ({
 
                 <div className="flex items-center gap-1 shrink-0">
                     {/* Tombol "+ Pengganti" — hanya untuk siswa reguler TH yang belum punya makeup */}
-                    {!row.is_pengganti && isAbsen && !makeupRecord && row.id_presensi && (
+                    {bolehJadwalkanPengganti && !row.is_pengganti && isAbsen && !makeupRecord && row.id_presensi && (
                         <button
                             type="button"
                             title="Jadwalkan sesi pengganti"
@@ -323,19 +327,27 @@ const AbsenDrawer = ({
                         </button>
                     )}
 
-                    {STATUS_BUTTONS.map((btn) => (
-                        <button
-                            key={btn.value}
-                            type="button"
-                            title={btn.label}
-                            onClick={() => handleToggle(row.id_siswa, row.is_pengganti, btn.value)}
-                            className={`w-10 h-9 rounded-lg text-xs font-bold transition-all ${
-                                row.status === btn.value ? btn.active : btn.inactive
-                            }`}
-                        >
-                            {btn.short}
-                        </button>
-                    ))}
+                    {bolehAbsen ? (
+                        STATUS_BUTTONS.map((btn) => (
+                            <button
+                                key={btn.value}
+                                type="button"
+                                title={btn.label}
+                                onClick={() => handleToggle(row.id_siswa, row.is_pengganti, btn.value)}
+                                className={`w-10 h-9 rounded-lg text-xs font-bold transition-all ${
+                                    row.status === btn.value ? btn.active : btn.inactive
+                                }`}
+                            >
+                                {btn.short}
+                            </button>
+                        ))
+                    ) : (
+                        row.status !== null && (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_BADGE[row.status]}`}>
+                                {STATUS_BUTTONS.find((btn) => btn.value === row.status)?.label}
+                            </span>
+                        )
+                    )}
                 </div>
             </div>
         )
@@ -417,20 +429,22 @@ const AbsenDrawer = ({
                                         Total <strong>{rows.length}</strong>
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                    <span className="text-xs text-gray-400 mr-0.5">Semua:</span>
-                                    {STATUS_BUTTONS.map((btn) => (
-                                        <button
-                                            key={btn.value}
-                                            type="button"
-                                            onClick={() => handleMarkAll(btn.value)}
-                                            title={`Tandai semua ${btn.label}`}
-                                            className={`w-8 h-7 rounded-lg text-xs font-bold transition-colors ${btn.inactive}`}
-                                        >
-                                            {btn.short}
-                                        </button>
-                                    ))}
-                                </div>
+                                {bolehAbsen && (
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-xs text-gray-400 mr-0.5">Semua:</span>
+                                        {STATUS_BUTTONS.map((btn) => (
+                                            <button
+                                                key={btn.value}
+                                                type="button"
+                                                onClick={() => handleMarkAll(btn.value)}
+                                                title={`Tandai semua ${btn.label}`}
+                                                className={`w-8 h-7 rounded-lg text-xs font-bold transition-colors ${btn.inactive}`}
+                                            >
+                                                {btn.short}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -485,7 +499,7 @@ const AbsenDrawer = ({
                     </div>
 
                     {/* ── Tombol simpan ── */}
-                    {!loading && rows.length > 0 && (
+                    {bolehAbsen && !loading && rows.length > 0 && (
                         <div className="px-4 py-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0">
                             <Button
                                 variant="solid"

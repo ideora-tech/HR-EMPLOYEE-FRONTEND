@@ -14,6 +14,7 @@ import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import TingkatProgramTable from '@/components/kursus/tingkat-program/TingkatProgramTable'
 import TingkatProgramForm from '@/components/kursus/tingkat-program/TingkatProgramForm'
 import TingkatProgramService from '@/services/kursus/tingkat-program.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type {
@@ -31,6 +32,10 @@ const AKTIF_OPTIONS: AktifOption[] = [
 ]
 
 const TingkatProgramPage = () => {
+    const { punya } = useIzin()
+    const bolehTambah = punya('kursus_tingkat_program.create')
+    const bolehUbah = punya('kursus_tingkat_program.update')
+    const bolehHapus = punya('kursus_tingkat_program.delete')
     const [list, setList] = useState<ITingkatProgram[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -175,7 +180,7 @@ const TingkatProgramPage = () => {
             <Card
                 header={{
                     content: <h4>Manajemen Paket </h4>,
-                    extra: (
+                    extra: bolehTambah && (
                         <Button
                             variant="solid"
                             size="sm"
@@ -239,6 +244,8 @@ const TingkatProgramPage = () => {
                     }}
                     onEdit={handleOpenEdit}
                     onDelete={setDeleteTarget}
+                    bolehUbah={bolehUbah}
+                    bolehHapus={bolehHapus}
                 />
             </Card>
 

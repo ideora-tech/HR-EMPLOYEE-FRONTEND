@@ -9,6 +9,7 @@ import JadwalKalender from '@/components/kursus/jadwal/JadwalKalender'
 import JadwalDetailDrawer from '@/components/kursus/jadwal/JadwalDetailDrawer'
 import JadwalKalenderMingguan from '@/components/kursus/jadwal/JadwalKalenderMingguan'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import { ROUTES } from '@/constants/route.constant'
@@ -16,6 +17,7 @@ import type { IJadwalKelas } from '@/@types/kursus.types'
 
 const JadwalKelasPage = () => {
     const router = useRouter()
+    const { punya } = useIzin()
 
     const [activeTab, setActiveTab] = useState<'tabel' | 'kalender'>('tabel')
     const [submitting, setSubmitting] = useState(false)
@@ -109,15 +111,17 @@ const JadwalKelasPage = () => {
                             >
                                 Export Excel
                             </Button>
-                            <Button
-                                variant="solid"
-                                size="sm"
-                                customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
-                                icon={<HiPlusCircle />}
-                                onClick={() => router.push(ROUTES.KURSUS_JADWAL_TAMBAH)}
-                            >
-                                Tambah Jadwal
-                            </Button>
+                            {punya('kursus_jadwal.create') && (
+                                <Button
+                                    variant="solid"
+                                    size="sm"
+                                    customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                                    icon={<HiPlusCircle />}
+                                    onClick={() => router.push(ROUTES.KURSUS_JADWAL_TAMBAH)}
+                                >
+                                    Tambah Jadwal
+                                </Button>
+                            )}
                         </div>
                     ),
                     bordered: false,
@@ -131,6 +135,8 @@ const JadwalKelasPage = () => {
                             onView={(item) => { setDrawerJadwal(item); setDrawerOpen(true) }}
                             onEdit={(item) => router.push(ROUTES.KURSUS_JADWAL_EDIT(item.id_jadwal_kelas))}
                             onDelete={setDeleteTarget}
+                            bolehUbah={punya('kursus_jadwal.update')}
+                            bolehHapus={punya('kursus_jadwal.delete')}
                         />
                     </div>
                 ) : (

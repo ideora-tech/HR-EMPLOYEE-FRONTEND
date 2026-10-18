@@ -11,6 +11,11 @@ declare module 'next-auth' {
             authority?: string[]
             role?: string | null
             companyId?: string | null
+            /** Kode izin efektif dari GET /auth/me */
+            izin?: string[]
+            namaPeran?: string | null
+            superAdmin?: boolean
+            isOwner?: boolean
         }
         accessToken?: string | null
         refreshToken?: string | null
@@ -21,6 +26,10 @@ declare module 'next-auth' {
         companyId?: string | null
         accessToken?: string | null
         refreshToken?: string | null
+        izin?: string[]
+        namaPeran?: string | null
+        superAdmin?: boolean
+        isOwner?: boolean
     }
 }
 
@@ -30,5 +39,10 @@ declare module 'next-auth/jwt' {
         companyId?: string | null
         accessToken?: string | null
         refreshToken?: string | null
+        izin?: string[]
+        namaPeran?: string | null
+        superAdmin?: boolean
+        isOwner?: boolean
+        izinDiambil?: number
     }
 }

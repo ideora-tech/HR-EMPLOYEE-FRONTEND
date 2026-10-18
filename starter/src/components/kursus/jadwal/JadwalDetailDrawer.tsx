@@ -11,6 +11,7 @@ import {
     HiOutlineAcademicCap,
     HiOutlineUserAdd,
 } from 'react-icons/hi'
+import useIzin from '@/utils/hooks/useIzin'
 import type { IJadwalKelas, ICatatKelasSiswa } from '@/@types/kursus.types'
 import CatatKelasSiswaService from '@/services/kursus/catat-kelas-siswa.service'
 import DaftarSiswaJadwalModal from './DaftarSiswaJadwalModal'
@@ -33,6 +34,7 @@ const DetailRow = ({ icon, label, value }: { icon: React.ReactNode; label: strin
 )
 
 const JadwalDetailDrawer = ({ open, jadwal, onClose, onRefresh }: JadwalDetailDrawerProps) => {
+    const { punya } = useIzin()
     const [siswaList, setSiswaList] = useState<ICatatKelasSiswa[]>([])
     const [loadingSiswa, setLoadingSiswa] = useState(false)
     const [assignOpen, setAssignOpen] = useState(false)
@@ -123,19 +125,21 @@ const JadwalDetailDrawer = ({ open, jadwal, onClose, onRefresh }: JadwalDetailDr
                             {!loadingSiswa && (
                                 <span className="text-xs text-gray-400">{siswaList.length} siswa</span>
                             )}
-                            <Button
-                                className="ml-auto"
-                                size="xs"
-                                variant="solid"
-                                icon={<HiOutlineUserAdd />}
-                                customColorClass={() =>
-                                    'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'
-                                }
-                                disabled={jadwal.aktif !== 1}
-                                onClick={() => setAssignOpen(true)}
-                            >
-                                Daftarkan Siswa
-                            </Button>
+                            {punya('kursus_kelas_siswa.create') && (
+                                <Button
+                                    className="ml-auto"
+                                    size="xs"
+                                    variant="solid"
+                                    icon={<HiOutlineUserAdd />}
+                                    customColorClass={() =>
+                                        'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'
+                                    }
+                                    disabled={jadwal.aktif !== 1}
+                                    onClick={() => setAssignOpen(true)}
+                                >
+                                    Daftarkan Siswa
+                                </Button>
+                            )}
                         </div>
 
                         {loadingSiswa ? (

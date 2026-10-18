@@ -7,6 +7,7 @@ import { HiPlusCircle } from 'react-icons/hi'
 import KelasTab from '@/components/kursus/kelas/KelasTab'
 import PaketKursusTab from '@/components/kursus/paket/PaketKursusTab'
 import KategoriUmurTab from '@/components/kursus/kategori-umur/KategoriUmurTab'
+import useIzin from '@/utils/hooks/useIzin'
 import { ROUTES } from '@/constants/route.constant'
 
 type ActiveTab = 'kelas' | 'paket' | 'kategori-umur'
@@ -23,9 +24,16 @@ const TAMBAH_LABEL: Record<ActiveTab, string> = {
     'kategori-umur': 'Tambah Kategori',
 }
 
+const IZIN_TAMBAH: Record<ActiveTab, string> = {
+    paket: 'kursus_paket.create',
+    kelas: 'kursus_kelas.create',
+    'kategori-umur': 'kursus_kategori_umur.create',
+}
+
 const KelasPage = () => {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const { punya } = useIzin()
     const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
         const tab = searchParams.get('tab') as ActiveTab | null
         return tab && ['kelas', 'paket', 'kategori-umur'].includes(tab) ? tab : 'paket'
@@ -52,15 +60,17 @@ const KelasPage = () => {
             <Card bodyClass="p-0">
                 <div className="flex items-center justify-between px-4 pt-4 pb-0">
                     <h4>Pengaturan Kelas</h4>
-                    <Button
-                        variant="solid"
-                        size="sm"
-                        customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
-                        icon={<HiPlusCircle />}
-                        onClick={handleTambah}
-                    >
-                        {TAMBAH_LABEL[activeTab]}
-                    </Button>
+                    {punya(IZIN_TAMBAH[activeTab]) && (
+                        <Button
+                            variant="solid"
+                            size="sm"
+                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                            icon={<HiPlusCircle />}
+                            onClick={handleTambah}
+                        >
+                            {TAMBAH_LABEL[activeTab]}
+                        </Button>
+                    )}
                 </div>
                 <div className="px-4 pt-3 border-b border-gray-100 dark:border-gray-700">
                     <div className="flex gap-0">

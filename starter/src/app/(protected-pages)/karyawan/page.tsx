@@ -20,6 +20,7 @@ import {
 } from 'react-icons/hi'
 import KaryawanTable from '@/components/karyawan/KaryawanTable'
 import KaryawanService from '@/services/karyawan.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { IKaryawan } from '@/@types/karyawan.types'
@@ -33,6 +34,10 @@ const AKTIF_OPTIONS: AktifOption[] = [
 ]
 
 const KaryawanPage = () => {
+    const { punya } = useIzin()
+    const bolehTambah = punya('karyawan.create')
+    const bolehUbah = punya('karyawan.update')
+    const bolehHapus = punya('karyawan.delete')
     const router = useRouter()
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -178,7 +183,7 @@ const KaryawanPage = () => {
             <Card
                 header={{
                     content: <h4>Karyawan</h4>,
-                    extra: (
+                    extra: bolehTambah && (
                         // Di layar sempit tombol turun baris, bukan mendorong kartu melebar.
                         <div className="flex flex-wrap items-center justify-end gap-2 max-w-full">
                             <Button
@@ -278,6 +283,8 @@ const KaryawanPage = () => {
                         router.push(`/karyawan/${item.id_karyawan}/edit`)
                     }
                     onDelete={setDeleteTarget}
+                    bolehUbah={bolehUbah}
+                    bolehHapus={bolehHapus}
                 />
             </Card>
 

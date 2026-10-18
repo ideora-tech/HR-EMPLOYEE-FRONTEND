@@ -9,11 +9,13 @@ import ConvertTrialModal from '@/components/kursus/siswa/ConvertTrialModal'
 import ChangeTrialKelasModal from '@/components/kursus/siswa/ChangeTrialKelasModal'
 import EditKelasModal from '@/components/kursus/siswa/EditKelasModal'
 import SiswaDetailHeader from '@/components/kursus/siswa/SiswaDetailHeader'
+import PasswordAplikasiDialog from '@/components/kursus/siswa/PasswordAplikasiDialog'
 import SiswaKelasTable from '@/components/kursus/siswa/SiswaKelasTable'
 import SiswaTagihanTable from '@/components/kursus/siswa/SiswaTagihanTable'
 import SiswaService from '@/services/kursus/siswa.service'
 import TagihanService from '@/services/kursus/tagihan.service'
 import CatatKelasSiswaService from '@/services/kursus/catat-kelas-siswa.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { ROUTES } from '@/constants/route.constant'
 import type { ISiswa, ITagihan, ISiswaKelasItem } from '@/@types/kursus.types'
@@ -22,12 +24,16 @@ const SiswaDetailPage = () => {
     const params = useParams()
     const router = useRouter()
     const idSiswa = params.id as string
+    const { punya } = useIzin()
+    const bolehUbahKelas = punya('kursus_kelas_siswa.update')
+    const bolehHapusKelas = punya('kursus_kelas_siswa.delete')
 
     const [siswa, setSiswa] = useState<ISiswa | null>(null)
     const [tagihan, setTagihan] = useState<ITagihan[]>([])
     const [loading, setLoading] = useState(true)
     const [loadingTagihan, setLoadingTagihan] = useState(true)
     const [deleteOpen, setDeleteOpen] = useState(false)
+    const [passwordOpen, setPasswordOpen] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [convertTarget, setConvertTarget] = useState<ISiswaKelasItem | null>(null)
     const [changeKelasTarget, setChangeKelasTarget] = useState<ISiswaKelasItem | null>(null)
@@ -144,6 +150,10 @@ const SiswaDetailPage = () => {
                 onEdit={() => router.push(ROUTES.KURSUS_SISWA_EDIT(siswa.id_siswa))}
                 onInputKelas={() => router.push(ROUTES.KURSUS_SISWA_ASSIGN_KELAS(siswa.id_siswa))}
                 onHapus={() => setDeleteOpen(true)}
+                onPasswordAplikasi={() => setPasswordOpen(true)}
+                bolehInputKelas={punya('kursus_kelas_siswa.create')}
+                bolehUbah={punya('kursus_siswa.update')}
+                bolehHapus={punya('kursus_siswa.delete')}
             />
 
             {/* Riwayat Kelas */}
@@ -153,10 +163,10 @@ const SiswaDetailPage = () => {
                 </div>
                 <SiswaKelasTable
                     data={siswa.kelas ?? []}
-                    onConvert={(item) => setConvertTarget(item)}
-                    onChangeKelas={(item) => setChangeKelasTarget(item)}
-                    onEdit={(item) => setEditKelasTarget(item)}
-                    onHapus={(item) => setHapusKelasTarget(item)}
+                    onConvert={bolehUbahKelas ? (item) => setConvertTarget(item) : undefined}
+                    onChangeKelas={bolehUbahKelas ? (item) => setChangeKelasTarget(item) : undefined}
+                    onEdit={bolehUbahKelas ? (item) => setEditKelasTarget(item) : undefined}
+                    onHapus={bolehHapusKelas ? (item) => setHapusKelasTarget(item) : undefined}
                 />
             </Card>
 
@@ -165,7 +175,11 @@ const SiswaDetailPage = () => {
                 <div className="px-5 pt-4 pb-3">
                     <h5>Riwayat Tagihan & Pembayaran</h5>
                 </div>
-                <SiswaTagihanTable data={tagihan} loading={loadingTagihan} />
+                <SiswaTagihanTable
+                    data={tagihan}
+                    loading={loadingTagihan}
+                    bolehCatatPembayaran={punya('kursus_pembayaran.create')}
+                />
             </Card>
 
             <EditKelasModal
@@ -174,6 +188,16 @@ const SiswaDetailPage = () => {
                 onClose={() => setEditKelasTarget(null)}
                 onSuccess={() => {
                     setEditKelasTarget(null)
+                    fetchSiswa()
+                }}
+            />
+
+            <PasswordAplikasiDialog
+                open={passwordOpen}
+                siswa={siswa}
+                onClose={() => setPasswordOpen(false)}
+                onSuccess={() => {
+                    setPasswordOpen(false)
                     fetchSiswa()
                 }}
             />

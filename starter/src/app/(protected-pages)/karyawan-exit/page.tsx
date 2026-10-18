@@ -18,6 +18,7 @@ import {
 } from 'react-icons/hi'
 import KaryawanExitTable from '@/components/karyawan-exit/KaryawanExitTable'
 import KaryawanExitService from '@/services/karyawan-exit.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type {
@@ -42,6 +43,10 @@ const JENIS_OPTIONS: JenisOption[] = [
 
 const KaryawanExitPage = () => {
     const router = useRouter()
+    const { punya } = useIzin()
+    const bolehTambah = punya('karyawan_exit.create')
+    const bolehUbah = punya('karyawan_exit.update')
+    const bolehHapus = punya('karyawan_exit.delete')
 
     /* list state */
     const [list, setList] = useState<IKaryawanExit[]>([])
@@ -153,7 +158,7 @@ const KaryawanExitPage = () => {
                             <h4>Data Exit Karyawan</h4>
                         </div>
                     ),
-                    extra: (
+                    extra: bolehTambah && (
                         <Button
                             variant="solid"
                             size="sm"
@@ -224,6 +229,8 @@ const KaryawanExitPage = () => {
                     }}
                     onEdit={handleOpenEdit}
                     onDelete={setDeleteTarget}
+                    bolehUbah={bolehUbah}
+                    bolehHapus={bolehHapus}
                 />
             </Card>
 

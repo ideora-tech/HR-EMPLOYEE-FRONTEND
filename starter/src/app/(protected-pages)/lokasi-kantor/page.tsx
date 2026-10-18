@@ -7,6 +7,7 @@ import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import LokasiKantorTable from '@/components/lokasi-kantor/LokasiKantorTable'
 import LokasiKantorForm from '@/components/lokasi-kantor/LokasiKantorForm'
 import LokasiKantorService from '@/services/lokasi-kantor.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { ILokasiKantor, ICreateLokasiKantor, IUpdateLokasiKantor } from '@/@types/organisasi.types'
@@ -20,6 +21,10 @@ const AKTIF_OPTIONS: AktifOption[] = [
 ]
 
 const LokasiKantorPage = () => {
+    const { punya } = useIzin()
+    const bolehTambah = punya('lokasi_kantor.create')
+    const bolehUbah = punya('lokasi_kantor.update')
+    const bolehHapus = punya('lokasi_kantor.delete')
     const [list, setList] = useState<ILokasiKantor[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -158,7 +163,7 @@ const LokasiKantorPage = () => {
             <Card
                 header={{
                     content: <h4>Manajemen Lokasi Kantor</h4>,
-                    extra: (
+                    extra: bolehTambah && (
                         <Button
                             variant="solid"
                             size="sm"
@@ -222,6 +227,8 @@ const LokasiKantorPage = () => {
                     }}
                     onEdit={handleOpenEdit}
                     onDelete={setDeleteTarget}
+                    bolehUbah={bolehUbah}
+                    bolehHapus={bolehHapus}
                 />
             </Card>
 

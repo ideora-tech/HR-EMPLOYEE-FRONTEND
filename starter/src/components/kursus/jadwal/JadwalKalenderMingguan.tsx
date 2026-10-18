@@ -5,6 +5,7 @@ import { HiChevronLeft, HiChevronRight, HiOutlineBan, HiOutlineRefresh } from 'r
 import { toast, Notification } from '@/components/ui'
 import ApiService from '@/services/ApiService'
 import { API_ENDPOINTS } from '@/constants/api.constant'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import type { IJadwalKalenderResponse, IJadwalKelas, ISesiPengganti } from '@/@types/kursus.types'
 import LiburForm from './LiburForm'
@@ -75,6 +76,10 @@ function getCardColor(namaKelas: string | null) {
 type KalenderData = IJadwalKalenderResponse
 
 export default function JadwalKalenderMingguan() {
+    const { punya } = useIzin()
+    const bolehLibur = punya('kursus_libur.create')
+    const bolehBatalKelas = punya('kursus_cancel_kelas.create')
+    const bolehKonfirmasiPengganti = punya('kursus_cancel_kelas.konfirmasi_pengganti')
     const [weekMonday, setWeekMonday] = useState<Date>(() => getMondayOfWeek(new Date()))
     const [data, setData] = useState<KalenderData>({ jadwal: [], libur: [], cancel: [], sesi_pengganti: [] })
     const [loading, setLoading] = useState(false)
@@ -188,7 +193,7 @@ export default function JadwalKalenderMingguan() {
                                     {dayNum}
                                 </p>
                                 {isToday && <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full mx-auto mt-1" />}
-                                {!hasLibur && (
+                                {bolehLibur && !hasLibur && (
                                     <button
                                         onClick={() => { setLiburTargetTanggal(colDate); setLiburFormOpen(true) }}
                                         className="absolute top-1 right-1 hidden group-hover:flex items-center gap-1
@@ -251,10 +256,10 @@ export default function JadwalKalenderMingguan() {
                                     return (
                                         <div
                                             key={jadwal.id_jadwal_kelas}
-                                            className={`rounded-lg px-2 py-1.5 border-l-[3px] cursor-pointer
-                                                hover:-translate-y-0.5 hover:shadow-md transition-all
+                                            className={`rounded-lg px-2 py-1.5 border-l-[3px]
+                                                ${bolehBatalKelas ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all' : ''}
                                                 ${color.bg} ${color.border} ${color.text}`}
-                                            onClick={() => setCancelModal({ open: true, jadwal, tanggal: colDate })}
+                                            onClick={bolehBatalKelas ? () => setCancelModal({ open: true, jadwal, tanggal: colDate }) : undefined}
                                         >
                                             <p className="text-[10px] font-bold opacity-75">{jadwal.jam_mulai} – {jadwal.jam_selesai}</p>
                                             <p className="text-[11px] font-bold leading-tight">{jadwal.nama_kelas}</p>
@@ -274,13 +279,13 @@ export default function JadwalKalenderMingguan() {
                                 {penggantiHariIni.map(sesi => (
                                     <div
                                         key={sesi.id_sesi_pengganti}
-                                        className={`rounded-lg px-2 py-1.5 border-l-[3px] cursor-pointer
-                                            hover:-translate-y-0.5 hover:shadow-md transition-all
+                                        className={`rounded-lg px-2 py-1.5 border-l-[3px]
+                                            ${bolehKonfirmasiPengganti ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all' : ''}
                                             ${sesi.status === 1
                                                 ? 'bg-amber-50 border-amber-400 text-amber-900'
                                                 : 'bg-orange-50 border-orange-400 text-orange-900'
                                             }`}
-                                        onClick={() => setPenggantiModal({ open: true, sesi })}
+                                        onClick={bolehKonfirmasiPengganti ? () => setPenggantiModal({ open: true, sesi }) : undefined}
                                     >
                                         <p className="text-[10px] font-bold opacity-75">{sesi.jam_mulai} – {sesi.jam_selesai}</p>
                                         <p className="text-[11px] font-bold leading-tight">{sesi.nama_kelas}</p>

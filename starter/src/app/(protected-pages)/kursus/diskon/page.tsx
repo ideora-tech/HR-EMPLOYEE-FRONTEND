@@ -14,6 +14,7 @@ import { HiPlusCircle, HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import DiskonTable from '@/components/kursus/diskon/DiskonTable'
 import DiskonForm from '@/components/kursus/diskon/DiskonForm'
 import DiskonService from '@/services/kursus/diskon.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { IDiskon, ICreateDiskon, IUpdateDiskon } from '@/@types/kursus.types'
@@ -27,6 +28,10 @@ const AKTIF_OPTIONS: AktifOption[] = [
 ]
 
 const DiskonPage = () => {
+    const { punya } = useIzin()
+    const bolehTambah = punya('kursus_diskon.create')
+    const bolehUbah = punya('kursus_diskon.update')
+    const bolehHapus = punya('kursus_diskon.delete')
     const [list, setList] = useState<IDiskon[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -156,7 +161,7 @@ const DiskonPage = () => {
             <Card
                 header={{
                     content: <h4>Manajemen Diskon Kursus</h4>,
-                    extra: (
+                    extra: bolehTambah && (
                         <Button
                             variant="solid"
                             size="sm"
@@ -209,6 +214,8 @@ const DiskonPage = () => {
                     onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
                     onEdit={handleOpenEdit}
                     onDelete={setDeleteTarget}
+                    bolehUbah={bolehUbah}
+                    bolehHapus={bolehHapus}
                 />
             </Card>
 

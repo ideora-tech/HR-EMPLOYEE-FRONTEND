@@ -5,6 +5,7 @@ import { Card, Select, Input, Button, Notification, toast } from '@/components/u
 import JadwalRequestTable from '@/components/kursus/jadwal-request/JadwalRequestTable'
 import ApproveRejectModal from '@/components/kursus/jadwal-request/ApproveRejectModal'
 import JadwalRequestService from '@/services/kursus/jadwal-request.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import type { IJadwalRequestPublic } from '@/@types/kursus.types'
 
@@ -20,6 +21,7 @@ const STATUS_OPTIONS: StatusOption[] = [
 ]
 
 const JadwalRequestPage = () => {
+    const { punya } = useIzin()
     const [list, setList] = useState<IJadwalRequestPublic[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -202,6 +204,7 @@ const JadwalRequestPage = () => {
                     }}
                     onApprove={handleApprove}
                     onReject={handleReject}
+                    bolehProses={punya('kursus_jadwal_request.update')}
                 />
             </Card>
 

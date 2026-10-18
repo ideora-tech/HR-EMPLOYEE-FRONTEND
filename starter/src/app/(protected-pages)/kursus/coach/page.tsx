@@ -8,6 +8,7 @@ import CoachTable from '@/components/kursus/coach/CoachTable'
 import CoachFormDialog from '@/components/kursus/coach/CoachFormDialog'
 import CoachService from '@/services/kursus/coach.service'
 import KaryawanService from '@/services/karyawan.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import type { KaryawanOption } from '@/components/kursus/coach/CoachFormDialog'
 import type { ICoachPublic, ICreateCoach, IUpdateCoach } from '@/@types/kursus.types'
@@ -21,6 +22,10 @@ const AKTIF_OPTIONS: AktifOption[] = [
 ]
 
 const CoachPage = () => {
+    const { punya } = useIzin()
+    const bolehTambah = punya('kursus_coach.create')
+    const bolehUbah = punya('kursus_coach.update')
+    const bolehHapus = punya('kursus_coach.delete')
     const [coachList, setCoachList] = useState<ICoachPublic[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -147,7 +152,7 @@ const CoachPage = () => {
             <Card
                 header={{
                     content: <h4>Data Coach</h4>,
-                    extra: (
+                    extra: bolehTambah && (
                         <Button
                             variant="solid"
                             size="sm"
@@ -200,6 +205,8 @@ const CoachPage = () => {
                     onPageSizeChange={(size) => { setPageSize(size); setPage(1) }}
                     onEdit={(row) => { setEditTarget(row); setFormOpen(true) }}
                     onDelete={setDeleteTarget}
+                    bolehUbah={bolehUbah}
+                    bolehHapus={bolehHapus}
                 />
             </Card>
 

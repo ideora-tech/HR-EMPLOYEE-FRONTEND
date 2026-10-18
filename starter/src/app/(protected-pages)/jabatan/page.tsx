@@ -8,6 +8,7 @@ import JabatanTable from '@/components/jabatan/JabatanTable'
 import JabatanForm from '@/components/jabatan/JabatanForm'
 import JabatanService from '@/services/jabatan.service'
 import DepartemenService from '@/services/departemen.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { IDepartemen, IJabatan, ICreateJabatan, IUpdateJabatan } from '@/@types/organisasi.types'
@@ -22,6 +23,10 @@ const AKTIF_OPTIONS: AktifOption[] = [
 ]
 
 const JabatanPage = () => {
+    const { punya } = useIzin()
+    const bolehTambah = punya('jabatan.create')
+    const bolehUbah = punya('jabatan.update')
+    const bolehHapus = punya('jabatan.delete')
     const [list, setList] = useState<IJabatan[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -182,7 +187,7 @@ const JabatanPage = () => {
             <Card
                 header={{
                     content: <h4>Manajemen Jabatan</h4>,
-                    extra: (
+                    extra: bolehTambah && (
                         <Button
                             variant="solid"
                             size="sm"
@@ -259,6 +264,8 @@ const JabatanPage = () => {
                     }}
                     onEdit={handleOpenEdit}
                     onDelete={setDeleteTarget}
+                    bolehUbah={bolehUbah}
+                    bolehHapus={bolehHapus}
                 />
             </Card>
 

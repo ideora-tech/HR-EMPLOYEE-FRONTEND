@@ -8,9 +8,11 @@ interface PerusahaanCardProps {
     perusahaan: IPerusahaan
     onEdit: (perusahaan: IPerusahaan) => void
     onDelete: (perusahaan: IPerusahaan) => void
+    bolehUbah: boolean
+    bolehHapus: boolean
 }
 
-const PerusahaanCard = ({ perusahaan, onEdit, onDelete }: PerusahaanCardProps) => {
+const PerusahaanCard = ({ perusahaan, onEdit, onDelete, bolehUbah, bolehHapus }: PerusahaanCardProps) => {
     return (
         <Card className="border-t-4 border-t-indigo-500">
             <div className="flex items-start justify-between mb-3">
@@ -66,25 +68,29 @@ const PerusahaanCard = ({ perusahaan, onEdit, onDelete }: PerusahaanCardProps) =
             </div>
 
             <div className="flex gap-2">
-                <Button
-                    size="sm"
-                    className="flex-1"
-                    icon={<HiPencilAlt />}
-                    onClick={() => onEdit(perusahaan)}
-                >
-                    Edit
-                </Button>
-                <Button
-                    size="sm"
-                    className="flex-1"
-                    customColorClass={() =>
-                        'border border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20'
-                    }
-                    icon={<HiTrash />}
-                    onClick={() => onDelete(perusahaan)}
-                >
-                    Hapus
-                </Button>
+                {bolehUbah && (
+                    <Button
+                        size="sm"
+                        className="flex-1"
+                        icon={<HiPencilAlt />}
+                        onClick={() => onEdit(perusahaan)}
+                    >
+                        Edit
+                    </Button>
+                )}
+                {bolehHapus && (
+                    <Button
+                        size="sm"
+                        className="flex-1"
+                        customColorClass={() =>
+                            'border border-red-300 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20'
+                        }
+                        icon={<HiTrash />}
+                        onClick={() => onDelete(perusahaan)}
+                    >
+                        Hapus
+                    </Button>
+                )}
             </div>
         </Card>
     )

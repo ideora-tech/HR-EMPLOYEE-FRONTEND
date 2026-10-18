@@ -57,11 +57,13 @@ interface JadwalKalenderProps {
     onView: (item: IJadwalKelas) => void
     onEdit: (item: IJadwalKelas) => void
     onDelete: (item: IJadwalKelas) => void
+    bolehUbah: boolean
+    bolehHapus: boolean
 }
 
 /* ─── component ──────────────────────────────────────────── */
 
-const JadwalKalender = ({ refreshToken, onView, onEdit, onDelete }: JadwalKalenderProps) => {
+const JadwalKalender = ({ refreshToken, onView, onEdit, onDelete, bolehUbah, bolehHapus }: JadwalKalenderProps) => {
     const [data, setData] = useState<IJadwalKelas[]>([])
     const [loading, setLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
@@ -210,22 +212,26 @@ const JadwalKalender = ({ refreshToken, onView, onEdit, onDelete }: JadwalKalend
                                                                 <span className="text-[9px] font-medium text-gray-400 mt-0.5 block">Nonaktif</span>
                                                             )}
                                                             <div className="absolute top-1 right-1 hidden group-hover/card:flex gap-0.5">
-                                                                <Tooltip title="Edit">
-                                                                    <span
-                                                                        className="cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 transition-colors"
-                                                                        onClick={(e) => { e.stopPropagation(); onEdit(jadwal) }}
-                                                                    >
-                                                                        <HiOutlinePencilAlt className="text-[11px]" />
-                                                                    </span>
-                                                                </Tooltip>
-                                                                <Tooltip title="Hapus">
-                                                                    <span
-                                                                        className="cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded bg-white dark:bg-gray-700 shadow-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 transition-colors"
-                                                                        onClick={(e) => { e.stopPropagation(); onDelete(jadwal) }}
-                                                                    >
-                                                                        <HiOutlineTrash className="text-[11px]" />
-                                                                    </span>
-                                                                </Tooltip>
+                                                                {bolehUbah && (
+                                                                    <Tooltip title="Edit">
+                                                                        <span
+                                                                            className="cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/20 transition-colors"
+                                                                            onClick={(e) => { e.stopPropagation(); onEdit(jadwal) }}
+                                                                        >
+                                                                            <HiOutlinePencilAlt className="text-[11px]" />
+                                                                        </span>
+                                                                    </Tooltip>
+                                                                )}
+                                                                {bolehHapus && (
+                                                                    <Tooltip title="Hapus">
+                                                                        <span
+                                                                            className="cursor-pointer inline-flex items-center justify-center w-5 h-5 rounded bg-white dark:bg-gray-700 shadow-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/20 transition-colors"
+                                                                            onClick={(e) => { e.stopPropagation(); onDelete(jadwal) }}
+                                                                        >
+                                                                            <HiOutlineTrash className="text-[11px]" />
+                                                                        </span>
+                                                                    </Tooltip>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     )

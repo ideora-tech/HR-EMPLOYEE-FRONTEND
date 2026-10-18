@@ -272,6 +272,7 @@ export interface ISiswa {
     dibuat_pada: string
     diubah_pada: string | null
     kelas?: ISiswaKelasItem[]      // diisi saat GET /kursus/siswa
+    punya_akun_aplikasi?: number   // 1 = password aplikasi sudah diatur (hanya di detail)
 }
 
 // Monitoring per-siswa (computed client-side)

@@ -25,6 +25,10 @@ interface SiswaTableProps {
     selectedIds: string[]
     onCheckBoxChange: (checked: boolean, row: ISiswa) => void
     onSelectAllChange: (checked: boolean, pageRows: ISiswa[]) => void
+    bolehUbah: boolean
+    bolehHapus: boolean
+    bolehAssignKelas: boolean
+    bolehKonversiTrial: boolean
 }
 
 const SiswaTable = ({
@@ -39,6 +43,10 @@ const SiswaTable = ({
     selectedIds,
     onCheckBoxChange,
     onSelectAllChange,
+    bolehUbah,
+    bolehHapus,
+    bolehAssignKelas,
+    bolehKonversiTrial,
 }: SiswaTableProps) => {
     const columns: ColumnDef<ISiswa>[] = useMemo(
         () => [
@@ -142,7 +150,7 @@ const SiswaTable = ({
                     )
                     return (
                     <div className="flex items-center justify-end gap-2">
-                        {hasActiveTrial && (
+                        {bolehKonversiTrial && hasActiveTrial && (
                             <Tooltip title="Convert Trial">
                                 <span
                                     className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-500/20 dark:text-violet-300 dark:hover:bg-violet-500/30 transition-colors"
@@ -160,28 +168,32 @@ const SiswaTable = ({
                                 <HiOutlineEye className="text-lg" />
                             </span>
                         </Tooltip>
-                        <Tooltip title="Edit">
-                            <span
-                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
-                                onClick={() => onEdit(row.original)}
-                            >
-                                <HiOutlinePencilAlt className="text-lg" />
-                            </span>
-                        </Tooltip>
-                        <Tooltip title="Hapus">
-                            <span
-                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
-                                onClick={() => onDelete(row.original)}
-                            >
-                                <HiOutlineTrash className="text-lg" />
-                            </span>
-                        </Tooltip>
+                        {bolehUbah && (
+                            <Tooltip title="Edit">
+                                <span
+                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
+                                    onClick={() => onEdit(row.original)}
+                                >
+                                    <HiOutlinePencilAlt className="text-lg" />
+                                </span>
+                            </Tooltip>
+                        )}
+                        {bolehHapus && (
+                            <Tooltip title="Hapus">
+                                <span
+                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
+                                    onClick={() => onDelete(row.original)}
+                                >
+                                    <HiOutlineTrash className="text-lg" />
+                                </span>
+                            </Tooltip>
+                        )}
                     </div>
                     )
                 },
             },
         ],
-        [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete, onDetail],
+        [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete, onDetail, bolehUbah, bolehHapus, bolehKonversiTrial],
     )
 
     return (
@@ -193,7 +205,7 @@ const SiswaTable = ({
             pagingData={pagingData}
             onPaginationChange={onPaginationChange}
             onSelectChange={onSelectChange}
-            selectable
+            selectable={bolehAssignKelas}
             checkboxChecked={(row) => selectedIds.includes((row as ISiswa).id_siswa)}
             onCheckBoxChange={(checked, row) => onCheckBoxChange(checked, row as ISiswa)}
             indeterminateCheckboxChecked={(rows) =>

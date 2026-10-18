@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation'
 import { ROUTES } from '@/constants/route.constant'
 
-/** Halaman lama — kini tab "Izin Peran" di halaman Peran. */
+/** Halaman lama — izin kini diatur per peran lewat tombol "Atur Izin" di halaman Peran. */
 const IzinPeranPage = () => {
-    redirect(`${ROUTES.PERAN}?tab=izin-peran`)
+    redirect(ROUTES.PERAN)
 }
 
 export default IzinPeranPage

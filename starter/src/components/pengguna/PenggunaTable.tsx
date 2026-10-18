@@ -6,6 +6,7 @@ import { Tag, Tooltip } from '@/components/ui'
 import { HiOutlinePencilAlt, HiOutlineTrash } from 'react-icons/hi'
 import type { ColumnDef, CellContext } from '@/components/shared/DataTable'
 import type { IPengguna } from '@/@types/pengguna.types'
+import PeranBadges from '@/components/pengguna/PeranBadges'
 
 interface PenggunaTableProps {
     data: IPengguna[]
@@ -15,13 +16,8 @@ interface PenggunaTableProps {
     onSelectChange: (pageSize: number) => void
     onEdit: (pengguna: IPengguna) => void
     onDelete: (pengguna: IPengguna) => void
-}
-
-const PERAN_COLOR: Record<string, string> = {
-    OWNER: 'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-100',
-    HR_ADMIN: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-100',
-    FINANCE: 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-100',
-    EMPLOYEE: 'bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-100',
+    bolehUbah: (pengguna: IPengguna) => boolean
+    bolehHapus: (pengguna: IPengguna) => boolean
 }
 
 const PenggunaTable = ({
@@ -32,6 +28,8 @@ const PenggunaTable = ({
     onSelectChange,
     onEdit,
     onDelete,
+    bolehUbah,
+    bolehHapus,
 }: PenggunaTableProps) => {
     const columns: ColumnDef<IPengguna>[] = useMemo(
         () => [
@@ -59,16 +57,7 @@ const PenggunaTable = ({
                 header: 'Peran',
                 accessorKey: 'peran',
                 size: 160,
-                cell: ({ row }: CellContext<IPengguna, unknown>) => (
-                    <Tag
-                        className={
-                            PERAN_COLOR[row.original.peran] ??
-                            'bg-gray-100 text-gray-600'
-                        }
-                    >
-                        {row.original.peran}
-                    </Tag>
-                ),
+                cell: ({ row }: CellContext<IPengguna, unknown>) => <PeranBadges pengguna={row.original} />,
             },
             {
                 header: 'Status',
@@ -92,27 +81,31 @@ const PenggunaTable = ({
                 size: 100,
                 cell: ({ row }: CellContext<IPengguna, unknown>) => (
                     <div className="flex items-center justify-end gap-2">
-                        <Tooltip title="Edit">
-                            <span
-                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
-                                onClick={() => onEdit(row.original)}
-                            >
-                                <HiOutlinePencilAlt className="text-lg" />
-                            </span>
-                        </Tooltip>
-                        <Tooltip title="Hapus">
-                            <span
-                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
-                                onClick={() => onDelete(row.original)}
-                            >
-                                <HiOutlineTrash className="text-lg" />
-                            </span>
-                        </Tooltip>
+                        {bolehUbah(row.original) && (
+                            <Tooltip title="Edit">
+                                <span
+                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
+                                    onClick={() => onEdit(row.original)}
+                                >
+                                    <HiOutlinePencilAlt className="text-lg" />
+                                </span>
+                            </Tooltip>
+                        )}
+                        {bolehHapus(row.original) && (
+                            <Tooltip title="Hapus">
+                                <span
+                                    className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
+                                    onClick={() => onDelete(row.original)}
+                                >
+                                    <HiOutlineTrash className="text-lg" />
+                                </span>
+                            </Tooltip>
+                        )}
                     </div>
                 ),
             },
         ],
-        [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete],
+        [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete, bolehUbah, bolehHapus],
     )
 
     return (

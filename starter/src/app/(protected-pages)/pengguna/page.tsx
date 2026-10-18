@@ -23,6 +23,8 @@ import PenggunaCard from '@/components/pengguna/PenggunaCard'
 import PenggunaForm from '@/components/pengguna/PenggunaForm'
 import PenggunaService from '@/services/pengguna.service'
 import PeranService from '@/services/peran.service'
+import useIzin from '@/utils/hooks/useIzin'
+import useCurrentSession from '@/utils/hooks/useCurrentSession'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { IPengguna, IPenggunaCreate, IPenggunaUpdate } from '@/@types/pengguna.types'
@@ -37,7 +39,24 @@ const AKTIF_OPTIONS: AktifOption[] = [
     { value: '0', label: 'Nonaktif' },
 ]
 
+const adalahOwner = (p: IPengguna) => (p.peran_list ?? []).some((r) => r.is_sistem === 1)
+
 const PenggunaPage = () => {
+    const { punya, superAdmin, isOwner } = useIzin()
+    const { session } = useCurrentSession()
+    const idSaya = session.user?.id
+    // Cermin aturan backend: SUPERADMIN boleh semua (izinnya tidak dikirim di sesi), akun Owner
+    // hanya diurus Owner, dan tidak ada yang bisa menghapus akun sendiri.
+    const bolehTambah = superAdmin || punya('pengguna.create')
+    const bolehUbah = useCallback(
+        (p: IPengguna) => superAdmin || (punya('pengguna.update') && (isOwner || !adalahOwner(p))),
+        [punya, superAdmin, isOwner],
+    )
+    const bolehHapus = useCallback(
+        (p: IPengguna) =>
+            p.id_pengguna !== idSaya && (superAdmin || (punya('pengguna.delete') && (isOwner || !adalahOwner(p)))),
+        [punya, superAdmin, isOwner, idSaya],
+    )
     const [penggunaList, setPenggunaList] = useState<IPengguna[]>([])
     const [peranList, setPeranList] = useState<IPeran[]>([])
     const [loading, setLoading] = useState(false)
@@ -202,7 +221,7 @@ const PenggunaPage = () => {
             <Card
                 header={{
                     content: <h4>Manajemen Pengguna</h4>,
-                    extra: (
+                    extra: bolehTambah && (
                         <Button
                             variant="solid"
                             size="sm"
@@ -297,6 +316,8 @@ const PenggunaPage = () => {
                         onSelectChange={handlePageSizeChange}
                         onEdit={handleOpenEdit}
                         onDelete={handleOpenDelete}
+                        bolehUbah={bolehUbah}
+                        bolehHapus={bolehHapus}
                     />
                 ) : loading ? (
                     <div className="flex justify-center items-center py-16">
@@ -314,6 +335,8 @@ const PenggunaPage = () => {
                                 pengguna={pengguna}
                                 onEdit={handleOpenEdit}
                                 onDelete={handleOpenDelete}
+                                bolehUbah={bolehUbah(pengguna)}
+                                bolehHapus={bolehHapus(pengguna)}
                             />
                         ))}
                     </div>
@@ -354,8 +377,7 @@ const PenggunaPage = () => {
                     <span className="font-semibold">
                         &ldquo;{deleteTarget?.nama_pengguna}&rdquo;
                     </span>{' '}
-                    akan dihapus secara permanen. Tindakan ini tidak dapat
-                    dibatalkan.
+                    akan dihapus dan tidak bisa login lagi.
                 </p>
             </ConfirmDialog>
         </div>

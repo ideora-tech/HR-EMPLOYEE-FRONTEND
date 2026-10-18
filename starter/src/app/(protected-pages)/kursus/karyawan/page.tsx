@@ -9,6 +9,7 @@ import KaryawanKursusTable from '@/components/kursus/karyawan/KaryawanKursusTabl
 import KaryawanService from '@/services/karyawan.service'
 import ApiService from '@/services/ApiService'
 import { API_ENDPOINTS } from '@/constants/api.constant'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import type { IKaryawan } from '@/@types/karyawan.types'
 import type { IJabatan } from '@/@types/organisasi.types'
@@ -27,6 +28,10 @@ const ALL_JABATAN: JabatanOption = { value: '', label: 'Semua Jabatan' }
 
 const KaryawanKursusPage = () => {
     const router = useRouter()
+    const { punya } = useIzin()
+    const bolehTambah = punya('karyawan.create')
+    const bolehUbah = punya('karyawan.update')
+    const bolehHapus = punya('karyawan.delete')
 
     const [karyawanList, setKaryawanList] = useState<IKaryawan[]>([])
     const [loading, setLoading] = useState(false)
@@ -124,7 +129,7 @@ const KaryawanKursusPage = () => {
             <Card
                 header={{
                     content: <h4>Data Karyawan</h4>,
-                    extra: (
+                    extra: bolehTambah && (
                         <Button
                             variant="solid"
                             size="sm"
@@ -184,6 +189,8 @@ const KaryawanKursusPage = () => {
                     onPageSizeChange={(size) => { setPageSize(size); setPage(1) }}
                     onEdit={(row) => router.push(`/kursus/karyawan/${row.id_karyawan}/edit`)}
                     onDelete={setDeleteTarget}
+                    bolehUbah={bolehUbah}
+                    bolehHapus={bolehHapus}
                 />
             </Card>
 

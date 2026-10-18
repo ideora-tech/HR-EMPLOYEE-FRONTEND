@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import {
     Button,
     Input,
@@ -25,6 +26,8 @@ import PeranService from '@/services/peran.service'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { IPeran, IPeranCreate, IPeranUpdate } from '@/@types/peran.types'
+import useIzin from '@/utils/hooks/useIzin'
+import { ROUTES } from '@/constants/route.constant'
 
 type ViewMode = 'table' | 'card'
 type AktifOption = { value: '' | '1' | '0'; label: string }
@@ -36,6 +39,11 @@ const AKTIF_OPTIONS: AktifOption[] = [
 ]
 
 const PeranPanel = () => {
+    const router = useRouter()
+    const { punya } = useIzin()
+    const bolehTambah = punya('peran.create')
+    const bolehUbah = punya('peran.update')
+    const bolehHapus = punya('peran.delete')
     const [peranList, setPeranList] = useState<IPeran[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -117,6 +125,10 @@ const PeranPanel = () => {
         setDeleteTarget(p)
     }, [])
 
+    const handleAturIzin = useCallback((p: IPeran) => {
+        router.push(ROUTES.PERAN_IZIN(p.id_peran))
+    }, [router])
+
     const handleSubmit = async (payload: IPeranCreate | IPeranUpdate) => {
         setSubmitting(true)
         try {
@@ -132,13 +144,19 @@ const PeranPanel = () => {
                     />,
                 )
             } else {
-                await PeranService.create(payload as IPeranCreate)
+                const res = await PeranService.create(payload as IPeranCreate)
                 toast.push(
                     <Notification
                         type="success"
                         title={MESSAGES.SUCCESS.CREATED(ENTITY.PERAN)}
-                    />,
+                    >
+                        Lanjutkan dengan mengatur izin peran ini.
+                    </Notification>,
                 )
+                // Peran baru belum punya izin: langsung ke matriks izinnya (seperti POS "Simpan & Atur Izin").
+                setFormOpen(false)
+                router.push(ROUTES.PERAN_IZIN(res.data.id_peran))
+                return
             }
             setFormOpen(false)
             setEditTarget(null)
@@ -193,7 +211,7 @@ const PeranPanel = () => {
             <TabPanelCard
                 header={{
                     content: <h4>Manajemen Peran</h4>,
-                    extra: (
+                    extra: bolehTambah && (
                         <Button
                             variant="solid"
                             size="sm"
@@ -286,8 +304,11 @@ const PeranPanel = () => {
                         }}
                         onPaginationChange={handlePageChange}
                         onSelectChange={handlePageSizeChange}
+                        onAturIzin={handleAturIzin}
                         onEdit={handleOpenEdit}
                         onDelete={handleOpenDelete}
+                        bolehUbah={bolehUbah}
+                        bolehHapus={bolehHapus}
                     />
                 ) : loading ? (
                     <div className="flex justify-center items-center py-16">
@@ -303,8 +324,11 @@ const PeranPanel = () => {
                             <PeranCard
                                 key={peran.id_peran}
                                 peran={peran}
+                                onAturIzin={handleAturIzin}
                                 onEdit={handleOpenEdit}
                                 onDelete={handleOpenDelete}
+                                bolehUbah={bolehUbah}
+                                bolehHapus={bolehHapus}
                             />
                         ))}
                     </div>
@@ -344,8 +368,8 @@ const PeranPanel = () => {
                     <span className="font-semibold">
                         &ldquo;{deleteTarget?.nama_peran}&rdquo;
                     </span>{' '}
-                    akan dihapus secara permanen. Tindakan ini tidak dapat
-                    dibatalkan.
+                    akan dihapus. Peran yang masih dipakai pengguna tidak bisa
+                    dihapus; pindahkan penggunanya ke peran lain dulu.
                 </p>
             </ConfirmDialog>
         </div>

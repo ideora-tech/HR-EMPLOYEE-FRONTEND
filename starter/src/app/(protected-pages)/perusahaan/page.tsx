@@ -23,6 +23,7 @@ import PerusahaanTable from '@/components/perusahaan/PerusahaanTable'
 import PerusahaanCard from '@/components/perusahaan/PerusahaanCard'
 import PerusahaanOverviewDialog from '@/components/perusahaan/PerusahaanOverviewDialog'
 import PerusahaanService from '@/services/perusahaan.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { IPerusahaan } from '@/@types/perusahaan.types'
@@ -38,6 +39,11 @@ const AKTIF_OPTIONS: AktifOption[] = [
 
 const PerusahaanPage = () => {
     const router = useRouter()
+    const { punya, superAdmin } = useIzin()
+    // Tambah & hapus perusahaan khusus SUPERADMIN; ubah profil juga untuk perusahaan sendiri.
+    const bolehTambah = superAdmin
+    const bolehUbah = superAdmin || punya('perusahaan.update')
+    const bolehHapus = superAdmin
     const [list, setList] = useState<IPerusahaan[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -148,7 +154,7 @@ const PerusahaanPage = () => {
             <Card
                 header={{
                     content: <h4>Manajemen Perusahaan</h4>,
-                    extra: (
+                    extra: bolehTambah && (
                         <Button
                             variant="solid"
                             size="sm"
@@ -236,6 +242,8 @@ const PerusahaanPage = () => {
                         onDetail={handleOpenDetail}
                         onEdit={handleOpenEdit}
                         onDelete={handleOpenDelete}
+                        bolehUbah={bolehUbah}
+                        bolehHapus={bolehHapus}
                     />
                 ) : loading ? (
                     <div className="flex justify-center items-center py-16">
@@ -253,6 +261,8 @@ const PerusahaanPage = () => {
                                 perusahaan={perusahaan}
                                 onEdit={handleOpenEdit}
                                 onDelete={handleOpenDelete}
+                                bolehUbah={bolehUbah}
+                                bolehHapus={bolehHapus}
                             />
                         ))}
                     </div>

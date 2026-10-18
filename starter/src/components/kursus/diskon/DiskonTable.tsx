@@ -16,6 +16,8 @@ interface DiskonTableProps {
     onSelectChange: (size: number) => void
     onEdit: (item: IDiskon) => void
     onDelete: (item: IDiskon) => void
+    bolehUbah: boolean
+    bolehHapus: boolean
 }
 
 const formatTanggal = (value: string | null) => {
@@ -31,6 +33,8 @@ const DiskonTable = ({
     onSelectChange,
     onEdit,
     onDelete,
+    bolehUbah,
+    bolehHapus,
 }: DiskonTableProps) => {
     const columns: ColumnDef<IDiskon>[] = useMemo(
         () => [
@@ -104,23 +108,27 @@ const DiskonTable = ({
                 size: 100,
                 cell: ({ row }: CellContext<IDiskon, unknown>) => (
                     <div className="flex items-center justify-end gap-2">
-                        <span
-                            className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
-                            onClick={() => onEdit(row.original)}
-                        >
-                            <HiOutlinePencilAlt className="text-lg" />
-                        </span>
-                        <span
-                            className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
-                            onClick={() => onDelete(row.original)}
-                        >
-                            <HiOutlineTrash className="text-lg" />
-                        </span>
+                        {bolehUbah && (
+                            <span
+                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
+                                onClick={() => onEdit(row.original)}
+                            >
+                                <HiOutlinePencilAlt className="text-lg" />
+                            </span>
+                        )}
+                        {bolehHapus && (
+                            <span
+                                className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
+                                onClick={() => onDelete(row.original)}
+                            >
+                                <HiOutlineTrash className="text-lg" />
+                            </span>
+                        )}
                     </div>
                 ),
             },
         ],
-        [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete],
+        [pagingData.pageIndex, pagingData.pageSize, onEdit, onDelete, bolehUbah, bolehHapus],
     )
 
     return (

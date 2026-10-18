@@ -159,6 +159,7 @@ const CoachFormDialog = ({
                 >
                     <Input
                         placeholder="mis. coach_yuma"
+                        autoComplete="off"
                         value={form.username}
                         onChange={(e) => setForm((p) => ({ ...p, username: e.target.value.trim() }))}
                     />
@@ -173,6 +174,8 @@ const CoachFormDialog = ({
                 >
                     <Input
                         type="password"
+                        // Tanpa ini password manager browser mengisi sandi admin yang login, lalu ikut tersimpan.
+                        autoComplete="new-password"
                         placeholder="Minimal 6 karakter"
                         value={form.password}
                         onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}

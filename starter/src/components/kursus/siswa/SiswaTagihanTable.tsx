@@ -40,9 +40,10 @@ const formatTanggal = (raw: string) => {
 interface SiswaTagihanTableProps {
     data: ITagihan[]
     loading?: boolean
+    bolehCatatPembayaran: boolean
 }
 
-const SiswaTagihanTable = ({ data, loading = false }: SiswaTagihanTableProps) => {
+const SiswaTagihanTable = ({ data, loading = false, bolehCatatPembayaran }: SiswaTagihanTableProps) => {
     const router = useRouter()
 
     const [filterBulan, setFilterBulan] = useState<SelectOption | null>(null)
@@ -231,7 +232,7 @@ const SiswaTagihanTable = ({ data, loading = false }: SiswaTagihanTableProps) =>
                                             </td>
                                             <td className="py-3 px-4">
                                                 <div className="flex items-center justify-end gap-1">
-                                                    {(item.status === 1 || item.status === 2) && (
+                                                    {bolehCatatPembayaran && (item.status === 1 || item.status === 2) && (
                                                         <span
                                                             title="Catat Pembayaran"
                                                             className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"

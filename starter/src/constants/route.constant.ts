@@ -10,6 +10,7 @@ export const ROUTES = {
     MENU: '/menu',
     MENU_MODUL: '/menu-modul',
     PERAN: '/peran',
+    PERAN_IZIN: (id: string) => `/peran/${id}`,
     PENGGUNA: '/pengguna',
     IZIN_PERAN: '/izin-peran',
     PERUSAHAAN: '/perusahaan',

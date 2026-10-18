@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
     Button,
     Dialog,
@@ -10,10 +10,12 @@ import {
     Switcher,
 } from '@/components/ui'
 import { HiEye, HiEyeOff } from 'react-icons/hi'
+import useIzin from '@/utils/hooks/useIzin'
+import type { MultiValue } from 'react-select'
 import type { IPengguna, IPenggunaCreate, IPenggunaUpdate } from '@/@types/pengguna.types'
 import type { IPeran } from '@/@types/peran.types'
 
-type PeranOption = { value: string; label: string }
+type PeranOption = { value: string; label: string; owner: boolean }
 
 interface PenggunaFormProps {
     open: boolean
@@ -28,7 +30,7 @@ interface FormState {
     username: string
     kata_sandi: string
     konfirmasi_sandi: string
-    peran: string
+    id_peran: string[]
     aktif: boolean
 }
 
@@ -38,7 +40,7 @@ const INITIAL_STATE: FormState = {
     username: '',
     kata_sandi: '',
     konfirmasi_sandi: '',
-    peran: 'EMPLOYEE',
+    id_peran: [],
     aktif: true,
 }
 
@@ -47,6 +49,15 @@ const validatePassword = (pwd: string): string | null => {
     if (!/[A-Z]/.test(pwd)) return 'Harus mengandung minimal 1 huruf besar'
     if (!/[^a-zA-Z0-9]/.test(pwd)) return 'Harus mengandung minimal 1 simbol'
     return null
+}
+
+/** Peran yang sudah dimiliki pengguna; data lama tanpa peran_list dicocokkan lewat kode. */
+const peranAwal = (pengguna: IPengguna, peranList: IPeran[]): string[] => {
+    if (pengguna.peran_list?.length) return pengguna.peran_list.map((p) => p.id_peran)
+    const cocok = peranList.find(
+        (p) => p.kode_peran === pengguna.peran && p.company_id === pengguna.id_perusahaan,
+    )
+    return cocok ? [cocok.id_peran] : []
 }
 
 const EyeToggle = ({
@@ -72,16 +83,27 @@ const PenggunaForm = ({
     onClose,
     onSubmit,
 }: PenggunaFormProps) => {
-    const peranOptions: PeranOption[] = peranList.map((p) => ({
-        value: p.kode_peran,
-        label: p.nama_peran,
-    }))
+    const { superAdmin, isOwner } = useIzin()
     const [form, setForm] = useState<FormState>(INITIAL_STATE)
     const [errors, setErrors] = useState<FormErrors>({})
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
 
     const isEdit = !!editData
+    // SUPERADMIN hanya membuat akun SUPERADMIN; peran perusahaan dipilih untuk akun milik perusahaan.
+    const pakaiPeran = superAdmin ? !!editData?.id_perusahaan : true
+
+    const peranOptions: PeranOption[] = useMemo(
+        () =>
+            peranList
+                .filter((p) => !superAdmin || p.company_id === editData?.id_perusahaan)
+                .map((p) => ({
+                    value: p.id_peran,
+                    label: p.is_sistem === 1 ? `${p.nama_peran} (semua izin)` : p.nama_peran,
+                    owner: p.is_sistem === 1,
+                })),
+        [peranList, superAdmin, editData?.id_perusahaan],
+    )
 
     useEffect(() => {
         if (editData) {
@@ -89,7 +111,7 @@ const PenggunaForm = ({
                 username: editData.nama_pengguna,
                 kata_sandi: '',
                 konfirmasi_sandi: '',
-                peran: editData.peran,
+                id_peran: peranAwal(editData, peranList),
                 aktif: editData.aktif === 1,
             })
         } else {
@@ -98,7 +120,7 @@ const PenggunaForm = ({
         setErrors({})
         setShowPassword(false)
         setShowConfirm(false)
-    }, [editData, open])
+    }, [editData, open, peranList])
 
     const validate = (): boolean => {
         const newErrors: FormErrors = {}
@@ -120,7 +142,7 @@ const PenggunaForm = ({
                 newErrors.konfirmasi_sandi = 'Kata sandi tidak cocok'
         }
 
-        if (!form.peran) newErrors.peran = 'Peran wajib dipilih'
+        if (pakaiPeran && form.id_peran.length === 0) newErrors.id_peran = 'Pilih minimal satu peran'
 
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
@@ -132,9 +154,9 @@ const PenggunaForm = ({
         if (isEdit) {
             const payload: IPenggunaUpdate = {
                 nama_pengguna: form.username.trim(),
-                peran: form.peran,
                 aktif: form.aktif ? 1 : 0,
             }
+            if (pakaiPeran) payload.id_peran = form.id_peran
             if (form.kata_sandi.trim()) {
                 payload.kata_sandi = form.kata_sandi.trim()
             }
@@ -143,9 +165,10 @@ const PenggunaForm = ({
             const payload: IPenggunaCreate = {
                 nama_pengguna: form.username.trim(),
                 kata_sandi: form.kata_sandi.trim(),
-                peran: form.peran,
                 aktif: form.aktif ? 1 : 0,
             }
+            if (superAdmin) payload.peran = 'SUPERADMIN'
+            else payload.id_peran = form.id_peran
             onSubmit(payload)
         }
     }
@@ -172,6 +195,7 @@ const PenggunaForm = ({
                 >
                     <Input
                         placeholder="contoh: budi.santoso"
+                        autoComplete="off"
                         value={form.username}
                         invalid={!!errors.username}
                         onChange={(e) =>
@@ -199,6 +223,8 @@ const PenggunaForm = ({
                 >
                     <Input
                         type={showPassword ? 'text' : 'password'}
+                        // Tanpa ini password manager browser mengisi sandi admin yang login, lalu ikut tersimpan.
+                        autoComplete="new-password"
                         placeholder={
                             isEdit
                                 ? 'Isi untuk mengganti kata sandi'
@@ -230,6 +256,7 @@ const PenggunaForm = ({
                     >
                         <Input
                             type={showConfirm ? 'text' : 'password'}
+                            autoComplete="new-password"
                             placeholder="Ulangi kata sandi"
                             value={form.konfirmasi_sandi}
                             invalid={!!errors.konfirmasi_sandi}
@@ -249,26 +276,40 @@ const PenggunaForm = ({
                     </FormItem>
                 )}
 
-                <FormItem
-                    label="Peran"
-                    asterisk
-                    invalid={!!errors.peran}
-                    errorMessage={errors.peran}
-                >
-                    <Select<PeranOption>
-                        options={peranOptions}
-                        value={
-                            peranOptions.find((o) => o.value === form.peran) ??
-                            peranOptions[3]
+                {pakaiPeran ? (
+                    <FormItem
+                        label="Peran"
+                        asterisk
+                        invalid={!!errors.id_peran}
+                        errorMessage={errors.id_peran}
+                        extra={
+                            <span className="text-xs text-gray-400">
+                                Boleh lebih dari satu; izinnya digabung
+                            </span>
                         }
-                        onChange={(opt) =>
-                            setForm((p) => ({
-                                ...p,
-                                peran: (opt as PeranOption).value,
-                            }))
-                        }
-                    />
-                </FormItem>
+                    >
+                        <Select<PeranOption, true>
+                            isMulti
+                            placeholder="— Pilih Peran —"
+                            options={peranOptions}
+                            value={peranOptions.filter((o) => form.id_peran.includes(o.value))}
+                            // Peran Owner memegang semua izin paket: hanya Owner/SUPERADMIN yang boleh memberikannya.
+                            isOptionDisabled={(o) => o.owner && !isOwner && !superAdmin}
+                            onChange={(opts) =>
+                                setForm((p) => ({
+                                    ...p,
+                                    id_peran: (opts as MultiValue<PeranOption>).map((o) => o.value),
+                                }))
+                            }
+                        />
+                    </FormItem>
+                ) : (
+                    <p className="text-xs text-gray-500 mb-4">
+                        {isEdit
+                            ? 'Akun SUPERADMIN tidak memakai peran perusahaan.'
+                            : 'Akun baru dibuat sebagai SUPERADMIN (akses seluruh platform).'}
+                    </p>
+                )}
 
                 <FormItem label="Status Pengguna">
                     <div className="flex items-center gap-3">

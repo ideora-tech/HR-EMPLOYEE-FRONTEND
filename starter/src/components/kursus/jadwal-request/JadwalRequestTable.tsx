@@ -35,6 +35,7 @@ interface JadwalRequestTableProps {
     onPageSizeChange: (pageSize: number) => void
     onApprove: (row: IJadwalRequestPublic) => void
     onReject: (row: IJadwalRequestPublic) => void
+    bolehProses: boolean
 }
 
 const JadwalRequestTable = ({
@@ -45,6 +46,7 @@ const JadwalRequestTable = ({
     onPageSizeChange,
     onApprove,
     onReject,
+    bolehProses,
 }: JadwalRequestTableProps) => {
     const columns: ColumnDef<IJadwalRequestPublic>[] = useMemo(
         () => [
@@ -123,7 +125,7 @@ const JadwalRequestTable = ({
                 id: 'action',
                 size: 160,
                 cell: ({ row }: CellContext<IJadwalRequestPublic, unknown>) => {
-                    if (row.original.status !== 1) return null
+                    if (row.original.status !== 1 || !bolehProses) return null
                     return (
                         <div className="flex items-center gap-2">
                             <Tooltip title="Setujui">
@@ -147,7 +149,7 @@ const JadwalRequestTable = ({
                 },
             },
         ],
-        [pagingData.pageIndex, pagingData.pageSize, onApprove, onReject],
+        [pagingData.pageIndex, pagingData.pageSize, onApprove, onReject, bolehProses],
     )
 
     return (

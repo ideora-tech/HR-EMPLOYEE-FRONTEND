@@ -7,6 +7,7 @@ import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi'
 import KelasTable from '@/components/kursus/kelas/KelasTable'
 import KelasForm from '@/components/kursus/kelas/KelasForm'
 import KelasService from '@/services/kursus/kelas.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import type { IKelas, ICreateKelas, IUpdateKelas } from '@/@types/kursus.types'
@@ -25,6 +26,7 @@ interface KelasTabProps {
 }
 
 const KelasTab = ({ pendingAdd, onPendingAddHandled }: KelasTabProps) => {
+    const { punya } = useIzin()
     const [list, setList] = useState<IKelas[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -172,6 +174,8 @@ const KelasTab = ({ pendingAdd, onPendingAddHandled }: KelasTabProps) => {
                 onSelectChange={(size) => { setPageSize(size); setCurrentPage(1) }}
                 onEdit={(item) => { setEditData(item); setFormOpen(true) }}
                 onDelete={setDeleteTarget}
+                bolehUbah={punya('kursus_kelas.update')}
+                bolehHapus={punya('kursus_kelas.delete')}
             />
 
             <KelasForm

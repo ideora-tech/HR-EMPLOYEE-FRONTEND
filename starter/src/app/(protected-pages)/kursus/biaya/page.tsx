@@ -17,6 +17,7 @@ import DiskonTable from '@/components/kursus/diskon/DiskonTable'
 import DiskonForm from '@/components/kursus/diskon/DiskonForm'
 import BiayaService from '@/services/kursus/biaya.service'
 import DiskonService from '@/services/kursus/diskon.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { MESSAGES, ENTITY } from '@/constants/message.constant'
 import { ROUTES } from '@/constants/route.constant'
@@ -38,8 +39,10 @@ const AKTIF_OPTIONS: AktifOption[] = [
 
 const BiayaPage = () => {
     const router = useRouter()
+    const { punya } = useIzin()
 
     const [activeTab, setActiveTab] = useState<ActiveTab>('biaya')
+    const bolehTambah = activeTab === 'biaya' ? punya('kursus_biaya.create') : punya('kursus_diskon.create')
     const [submitting, setSubmitting] = useState(false)
 
     // ── Biaya state ──
@@ -199,15 +202,17 @@ const BiayaPage = () => {
             <Card bodyClass="p-0">
                 <div className="flex items-center justify-between px-4 pt-4 pb-0">
                     <h4>Manajemen Biaya & Diskon</h4>
-                    <Button
-                        variant="solid"
-                        size="sm"
-                        customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
-                        icon={<HiPlusCircle />}
-                        onClick={handleAddClick}
-                    >
-                        {activeTab === 'biaya' ? 'Tambah Biaya' : 'Tambah Diskon'}
-                    </Button>
+                    {bolehTambah && (
+                        <Button
+                            variant="solid"
+                            size="sm"
+                            customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                            icon={<HiPlusCircle />}
+                            onClick={handleAddClick}
+                        >
+                            {activeTab === 'biaya' ? 'Tambah Biaya' : 'Tambah Diskon'}
+                        </Button>
+                    )}
                 </div>
 
                 <div className="px-4 pt-3 border-b border-gray-100 dark:border-gray-700">
@@ -271,6 +276,8 @@ const BiayaPage = () => {
                                 onSelectChange={(size) => { setBiayaPageSize(size); setBiayaPage(1) }}
                                 onEdit={(item) => router.push(ROUTES.KURSUS_BIAYA_EDIT(item.id_biaya))}
                                 onDelete={setBiayaDeleteTarget}
+                                bolehUbah={punya('kursus_biaya.update')}
+                                bolehHapus={punya('kursus_biaya.delete')}
                             />
                         </>
                     )}
@@ -315,6 +322,8 @@ const BiayaPage = () => {
                                 onSelectChange={(size) => { setDiskonPageSize(size); setDiskonPage(1) }}
                                 onEdit={(item) => { setDiskonEditData(item); setDiskonFormOpen(true) }}
                                 onDelete={setDiskonDeleteTarget}
+                                bolehUbah={punya('kursus_diskon.update')}
+                                bolehHapus={punya('kursus_diskon.delete')}
                             />
                         </>
                     )}

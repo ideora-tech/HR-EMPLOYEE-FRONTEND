@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import {
     Button,
     Card,
@@ -13,6 +13,9 @@ import {
 import { HiArrowLeft, HiOutlineCamera, HiOutlineTrash } from 'react-icons/hi'
 import appConfig from '@/configs/app.config'
 import { formatNum } from '@/utils/formatNumber'
+import PeranService from '@/services/peran.service'
+import useIzin from '@/utils/hooks/useIzin'
+import type { IPeran } from '@/@types/peran.types'
 import type {
     IKaryawan,
     ICreateKaryawan,
@@ -38,12 +41,25 @@ const SK_OPTIONS: SKOption[] = [
     { value: 'MAGANG', label: 'Magang' },
 ]
 
-type PeranOption = { value: string; label: string }
-const PERAN_OPTIONS: PeranOption[] = [
-    { value: 'EMPLOYEE', label: 'Karyawan (default)' },
-    { value: 'COACH', label: 'Coach' },
-    { value: 'HR_ADMIN', label: 'Admin / HR' },
-]
+type PeranOption = { value: string; label: string; owner: boolean }
+/** Peran bawaan akun karyawan; dibuat otomatis di backend bila perusahaan belum punya. */
+const PERAN_DEFAULT = 'EMPLOYEE'
+
+/** Pilihan dari peran perusahaan, ditambah peran default & peran akun saat ini bila belum ada. */
+const buatPeranOptions = (peranList: IPeran[], peranSaatIni?: string | null): PeranOption[] => {
+    const opsi: PeranOption[] = peranList.map((p) => ({
+        value: p.kode_peran,
+        label: p.is_sistem === 1 ? `${p.nama_peran} (semua izin)` : p.nama_peran,
+        owner: p.is_sistem === 1,
+    }))
+    if (!opsi.some((o) => o.value === PERAN_DEFAULT)) {
+        opsi.unshift({ value: PERAN_DEFAULT, label: 'Karyawan (default)', owner: false })
+    }
+    if (peranSaatIni && !opsi.some((o) => o.value === peranSaatIni)) {
+        opsi.push({ value: peranSaatIni, label: peranSaatIni, owner: false })
+    }
+    return opsi
+}
 
 /* ─── FotoUploader ────────────────────────────────────────── */
 
@@ -187,7 +203,7 @@ const INITIAL: FormState = {
     telepon: '',
     tanggal_masuk: null,
     status_kepegawaian: '',
-    peran: 'EMPLOYEE',
+    peran: PERAN_DEFAULT,
     gaji_pokok: '',
     alamat: '',
     foto_url: '',
@@ -212,8 +228,21 @@ const KaryawanFormPage = ({
     const [form, setForm] = useState<FormState>(INITIAL)
     const [fotoFile, setFotoFile] = useState<File | null>(null)
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+    const [peranList, setPeranList] = useState<IPeran[]>([])
+    const { superAdmin, isOwner } = useIzin()
 
     const isEdit = !!editData
+
+    useEffect(() => {
+        PeranService.getAll({ aktif: 1, limit: 100 })
+            .then((res) => { if (res.success) setPeranList(res.data) })
+            .catch(() => { })
+    }, [])
+
+    const peranOptions = useMemo(
+        () => buatPeranOptions(peranList, editData?.peran_akun),
+        [peranList, editData?.peran_akun],
+    )
 
     useEffect(() => {
         if (editData) {
@@ -228,7 +257,7 @@ const KaryawanFormPage = ({
                 telepon: editData.telepon ?? '',
                 tanggal_masuk: strToDate(editData.tanggal_masuk),
                 status_kepegawaian: editData.status_kepegawaian ?? '',
-                peran: editData.peran_akun ?? 'EMPLOYEE',
+                peran: editData.peran_akun ?? PERAN_DEFAULT,
                 gaji_pokok: editData.gaji_pokok != null ? String(editData.gaji_pokok) : '',
                 alamat: editData.alamat ?? '',
                 foto_url: normalizeFotoUrl(editData.foto_url),
@@ -281,7 +310,7 @@ const KaryawanFormPage = ({
     const selectedJK = JK_OPTIONS.find((o) => o.value === form.jenis_kelamin) ?? JK_OPTIONS[0]
     const selectedSK =
         SK_OPTIONS.find((o) => o.value === form.status_kepegawaian) ?? SK_OPTIONS[0]
-    const selectedPeran = PERAN_OPTIONS.find((o) => o.value === form.peran) ?? PERAN_OPTIONS[0]
+    const selectedPeran = peranOptions.find((o) => o.value === form.peran) ?? peranOptions[0]
 
     return (
         <form
@@ -426,11 +455,13 @@ const KaryawanFormPage = ({
 
                             <FormItem
                                 label="Role / Akses"
-                                extra={<span className="text-xs text-gray-400">Menentukan hak akses akun login karyawan</span>}
+                                extra={<span className="text-xs text-gray-400">Peran utama akun login; peran tambahan diatur di halaman Pengguna</span>}
                             >
                                 <Select<PeranOption>
-                                    options={PERAN_OPTIONS}
+                                    options={peranOptions}
                                     value={selectedPeran}
+                                    // Peran Owner memegang semua izin paket: hanya Owner yang boleh memberikannya.
+                                    isOptionDisabled={(o) => o.owner && !isOwner && !superAdmin}
                                     onChange={(opt) =>
                                         set('peran', (opt as PeranOption).value)
                                     }

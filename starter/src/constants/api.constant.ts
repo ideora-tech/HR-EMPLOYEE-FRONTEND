@@ -42,6 +42,12 @@ export const API_ENDPOINTS = {
         BY_ID: (id: string) => `${PROXY}/peran/${id}`,
     },
 
+    // Izin (katalog untuk matriks peran; izin per paket khusus SUPERADMIN)
+    IZIN: {
+        KATALOG: `${PROXY}/izin`,
+        PAKET: (kodePaket: string) => `${PROXY}/izin/paket/${kodePaket}`,
+    },
+
     // Perusahaan (Company Management)
     PERUSAHAAN: {
         BASE: `${PROXY}/perusahaan`,
@@ -163,6 +169,7 @@ export const API_ENDPOINTS = {
         SISWA: {
             BASE: `${PROXY}/kursus/siswa`,
             BY_ID: (id: string) => `${PROXY}/kursus/siswa/${id}`,
+            PASSWORD: (id: string) => `${PROXY}/kursus/siswa/${id}/password`,
             DAFTAR: `${PROXY}/kursus/siswa/daftar`,
             TUNGGAKAN: `${PROXY}/kursus/siswa/tunggakan`,
             BELUM_SELESAI: `${PROXY}/kursus/siswa/belum-selesai`,

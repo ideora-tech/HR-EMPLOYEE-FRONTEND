@@ -28,6 +28,8 @@ interface TagihanGroupRowProps {
     onCetak: (tagihan: ITagihan) => void
     onViewPembayaran: (p: IPembayaran) => void
     onCetakPembayaran: (p: IPembayaran) => void
+    bolehCatatPembayaran: boolean
+    bolehBatalkan: boolean
 }
 
 const TagihanGroupRow = ({
@@ -43,6 +45,8 @@ const TagihanGroupRow = ({
     onCetak,
     onViewPembayaran,
     onCetakPembayaran,
+    bolehCatatPembayaran,
+    bolehBatalkan,
 }: TagihanGroupRowProps) => {
     const router = useRouter()
     const st = TAGIHAN_STATUS[tagihan.status]
@@ -112,7 +116,7 @@ const TagihanGroupRow = ({
                         </Tooltip>
 
                         {/* Catat Pembayaran */}
-                        {canBayar && (
+                        {bolehCatatPembayaran && canBayar && (
                             <Tooltip title="Catat Pembayaran">
                                 <span
                                     className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors"
@@ -124,7 +128,7 @@ const TagihanGroupRow = ({
                         )}
 
                         {/* Batalkan (alasan wajib) — tidak tersedia bila sudah dibatalkan */}
-                        {tagihan.status !== 4 && (
+                        {bolehBatalkan && tagihan.status !== 4 && (
                             <Tooltip title="Batalkan Tagihan">
                                 <span
                                     className="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"

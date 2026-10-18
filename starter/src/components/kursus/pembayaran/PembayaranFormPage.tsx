@@ -6,6 +6,7 @@ import { Button, Card, Dialog, FormItem, Input, Notification, Select, Spinner, t
 import { HiArrowLeft, HiOutlinePlus, HiOutlineTrash, HiOutlineUser, HiOutlineTag, HiOutlineCollection, HiOutlineCash, HiOutlineCheckCircle, HiOutlineClock, HiOutlineReceiptTax, HiOutlineDocumentText, HiOutlineX, HiCheck, HiOutlineViewGrid, HiOutlineUsers, HiOutlinePhotograph, HiOutlineUpload } from 'react-icons/hi'
 import TagihanService from '@/services/kursus/tagihan.service'
 import DiskonService from '@/services/kursus/diskon.service'
+import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { formatNum, formatRupiah, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 import { ROUTES } from '@/constants/route.constant'
@@ -66,6 +67,8 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
     const router = useRouter()
     const searchParams = useSearchParams()
     const preselectedId = searchParams.get('id')
+    const { punya } = useIzin()
+    const bolehUbahTagihan = punya('kursus_tagihan.update')
 
     const [form, setForm] = useState<FormState>(INITIAL)
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
@@ -384,21 +387,23 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                                         {statusInfo.label}
                                                     </span>
                                                 )}
-                                                <Button
-                                                    type="button"
-                                                    size="xs"
-                                                    variant="solid"
-                                                    customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
-                                                    className="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500"
-                                                    icon={<HiOutlinePlus />}
-                                                    onClick={() =>
-                                                        router.push(
-                                                            `${ROUTES.KURSUS_TAGIHAN_TAMBAH_BIAYA}?id=${selectedTagihan.id_tagihan}`,
-                                                        )
-                                                    }
-                                                >
-                                                    Tambah Biaya
-                                                </Button>
+                                                {bolehUbahTagihan && (
+                                                    <Button
+                                                        type="button"
+                                                        size="xs"
+                                                        variant="solid"
+                                                        customColorClass={() => 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500'}
+                                                        className="bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white border-emerald-500"
+                                                        icon={<HiOutlinePlus />}
+                                                        onClick={() =>
+                                                            router.push(
+                                                                `${ROUTES.KURSUS_TAGIHAN_TAMBAH_BIAYA}?id=${selectedTagihan.id_tagihan}`,
+                                                            )
+                                                        }
+                                                    >
+                                                        Tambah Biaya
+                                                    </Button>
+                                                )}
                                             </div>
                                         </div>
 
@@ -524,7 +529,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                                                 <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
                                                                     {formatRupiah(d.harga_akhir)}
                                                                 </span>
-                                                                {(selectedTagihan.detail?.length ?? 0) > 1 && (
+                                                                {bolehUbahTagihan && (selectedTagihan.detail?.length ?? 0) > 1 && (
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleDeleteDetailClick(d.id_detail)}
@@ -560,7 +565,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                         <div className="border-t border-gray-100 dark:border-gray-700 my-2" />
 
                         {/* ── Section: Diskon ── */}
-                        {selectedTagihan && (
+                        {selectedTagihan && (bolehUbahTagihan || selectedTagihan.id_diskon) && (
                             <div>
                                 <div className="mb-3">
                                     <h5 className="font-semibold">Diskon</h5>
@@ -583,15 +588,17 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                                 </p>
                                             </div>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={handleRemoveDiskon}
-                                            disabled={applyingDiskon}
-                                            className="flex items-center justify-center w-7 h-7 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                                            title="Hapus diskon"
-                                        >
-                                            <HiOutlineX className="text-base" />
-                                        </button>
+                                        {bolehUbahTagihan && (
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveDiskon}
+                                                disabled={applyingDiskon}
+                                                className="flex items-center justify-center w-7 h-7 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                                                title="Hapus diskon"
+                                            >
+                                                <HiOutlineX className="text-base" />
+                                            </button>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="flex flex-col gap-3">

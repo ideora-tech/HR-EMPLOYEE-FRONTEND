@@ -65,6 +65,15 @@ const SiswaService = {
         })
     },
 
+    /** Atur/reset password login aplikasi siswa (username = nomor telepon). */
+    async setPasswordAplikasi(id: string, password: string): Promise<ApiResponse<ISiswa>> {
+        return ApiService.fetchDataWithAxios<ApiResponse<ISiswa>, { password: string }>({
+            url: API_ENDPOINTS.KURSUS.SISWA.PASSWORD(id),
+            method: 'PUT',
+            data: { password },
+        })
+    },
+
     async remove(id: string): Promise<ApiResponse<null>> {
         return ApiService.fetchDataWithAxios<ApiResponse<null>>({
             url: API_ENDPOINTS.KURSUS.SISWA.BY_ID(id),
