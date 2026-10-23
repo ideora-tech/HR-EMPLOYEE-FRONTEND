@@ -22,7 +22,7 @@ interface Props {
  */
 const PeranIzinPage = ({ idPeran }: Props) => {
     const router = useRouter()
-    const { punya } = useIzin()
+    const { punya, superAdmin } = useIzin()
     const [peran, setPeran] = useState<IPeran | null>(null)
     const [katalog, setKatalog] = useState<IItemIzin[]>([])
     const [nama, setNama] = useState('')
@@ -103,6 +103,14 @@ const PeranIzinPage = ({ idPeran }: Props) => {
                 {isOwner && (
                     <Alert showIcon type="info">
                         Peran Owner adalah peran bawaan: otomatis memegang semua izin yang ada di paket langganan dan tidak bisa diubah.
+                    </Alert>
+                )}
+
+                {!isOwner && !bolehUbah && (
+                    <Alert showIcon type="info">
+                        {superAdmin
+                            ? 'Hanya bisa dilihat: peran perusahaan diatur oleh Owner perusahaan. Login dengan akun Owner untuk mengubahnya.'
+                            : 'Hanya bisa dilihat: Anda tidak punya izin mengubah peran.'}
                     </Alert>
                 )}
 

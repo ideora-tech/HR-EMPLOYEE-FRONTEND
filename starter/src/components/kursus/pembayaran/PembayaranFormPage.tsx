@@ -10,7 +10,7 @@ import useIzin from '@/utils/hooks/useIzin'
 import { parseApiError } from '@/utils/parseApiError'
 import { formatNum, formatRupiah, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 import { ROUTES } from '@/constants/route.constant'
-import type { ITagihan, IDiskon, ICreatePembayaran } from '@/@types/kursus.types'
+import type { ITagihan, IDiskon, ICreatePembayaran, IUpdateTagihan } from '@/@types/kursus.types'
 
 /* ─── helpers ─────────────────────────────────────────────── */
 
@@ -85,11 +85,15 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
     const [deletingDetail, setDeletingDetail] = useState(false)
 
     // Diskon
-    const [diskonMode, setDiskonMode] = useState<'none' | 'dropdown' | 'kode'>('none')
+    const [diskonMode, setDiskonMode] = useState<'none' | 'dropdown' | 'kode' | 'manual'>('none')
     const [diskonOptions, setDiskonOptions] = useState<DiskonOption[]>([])
     const [loadingDiskon, setLoadingDiskon] = useState(false)
     const [selectedDiskon, setSelectedDiskon] = useState<DiskonOption | null>(null)
     const [kodeDiskon, setKodeDiskon] = useState('')
+    // Diskon manual (tanpa master data): persen disimpan apa adanya, nominal dalam format ribuan
+    const [manualTipe, setManualTipe] = useState<'persen' | 'nominal'>('persen')
+    const [manualNilai, setManualNilai] = useState('')
+    const [manualNama, setManualNama] = useState('')
     const [applyingDiskon, setApplyingDiskon] = useState(false)
 
     const loadTagihan = useCallback(async () => {
@@ -221,16 +225,51 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
         })
     }
     const statusInfo = selectedTagihan ? STATUS_LABEL[selectedTagihan.status] : null
+    // Diskon manual tidak punya id_diskon — penandanya nama_diskon yang selalu terisi saat ada diskon.
+    const adaDiskon = !!(selectedTagihan?.id_diskon || selectedTagihan?.nama_diskon)
+
+    // Pratinjau diskon manual, rumusnya sama dengan backend: persen dari harga kotor, nominal maks. harga kotor
+    const manualAngka = manualTipe === 'persen' ? Number(manualNilai) : parseRupiah(manualNilai)
+    const hargaKotor = selectedTagihan ? Number(selectedTagihan.nominal_harga) || selectedTagihan.total_harga : 0
+    const manualPotongan = !manualNilai.trim() || Number.isNaN(manualAngka) || manualAngka <= 0
+        ? 0
+        : manualTipe === 'persen'
+            ? Math.round(hargaKotor * (Math.min(manualAngka, 100) / 100))
+            : Math.min(manualAngka, hargaKotor)
+
+    const resetDiskonInput = () => {
+        setSelectedDiskon(null)
+        setKodeDiskon('')
+        setManualNilai('')
+        setManualNama('')
+    }
 
     const handleApplyDiskon = async () => {
         if (!selectedTagihan) return
         setApplyingDiskon(true)
         try {
-            let payload: { id_diskon?: string; kode_diskon?: string }
+            let payload: Pick<IUpdateTagihan, 'id_diskon' | 'kode_diskon' | 'diskon_manual'>
             if (diskonMode === 'dropdown' && selectedDiskon) {
                 payload = { id_diskon: selectedDiskon.value }
             } else if (diskonMode === 'kode' && kodeDiskon.trim()) {
                 payload = { kode_diskon: kodeDiskon.trim() }
+            } else if (diskonMode === 'manual') {
+                const pesan = manualPotongan <= 0
+                    ? 'Isi besar diskon lebih dari 0'
+                    : manualTipe === 'persen' && manualAngka > 100
+                        ? 'Persentase maksimal 100'
+                        : null
+                if (pesan) {
+                    toast.push(<Notification type="warning" title={pesan} />)
+                    setApplyingDiskon(false)
+                    return
+                }
+                payload = {
+                    diskon_manual: {
+                        ...(manualNama.trim() && { nama: manualNama.trim() }),
+                        ...(manualTipe === 'persen' ? { persentase: manualAngka } : { nominal: manualAngka }),
+                    },
+                }
             } else {
                 toast.push(<Notification type="warning" title="Pilih diskon atau masukkan kode promo" />)
                 setApplyingDiskon(false)
@@ -241,6 +280,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                 setSelectedTagihan(res.data)
                 const sisaBaru = res.data.total_harga - res.data.total_bayar
                 setForm((p) => ({ ...p, jumlah: formatNum(sisaBaru > 0 ? sisaBaru : 0) }))
+                resetDiskonInput()
                 toast.push(<Notification type="success" title="Diskon berhasil diterapkan" />)
             }
         } catch (err) {
@@ -264,8 +304,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                 const sisaBaru = res.data.total_harga - res.data.total_bayar
                 setForm((p) => ({ ...p, jumlah: formatNum(sisaBaru > 0 ? sisaBaru : 0) }))
                 setDiskonMode('none')
-                setSelectedDiskon(null)
-                setKodeDiskon('')
+                resetDiskonInput()
                 toast.push(<Notification type="success" title="Diskon berhasil dihapus" />)
             }
         } catch (err) {
@@ -409,7 +448,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
 
 
                                         {/* ── Diskon info ── */}
-                                        {selectedTagihan.id_diskon && (
+                                        {adaDiskon && (
                                             <div className="px-5 py-3 bg-emerald-50 dark:bg-emerald-500/10 border-b border-emerald-100 dark:border-emerald-500/20">
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <HiOutlineReceiptTax className="text-emerald-500 shrink-0" />
@@ -418,7 +457,7 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                                 <div className="space-y-1 text-sm">
                                                     <div className="flex justify-between text-gray-500 dark:text-gray-400">
                                                         <span>Harga sebelum diskon</span>
-                                                        <span>{formatRupiah(selectedTagihan.total_harga)}</span>
+                                                        <span>{formatRupiah(selectedTagihan.total_harga + (selectedTagihan.nominal_diskon ?? 0))}</span>
                                                     </div>
                                                     <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
                                                         <span>
@@ -565,14 +604,14 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                         <div className="border-t border-gray-100 dark:border-gray-700 my-2" />
 
                         {/* ── Section: Diskon ── */}
-                        {selectedTagihan && (bolehUbahTagihan || selectedTagihan.id_diskon) && (
+                        {selectedTagihan && (bolehUbahTagihan || adaDiskon) && (
                             <div>
                                 <div className="mb-3">
                                     <h5 className="font-semibold">Diskon</h5>
                                 </div>
 
                                 {/* Diskon sudah terpasang */}
-                                {selectedTagihan.id_diskon ? (
+                                {adaDiskon ? (
                                     <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
                                         <div className="flex items-center gap-2">
                                             <div className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 shrink-0">
@@ -604,17 +643,17 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                     <div className="flex flex-col gap-3">
                                         {/* Mode selector */}
                                         <div className="flex gap-2">
-                                            {(['none', 'dropdown', 'kode'] as const).map((mode) => (
+                                            {(['none', 'dropdown', 'kode', 'manual'] as const).map((mode) => (
                                                 <button
                                                     key={mode}
                                                     type="button"
-                                                    onClick={() => { setDiskonMode(mode); setSelectedDiskon(null); setKodeDiskon('') }}
+                                                    onClick={() => { setDiskonMode(mode); resetDiskonInput() }}
                                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${diskonMode === mode
                                                         ? 'bg-[#E9F3FF] text-[#2a85ff] border-[#d0e6ff] dark:bg-[#E9F3FF]/10 dark:border-[#E9F3FF]/20 dark:text-[#7BB8FF]'
                                                         : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
                                                         }`}
                                                 >
-                                                    {mode === 'none' ? 'Tanpa Diskon' : mode === 'dropdown' ? 'Pilih Diskon' : 'Kode Promo'}
+                                                    {mode === 'none' ? 'Tanpa Diskon' : mode === 'dropdown' ? 'Pilih Diskon' : mode === 'kode' ? 'Kode Promo' : 'Diskon Manual'}
                                                 </button>
                                             ))}
                                         </div>
@@ -667,6 +706,68 @@ const PembayaranFormPage = ({ submitting = false, onSubmit }: PembayaranFormPage
                                                 >
                                                     Terapkan
                                                 </Button>
+                                            </div>
+                                        )}
+
+                                        {diskonMode === 'manual' && (
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex gap-2">
+                                                    {(['persen', 'nominal'] as const).map((tipe) => (
+                                                        <button
+                                                            key={tipe}
+                                                            type="button"
+                                                            onClick={() => { setManualTipe(tipe); setManualNilai('') }}
+                                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${manualTipe === tipe
+                                                                ? 'bg-[#E9F3FF] text-[#2a85ff] border-[#d0e6ff] dark:bg-[#E9F3FF]/10 dark:border-[#E9F3FF]/20 dark:text-[#7BB8FF]'
+                                                                : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                                                }`}
+                                                        >
+                                                            {tipe === 'persen' ? 'Persentase (%)' : 'Nominal (Rp)'}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <Input
+                                                        aria-label={manualTipe === 'persen' ? 'Besar diskon (%)' : 'Besar diskon (Rp)'}
+                                                        placeholder={manualTipe === 'persen' ? 'Besar diskon, mis. 10' : 'Besar diskon, mis. 50.000'}
+                                                        prefix={manualTipe === 'nominal' ? <span className="text-gray-400 text-sm">Rp</span> : undefined}
+                                                        suffix={manualTipe === 'persen' ? <span className="text-gray-400 text-sm">%</span> : undefined}
+                                                        inputMode={manualTipe === 'persen' ? 'decimal' : 'numeric'}
+                                                        value={manualNilai}
+                                                        onChange={(e) =>
+                                                            setManualNilai(
+                                                                manualTipe === 'persen'
+                                                                    ? e.target.value.replace(/[^0-9.]/g, '')
+                                                                    : formatRupiahInput(e.target.value),
+                                                            )
+                                                        }
+                                                    />
+                                                    <Input
+                                                        aria-label="Keterangan diskon"
+                                                        placeholder="Keterangan (opsional), mis. Potongan saudara"
+                                                        maxLength={100}
+                                                        value={manualNama}
+                                                        onChange={(e) => setManualNama(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {manualPotongan > 0
+                                                            ? `Potongan ${formatRupiah(manualPotongan)} · total jadi ${formatRupiah(Math.max(0, hargaKotor - manualPotongan))}`
+                                                            : 'Dipotong dari total tagihan, tanpa perlu master diskon.'}
+                                                    </p>
+                                                    <Button
+                                                        type="button"
+                                                        variant="solid"
+                                                        size="sm"
+                                                        className="bg-[#2a85ff] hover:bg-[#0069f6] text-white border-[#2a85ff] shrink-0"
+                                                        loading={applyingDiskon}
+                                                        disabled={!manualNilai.trim()}
+                                                        onClick={handleApplyDiskon}
+                                                    >
+                                                        Terapkan
+                                                    </Button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>

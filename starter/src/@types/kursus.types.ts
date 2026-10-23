@@ -473,6 +473,8 @@ export interface IUpdateTagihan {
     aktif?: number
     id_diskon?: string | null
     kode_diskon?: string | null
+    /** Diskon diketik langsung (persen ATAU nominal), tanpa master diskon. */
+    diskon_manual?: IDiskonManual
 }
 
 export interface ITagihanQuery {

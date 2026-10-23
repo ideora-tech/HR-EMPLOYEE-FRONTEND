@@ -229,7 +229,8 @@ const TagihanDetailDrawer = ({ open, tagihan, onClose, onChanged, readOnly = fal
 
                             {/* Progress bayar */}
                             <div>
-                                {tagihan.id_diskon && (
+                                {/* Diskon manual tidak punya id_diskon — nama_diskon selalu terisi saat ada diskon */}
+                                {(tagihan.id_diskon || tagihan.nama_diskon) && (
                                     <div className="text-xs text-gray-400 mb-2 space-y-1">
                                         <div className="flex justify-between">
                                             <span>Harga biaya</span>

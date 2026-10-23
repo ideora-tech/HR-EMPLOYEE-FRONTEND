@@ -105,7 +105,7 @@ const TagihanService = {
         return { ...res, data: normalizeTagihan(res.data) }
     },
 
-    async applyDiskon(id: string, payload: Pick<IUpdateTagihan, 'id_diskon' | 'kode_diskon'>): Promise<ApiResponse<ITagihan>> {
+    async applyDiskon(id: string, payload: Pick<IUpdateTagihan, 'id_diskon' | 'kode_diskon' | 'diskon_manual'>): Promise<ApiResponse<ITagihan>> {
         const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>, typeof payload>({
             url: API_ENDPOINTS.KURSUS.TAGIHAN.BY_ID(id),
             method: 'PATCH',
