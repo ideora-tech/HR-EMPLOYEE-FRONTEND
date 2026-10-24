@@ -6,6 +6,7 @@ import {
     Card,
     DatePicker,
     FormItem,
+    Input,
     Notification,
     Select,
     toast,
@@ -22,7 +23,7 @@ import BiayaService from '@/services/kursus/biaya.service'
 import DiskonService from '@/services/kursus/diskon.service'
 import JadwalKelasService from '@/services/kursus/jadwal-kelas.service'
 import SiswaService from '@/services/kursus/siswa.service'
-import { formatRupiah } from '@/utils/formatNumber'
+import { formatRupiah, formatRupiahInput, parseRupiah } from '@/utils/formatNumber'
 import type { IBiaya, IDiskon, IJadwalKelas, ISiswa, ICreateTagihanBulk } from '@/@types/kursus.types'
 
 type SelectOption = { value: string; label: string }
@@ -76,9 +77,14 @@ const TagihanFormPage = ({
 
     const [tagihanRows, setTagihanRows] = useState<TagihanItem[]>([newTagihanItem()])
 
-    // Kode promo sengaja tidak ditawarkan saat pembuatan tagihan — cukup pilih dari master diskon
-    const [diskonMode, setDiskonMode] = useState<'none' | 'dropdown'>('none')
+    // Kode promo sengaja tidak ditawarkan saat pembuatan tagihan — pilih dari master atau diskon manual
+    const [diskonMode, setDiskonMode] = useState<'none' | 'dropdown' | 'manual'>('none')
     const [selectedDiskon, setSelectedDiskon] = useState<SelectOption | null>(null)
+    // Diskon manual (tanpa master data): persen apa adanya, nominal dalam format ribuan
+    const [manualTipe, setManualTipe] = useState<'persen' | 'nominal'>('persen')
+    const [manualNilai, setManualNilai] = useState('')
+    const [manualNama, setManualNama] = useState('')
+    const manualAngka = manualTipe === 'persen' ? Number(manualNilai) : parseRupiah(manualNilai)
     const [diskonOptions, setDiskonOptions] = useState<SelectOption[]>([])
     const [loadingDiskon, setLoadingDiskon] = useState(false)
 
@@ -233,6 +239,10 @@ const TagihanFormPage = ({
         if (diskonMode === 'dropdown' && !selectedDiskon) {
             e.diskon = 'Pilih diskon dari daftar'
         }
+        if (diskonMode === 'manual') {
+            if (!manualNilai.trim() || Number.isNaN(manualAngka) || manualAngka <= 0) e.diskon = 'Isi besar diskon lebih dari 0'
+            else if (manualTipe === 'persen' && manualAngka > 100) e.diskon = 'Persentase maksimal 100'
+        }
 
         setErrors(e)
         return Object.keys(e).length === 0
@@ -252,6 +262,12 @@ const TagihanFormPage = ({
                 ...(row.periode.trim() && { periode: row.periode.trim() }),
             })),
             ...(diskonMode === 'dropdown' && selectedDiskon && { id_diskon: selectedDiskon.value }),
+            ...(diskonMode === 'manual' && {
+                diskon_manual: {
+                    ...(manualNama.trim() && { nama: manualNama.trim() }),
+                    ...(manualTipe === 'persen' ? { persentase: manualAngka } : { nominal: manualAngka }),
+                },
+            }),
         }
 
         onSubmit(payload)
@@ -261,6 +277,13 @@ const TagihanFormPage = ({
         (acc, r) => acc + (r.id_biaya && biayaMap[r.id_biaya] ? biayaMap[r.id_biaya].harga_biaya : 0),
         0,
     )
+
+    // Pratinjau diskon manual, rumusnya sama dengan backend: persen dari total, nominal maks. total
+    const manualPotongan = diskonMode !== 'manual' || Number.isNaN(manualAngka) || manualAngka <= 0
+        ? 0
+        : manualTipe === 'persen'
+            ? Math.round(estimasiTotal * (Math.min(manualAngka, 100) / 100))
+            : Math.min(manualAngka, estimasiTotal)
 
     return (
         <form
@@ -323,13 +346,15 @@ const TagihanFormPage = ({
 
                         <div className="flex flex-col gap-3">
                             <div className="flex gap-2">
-                                {(['none', 'dropdown'] as const).map((mode) => (
+                                {(['none', 'dropdown', 'manual'] as const).map((mode) => (
                                     <button
                                         key={mode}
                                         type="button"
                                         onClick={() => {
                                             setDiskonMode(mode)
                                             setSelectedDiskon(null)
+                                            setManualNilai('')
+                                            setManualNama('')
                                             setErrors((p) => {
                                                 const n = { ...p }
                                                 delete n.diskon
@@ -342,7 +367,7 @@ const TagihanFormPage = ({
                                                 : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
                                         }`}
                                     >
-                                        {mode === 'none' ? 'Tanpa Diskon' : 'Pilih Diskon'}
+                                        {mode === 'none' ? 'Tanpa Diskon' : mode === 'dropdown' ? 'Pilih Diskon' : 'Diskon Manual'}
                                     </button>
                                 ))}
                             </div>
@@ -360,6 +385,63 @@ const TagihanFormPage = ({
                                         }
                                     />
                                 </FormItem>
+                            )}
+
+                            {diskonMode === 'manual' && (
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex gap-2">
+                                        {(['persen', 'nominal'] as const).map((tipe) => (
+                                            <button
+                                                key={tipe}
+                                                type="button"
+                                                onClick={() => {
+                                                    setManualTipe(tipe)
+                                                    setManualNilai('')
+                                                }}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                                                    manualTipe === tipe
+                                                        ? 'bg-[#E9F3FF] text-[#2a85ff] border-[#d0e6ff] dark:bg-[#E9F3FF]/10 dark:border-[#E9F3FF]/20 dark:text-[#7BB8FF]'
+                                                        : 'bg-white dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                                }`}
+                                            >
+                                                {tipe === 'persen' ? 'Persentase (%)' : 'Nominal (Rp)'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <FormItem invalid={!!errors.diskon} errorMessage={errors.diskon}>
+                                            <Input
+                                                aria-label={manualTipe === 'persen' ? 'Besar diskon (%)' : 'Besar diskon (Rp)'}
+                                                placeholder={manualTipe === 'persen' ? 'Besar diskon, mis. 10' : 'Besar diskon, mis. 50.000'}
+                                                prefix={manualTipe === 'nominal' ? <span className="text-gray-400 text-sm">Rp</span> : undefined}
+                                                suffix={manualTipe === 'persen' ? <span className="text-gray-400 text-sm">%</span> : undefined}
+                                                inputMode={manualTipe === 'persen' ? 'decimal' : 'numeric'}
+                                                value={manualNilai}
+                                                onChange={(e) =>
+                                                    setManualNilai(
+                                                        manualTipe === 'persen'
+                                                            ? e.target.value.replace(/[^0-9.]/g, '')
+                                                            : formatRupiahInput(e.target.value),
+                                                    )
+                                                }
+                                            />
+                                        </FormItem>
+                                        <FormItem>
+                                            <Input
+                                                aria-label="Keterangan diskon"
+                                                placeholder="Keterangan (opsional), mis. Potongan saudara"
+                                                maxLength={100}
+                                                value={manualNama}
+                                                onChange={(e) => setManualNama(e.target.value)}
+                                            />
+                                        </FormItem>
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                        {manualPotongan > 0
+                                            ? `Potongan ${formatRupiah(manualPotongan)} · total jadi ${formatRupiah(Math.max(0, estimasiTotal - manualPotongan))}`
+                                            : 'Dipotong dari total tagihan, tanpa perlu master diskon.'}
+                                    </p>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -542,7 +624,12 @@ const TagihanFormPage = ({
                                         Estimasi Total
                                     </span>
                                     <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
-                                        {formatRupiah(estimasiTotal)}
+                                        {manualPotongan > 0 && (
+                                            <span className="mr-2 text-xs font-normal text-gray-400 line-through">
+                                                {formatRupiah(estimasiTotal)}
+                                            </span>
+                                        )}
+                                        {formatRupiah(Math.max(0, estimasiTotal - manualPotongan))}
                                     </span>
                                 </div>
                             )}

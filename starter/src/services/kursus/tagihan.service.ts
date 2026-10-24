@@ -167,10 +167,11 @@ const TagihanService = {
             })
         }
 
-        if (payload.id_diskon || payload.kode_diskon) {
-            const diskonPayload: Pick<IUpdateTagihan, 'id_diskon' | 'kode_diskon'> = {}
+        if (payload.id_diskon || payload.kode_diskon || payload.diskon_manual) {
+            const diskonPayload: Pick<IUpdateTagihan, 'id_diskon' | 'kode_diskon' | 'diskon_manual'> = {}
             if (payload.id_diskon) diskonPayload.id_diskon = payload.id_diskon
             if (payload.kode_diskon) diskonPayload.kode_diskon = payload.kode_diskon
+            if (payload.diskon_manual) diskonPayload.diskon_manual = payload.diskon_manual
             const res = await ApiService.fetchDataWithAxios<ApiResponse<ITagihan>, typeof diskonPayload>({
                 url: API_ENDPOINTS.KURSUS.TAGIHAN.BY_ID(id),
                 method: 'PATCH',

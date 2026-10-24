@@ -463,6 +463,7 @@ export interface ICreateTagihanBulk {
     items: ICreateTagihanBulkItem[]
     id_diskon?: string
     kode_diskon?: string
+    diskon_manual?: IDiskonManual
 }
 
 export interface IUpdateTagihan {
