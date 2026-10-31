@@ -81,7 +81,9 @@ const DaftarSiswaJadwalModal = ({ isOpen, jadwal, onClose, onSuccess }: DaftarSi
     const filteredKategori = useMemo<SelectOption[]>(() =>
         kategoriList.map((k) => ({
             value: k.id_kategori_umur,
-            label: k.nama_kategori_umur + (k.sesi_pertemuan ? ` (${k.sesi_pertemuan} sesi)` : ''),
+            label: k.nama_kategori_umur
+                + (k.sesi_pertemuan ? ` (${k.sesi_pertemuan} sesi)` : '')
+                + (k.nama_paket ? ` · ${k.nama_paket}` : ''),
         }))
     , [kategoriList])
 
