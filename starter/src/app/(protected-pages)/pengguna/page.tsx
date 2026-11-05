@@ -20,9 +20,10 @@ import {
 } from 'react-icons/hi'
 import PenggunaTable from '@/components/pengguna/PenggunaTable'
 import PenggunaCard from '@/components/pengguna/PenggunaCard'
-import PenggunaForm from '@/components/pengguna/PenggunaForm'
+import PenggunaForm, { type KaryawanOption } from '@/components/pengguna/PenggunaForm'
 import PenggunaService from '@/services/pengguna.service'
 import PeranService from '@/services/peran.service'
+import KaryawanService from '@/services/karyawan.service'
 import useIzin from '@/utils/hooks/useIzin'
 import useCurrentSession from '@/utils/hooks/useCurrentSession'
 import { parseApiError } from '@/utils/parseApiError'
@@ -79,6 +80,19 @@ const PenggunaPage = () => {
             .then((res) => { if (res.success) setPeranList(res.data) })
             .catch(() => { })
     }, [])
+
+    // Karyawan untuk dihubungkan ke akun (syarat login aplikasi coach). SUPERADMIN tidak memilih karyawan.
+    const [karyawanOptions, setKaryawanOptions] = useState<KaryawanOption[]>([])
+    useEffect(() => {
+        if (superAdmin) return
+        KaryawanService.getAll({ aktif: 1, limit: 200 })
+            .then((res) => {
+                if (res.success) {
+                    setKaryawanOptions(res.data.map((k) => ({ value: k.id_karyawan, label: k.nama_karyawan })))
+                }
+            })
+            .catch(() => { /* silent — dropdown karyawan kosong */ })
+    }, [superAdmin])
 
     const fetchPengguna = useCallback(async () => {
         setLoading(true)
@@ -349,6 +363,7 @@ const PenggunaPage = () => {
                 editData={editTarget}
                 submitting={submitting}
                 peranList={peranList}
+                karyawanOptions={karyawanOptions}
                 onClose={() => {
                     setFormOpen(false)
                     setEditTarget(null)

@@ -49,15 +49,28 @@ const CoachTable = ({
                 ),
             },
             {
-                header: 'Username',
+                header: 'Akun Login',
                 accessorKey: 'username',
-                size: 150,
-                cell: ({ row }: CellContext<ICoachPublic, unknown>) =>
-                    row.original.username ?? (
-                        <Tooltip title="Login mobile pakai nomor telepon">
-                            <span className="text-gray-400">via telepon</span>
+                size: 170,
+                cell: ({ row }: CellContext<ICoachPublic, unknown>) => {
+                    const { username_pengguna, username } = row.original
+                    if (username_pengguna) {
+                        return (
+                            <div>
+                                <p className="font-semibold">{username_pengguna}</p>
+                                <p className="text-xs text-gray-400">akun Pengguna</p>
+                            </div>
+                        )
+                    }
+                    return (
+                        <Tooltip title="Belum ada akun Pengguna yang terhubung ke karyawan ini. Login aplikasi masih memakai username/telepon cara lama.">
+                            <div>
+                                <p>{username ?? 'via telepon'}</p>
+                                <p className="text-xs text-amber-500">cara lama</p>
+                            </div>
                         </Tooltip>
-                    ),
+                    )
+                },
             },
             {
                 header: 'Telepon',

@@ -30,6 +30,9 @@ const PenggunaCard = ({ pengguna, onEdit, onDelete, bolehUbah, bolehHapus }: Pen
             </div>
 
             <h6 className="font-bold mb-1">{pengguna.nama_pengguna}</h6>
+            {pengguna.username && (
+                <p className="text-xs text-gray-500">Username: {pengguna.username}</p>
+            )}
             <p className="text-sm text-gray-400 mb-4">{pengguna.email}</p>
 
             <div className="flex gap-2">

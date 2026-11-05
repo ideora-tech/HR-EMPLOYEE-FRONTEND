@@ -49,7 +49,13 @@ const PenggunaTable = ({
                 cell: ({ row }: CellContext<IPengguna, unknown>) => (
                     <div>
                         <p className="font-semibold">{row.original.nama_pengguna}</p>
+                        {row.original.username && (
+                            <p className="text-xs text-gray-500">Username: {row.original.username}</p>
+                        )}
                         <p className="text-xs text-gray-400">{row.original.email}</p>
+                        {row.original.nama_karyawan && (
+                            <p className="text-xs text-gray-500">Karyawan: {row.original.nama_karyawan}</p>
+                        )}
                     </div>
                 ),
             },

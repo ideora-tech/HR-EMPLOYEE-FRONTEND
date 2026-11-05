@@ -16,33 +16,52 @@ import type { IPengguna, IPenggunaCreate, IPenggunaUpdate } from '@/@types/pengg
 import type { IPeran } from '@/@types/peran.types'
 
 type PeranOption = { value: string; label: string; owner: boolean }
+export type KaryawanOption = { value: string; label: string }
 
 interface PenggunaFormProps {
     open: boolean
     editData?: IPengguna | null
     submitting?: boolean
     peranList?: IPeran[]
+    karyawanOptions?: KaryawanOption[]
     onClose: () => void
     onSubmit: (payload: IPenggunaCreate | IPenggunaUpdate) => void
 }
 
 interface FormState {
+    nama: string
+    /** Username login (web & aplikasi coach); kosong saat tambah = dibuat otomatis dari nama */
     username: string
     kata_sandi: string
     konfirmasi_sandi: string
     id_peran: string[]
+    id_karyawan: string
     aktif: boolean
 }
 
 type FormErrors = Partial<Record<keyof FormState, string>>
 
 const INITIAL_STATE: FormState = {
+    nama: '',
     username: '',
     kata_sandi: '',
     konfirmasi_sandi: '',
     id_peran: [],
+    id_karyawan: '',
     aktif: true,
 }
+
+const USERNAME_RE = /^[A-Za-z0-9._-]+$/
+
+/** Pratinjau username otomatis dari nama — sama dengan aturan backend (generateUsername). */
+const usernameDariNama = (nama: string): string =>
+    nama
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9._\-\s]/g, '')
+        .trim()
+        .replace(/\s+/g, '.')
 
 const validatePassword = (pwd: string): string | null => {
     if (pwd.length < 8) return 'Minimal 8 karakter'
@@ -80,6 +99,7 @@ const PenggunaForm = ({
     editData,
     submitting = false,
     peranList = [],
+    karyawanOptions = [],
     onClose,
     onSubmit,
 }: PenggunaFormProps) => {
@@ -105,13 +125,22 @@ const PenggunaForm = ({
         [peranList, superAdmin, editData?.id_perusahaan],
     )
 
+    // Karyawan yang sedang terhubung tetap tampil walau tidak ada di daftar (mis. karyawan nonaktif).
+    const opsiKaryawan: KaryawanOption[] = useMemo(() => {
+        const idSekarang = editData?.id_karyawan
+        if (!idSekarang || karyawanOptions.some((o) => o.value === idSekarang)) return karyawanOptions
+        return [{ value: idSekarang, label: editData?.nama_karyawan ?? 'Karyawan terhubung' }, ...karyawanOptions]
+    }, [karyawanOptions, editData?.id_karyawan, editData?.nama_karyawan])
+
     useEffect(() => {
         if (editData) {
             setForm({
-                username: editData.nama_pengguna,
+                nama: editData.nama_pengguna,
+                username: editData.username ?? '',
                 kata_sandi: '',
                 konfirmasi_sandi: '',
                 id_peran: peranAwal(editData, peranList),
+                id_karyawan: editData.id_karyawan ?? '',
                 aktif: editData.aktif === 1,
             })
         } else {
@@ -125,7 +154,13 @@ const PenggunaForm = ({
     const validate = (): boolean => {
         const newErrors: FormErrors = {}
 
-        if (!form.username.trim()) newErrors.username = 'Username wajib diisi'
+        if (!form.nama.trim()) newErrors.nama = 'Nama wajib diisi'
+
+        const username = form.username.trim()
+        if (isEdit && editData?.username && !username) newErrors.username = 'Username wajib diisi'
+        else if (username && username.length < 3) newErrors.username = 'Username minimal 3 karakter'
+        else if (username && !USERNAME_RE.test(username))
+            newErrors.username = 'Hanya huruf, angka, titik, garis bawah, dan strip (tanpa spasi)'
 
         const passwordFilled = form.kata_sandi.trim().length > 0
         if (!isEdit && !passwordFilled) {
@@ -153,22 +188,30 @@ const PenggunaForm = ({
 
         if (isEdit) {
             const payload: IPenggunaUpdate = {
-                nama_pengguna: form.username.trim(),
+                nama_pengguna: form.nama.trim(),
                 aktif: form.aktif ? 1 : 0,
             }
+            const username = form.username.trim().toLowerCase()
+            if (username && username !== (editData?.username ?? '').toLowerCase()) payload.username = username
             if (pakaiPeran) payload.id_peran = form.id_peran
+            // Kirim hanya bila berubah: hubungan lama ke karyawan yang sudah dihapus tidak ikut divalidasi ulang.
+            if (!superAdmin && form.id_karyawan !== (editData?.id_karyawan ?? '')) {
+                payload.id_karyawan = form.id_karyawan || null
+            }
             if (form.kata_sandi.trim()) {
                 payload.kata_sandi = form.kata_sandi.trim()
             }
             onSubmit(payload)
         } else {
             const payload: IPenggunaCreate = {
-                nama_pengguna: form.username.trim(),
+                nama_pengguna: form.nama.trim(),
                 kata_sandi: form.kata_sandi.trim(),
                 aktif: form.aktif ? 1 : 0,
             }
+            if (form.username.trim()) payload.username = form.username.trim().toLowerCase()
             if (superAdmin) payload.peran = 'SUPERADMIN'
             else payload.id_peran = form.id_peran
+            if (!superAdmin && form.id_karyawan) payload.id_karyawan = form.id_karyawan
             onSubmit(payload)
         }
     }
@@ -188,18 +231,45 @@ const PenggunaForm = ({
 
             <div className="flex flex-col gap-1">
                 <FormItem
-                    label="Username"
+                    label="Nama"
                     asterisk
-                    invalid={!!errors.username}
-                    errorMessage={errors.username}
+                    invalid={!!errors.nama}
+                    errorMessage={errors.nama}
+                    extra={<span className="text-xs text-gray-400">Nama yang tampil di daftar</span>}
                 >
                     <Input
-                        placeholder="contoh: budi.santoso"
+                        placeholder="contoh: Budi Santoso"
+                        autoComplete="off"
+                        value={form.nama}
+                        invalid={!!errors.nama}
+                        onChange={(e) =>
+                            setForm((p) => ({ ...p, nama: e.target.value }))
+                        }
+                    />
+                </FormItem>
+
+                <FormItem
+                    label="Username Login"
+                    asterisk={isEdit && !!editData?.username}
+                    invalid={!!errors.username}
+                    errorMessage={errors.username}
+                    extra={
+                        <span className="text-xs text-gray-400">
+                            {isEdit ? 'Untuk login web & aplikasi coach' : 'Kosongkan = dibuat dari nama'}
+                        </span>
+                    }
+                >
+                    <Input
+                        placeholder={
+                            !isEdit && form.nama.trim()
+                                ? usernameDariNama(form.nama)
+                                : 'contoh: budi.santoso'
+                        }
                         autoComplete="off"
                         value={form.username}
                         invalid={!!errors.username}
                         onChange={(e) =>
-                            setForm((p) => ({ ...p, username: e.target.value }))
+                            setForm((p) => ({ ...p, username: e.target.value.trim().toLowerCase() }))
                         }
                     />
                 </FormItem>
@@ -309,6 +379,27 @@ const PenggunaForm = ({
                             ? 'Akun SUPERADMIN tidak memakai peran perusahaan.'
                             : 'Akun baru dibuat sebagai SUPERADMIN (akses seluruh platform).'}
                     </p>
+                )}
+
+                {!superAdmin && (
+                    <FormItem
+                        label="Karyawan"
+                        extra={
+                            <span className="text-xs text-gray-400">
+                                Opsional; wajib bila akun dipakai login aplikasi coach
+                            </span>
+                        }
+                    >
+                        <Select<KaryawanOption>
+                            isClearable
+                            placeholder="— Tidak terhubung ke karyawan —"
+                            options={opsiKaryawan}
+                            value={opsiKaryawan.find((o) => o.value === form.id_karyawan) ?? null}
+                            onChange={(opt) =>
+                                setForm((p) => ({ ...p, id_karyawan: (opt as KaryawanOption | null)?.value ?? '' }))
+                            }
+                        />
+                    </FormItem>
                 )}
 
                 <FormItem label="Status Pengguna">

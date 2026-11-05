@@ -904,6 +904,8 @@ export interface ICoachPublic {
     foto_url: string | null
     spesialisasi: string | null
     username: string | null
+    /** Username akun Pengguna aktif yang terhubung ke karyawan ini (akun login utama app coach) */
+    username_pengguna: string | null
     aktif: number
     dibuat_pada: string | null
     diubah_pada: string | null
@@ -911,7 +913,8 @@ export interface ICoachPublic {
 
 export interface ICreateCoach {
     id_karyawan: string
-    password: string
+    /** Opsional: coach bisa login memakai akun Pengguna yang terhubung ke karyawannya */
+    password?: string
     username?: string
     tarif_per_sesi?: number
     no_rekening?: string

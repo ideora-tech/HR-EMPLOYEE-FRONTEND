@@ -65,7 +65,12 @@ const CoachFormDialog = ({
                 id_karyawan: editData.id_karyawan,
                 username: editData.username ?? '',
                 password: '',
-                tarif: editData.tarif_per_sesi !== null ? formatRupiahInput(String(editData.tarif_per_sesi)) : '',
+                // DECIMAL dari MySQL datang sebagai string "140000.00": tanpa Number() titik desimalnya
+                // ikut terbuang oleh formatRupiahInput → 14.000.000 (100x) dan tersimpan saat form disimpan.
+                tarif:
+                    editData.tarif_per_sesi !== null
+                        ? formatRupiahInput(String(Math.round(Number(editData.tarif_per_sesi))))
+                        : '',
                 nama_bank: editData.nama_bank ?? '',
                 no_rekening: editData.no_rekening ?? '',
                 spesialisasi: editData.spesialisasi ?? '',
@@ -87,7 +92,6 @@ const CoachFormDialog = ({
             else if (!USERNAME_RE.test(form.username)) next.username = 'Hanya huruf, angka, titik, garis bawah, dan strip'
         }
 
-        if (!isEdit && !form.password) next.password = 'Password wajib diisi'
         if (form.password && form.password.length < 6) next.password = 'Password minimal 6 karakter'
 
         setErrors(next)
@@ -112,7 +116,7 @@ const CoachFormDialog = ({
         } else {
             const payload: ICreateCoach = {
                 id_karyawan: form.id_karyawan,
-                password: form.password,
+                ...(form.password && { password: form.password }),
                 ...(form.username && { username: form.username }),
                 ...(form.tarif && { tarif_per_sesi: parseRupiah(form.tarif) }),
                 ...(form.nama_bank && { nama_bank: form.nama_bank }),
@@ -151,11 +155,27 @@ const CoachFormDialog = ({
                     </FormItem>
                 )}
 
+                <div className="rounded-lg bg-gray-50 dark:bg-gray-700/40 px-3 py-2 text-xs text-gray-600 dark:text-gray-300">
+                    {isEdit && editData?.username_pengguna ? (
+                        <>
+                            Login aplikasi coach memakai akun Pengguna{' '}
+                            <span className="font-semibold">{editData.username_pengguna}</span>. Password dan status
+                            akunnya diatur di Pengaturan › Pengguna.
+                        </>
+                    ) : (
+                        <>
+                            Disarankan: buat akun di <span className="font-semibold">Pengaturan › Pengguna</span> lalu
+                            pilih karyawan ini, supaya coach login aplikasi dengan akun yang sama seperti web. Username
+                            dan password di bawah hanya cara lama (opsional).
+                        </>
+                    )}
+                </div>
+
                 <FormItem
-                    label="Username"
+                    label="Username (cara lama)"
                     invalid={!!errors.username}
                     errorMessage={errors.username}
-                    extra={<span className="text-xs text-gray-400">Opsional — bila kosong, coach login pakai nomor telepon</span>}
+                    extra={<span className="text-xs text-gray-400">Opsional</span>}
                 >
                     <Input
                         placeholder="mis. coach_yuma"
@@ -166,11 +186,14 @@ const CoachFormDialog = ({
                 </FormItem>
 
                 <FormItem
-                    label={isEdit ? 'Password Baru' : 'Password'}
-                    asterisk={!isEdit}
+                    label={isEdit ? 'Password Baru (cara lama)' : 'Password (cara lama)'}
                     invalid={!!errors.password}
                     errorMessage={errors.password}
-                    extra={isEdit ? <span className="text-xs text-gray-400">Kosongkan bila password tidak diubah</span> : undefined}
+                    extra={
+                        <span className="text-xs text-gray-400">
+                            {isEdit ? 'Kosongkan bila password tidak diubah' : 'Opsional'}
+                        </span>
+                    }
                 >
                     <Input
                         type="password"
