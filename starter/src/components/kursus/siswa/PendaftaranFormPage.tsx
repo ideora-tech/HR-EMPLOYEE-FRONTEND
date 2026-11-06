@@ -157,7 +157,7 @@ const PendaftaranFormPage = ({
             if (res.success) {
                 const opts = res.data.map((j: IJadwalKelas) => ({
                     value: j.id_jadwal_kelas,
-                    label: `${j.nama_kelas} - ${j.hari} ${j.jam_mulai}-${j.jam_selesai} (${j.nama_kategori_umur})${j.kuota > 0 ? ` · ${j.kuota_terpakai}/${j.kuota} terisi` : ''}`,
+                    label: `${j.nama_kelas} - ${j.hari} ${j.jam_mulai}-${j.jam_selesai} (${j.nama_kategori_umur}) · ${j.nama_karyawan?.trim() ? `Coach ${j.nama_karyawan.trim()}` : '(Tanpa Coach)'}${j.kuota > 0 ? ` · ${j.kuota_terpakai}/${j.kuota} terisi` : ''}`,
                 }))
                 setJadwalOptions(opts)
             }
